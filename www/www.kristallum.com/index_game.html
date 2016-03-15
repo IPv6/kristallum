@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ru" xmlns:og="http://opengraphprotocol.org/schema/"
+itemscope itemtype="http://schema.org/Article" 
+xmlns:fb="http://www.facebook.com/2008/fbml" 
+xmlns:fb="http://ogp.me/ns/fb#"><!-- Обявление стандарта. Не убирать! -->
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<!--# include file="ssi_metas.html?$args" -->
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/jquery/jquery.storage.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/jquery/jquery.json-2.2.min.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/jquery/jquery.purl.pp.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/head.load.min.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/site_bootstrap.js"></script>
+
+<!-- xsolla paybar/paystation
+<script type="text/javascript" src="https://secure.xsolla.com/paystation/embed/lightbox.js"></script>
+<link type="text/css" rel="stylesheet" href="https://secure.xsolla.com/paybar/jswidget/css/example4.css">
+-->
+<script type="text/javascript" src="https://secure.xsolla.com/paybar/jswidget/paybar.js"></script>
+<link type="text/css" rel="stylesheet" href="/css/xsolla.css">
+<!-- end of xsolla paybar/paystation -->
+
+</head>
+<body style="background:url(img/bg_gamepage.jpg);background-repeat: repeat;background-position:center top;background-color: black;">
+<!-- user panel -->
+<div id="user_info" style="position: relative; left:0%; top: 0%; width:99%;"></div>
+<!-- widget panel -->
+<center>
+
+<div id="widget_paybar" style="display: none;width: 90%; background-color: transparent; padding: 20px 20px 20px 20px; margin: 20px 20px 20px 20px;">
+<center>
+<div id="widget_paybar_info"></div>
+<div id="widget_paybar_content" style="display: none; width: 90%; padding: 20px 20px 20px 20px; margin: 20px 20px 20px 20px;"></div>
+<iframe id="widget_paybar_paystation" src="" width="100%" height="550" style="display: none;"></iframe>
+<a id="paycancel_bt" href="javascript:jq_ui_ApiPaymentCancel();">
+	<img src="/img/bt_igrat_ru_1_ww483_hh145.png" src2="/img/bt_igrat_ru_1_ovl.png">
+</a>
+</center>
+</div>
+
+<iframe id="widget_canvas" webkitallowfullscreen="true" mozallowfullscreen="true" allowfullscreen="true" frameborder="0" src="" scrolling="no"
+	width="1100px" height="1100px"
+	style="display: none; background:transparent;"
+></iframe>
+</center>
+<!-- legal stuff panel -->
+<div id="legal_notes" style="position: relative; left:1%; width:98%; height: 20px; text-align:center; display:none;" class="ui_small_text"></div>
+<script>
+function on_js_init(){
+	show_legals();
+	jq_createButton("#paycancel_bt",{
+		url_bg: $("#paycancel_bt img").attr('src')
+		,url_hover: $("#paycancel_bt img").attr('src2')
+		,onClick:function(){
+			jq_ui_ApiPaymentCancel();
+		}
+	});
+	// Asking user info and widget canvas url
+	var oldauth = $.Storage.get(window.CONST_JSSTORE_AUTH);
+	if(core_len(oldauth) == 0 || !window.GamerotorServer || !GamerotorServer.ready()){
+		jq_redirect2login({target_widget: window.bootstrap_config['focus_widget']});
+		return;
+	}
+	// If we have pending invites, sending them
+	var apiconf = $.gr_getConf();
+	apiconf.onInivite = jq_ui_ApiInvite;
+	apiconf.onShare = jq_ui_ApiShare;
+	apiconf.onPayment = jq_ui_ApiPayment;
+	apiconf.onProviderData = jq_login_viasn_callback;
+	GamerotorServer.BootstrapApi(window.bootstrap_config['focus_widget'],apiconf);
+	jq_check_friendinvites(true);
+	var login_num = 0;
+	try{
+		login_num = $.Storage.get("login_num");
+		login_num = 1+Number(login_num);
+		if(isNaN(login_num)){login_num=1;}
+	}catch(e){login_num = "ER";};
+	$.Storage.set("login_num",""+login_num);
+	jq_statHitPage("ui_login","login"+login_num);
+	jq_query_api("profile_info"
+		,{user_ids:"me"}
+		,function(ok_answer){
+			core_log("profile_info ok_answer",ok_answer);
+			jq_ui_upduserpanel('#user_info',window.bootstrap_config['focus_widget'],ok_answer["me"]);
+		}
+		,function(err_answer){
+			core_log("on_js_init: profile_info:",err_answer);
+			if(err_answer && ""+err_answer.error_code == "-110"){
+				jq_logout_user(window.bootstrap_config['focus_widget']);
+			}
+		});
+	jq_query_api("widget_canvas_url"
+		,{widget: window.bootstrap_config['focus_widget'], preload: "getProfiles,friends.get,friends.getAppUsers"}
+		,function(ok_answer){
+			core_log("widget_canvas ok_answer",ok_answer);
+			if(ok_answer["canvas_w"] != null){
+				$('#widget_canvas').prop('width', ok_answer["canvas_w"]);
+			}
+			if(ok_answer["canvas_h"] != null){
+				$('#widget_canvas').prop('height', ok_answer["canvas_h"]);
+			}
+			if(ok_answer["preload"] != null && GamerotorServer != null){
+				GamerotorServer.setPreloadedApiAnswer("getProfiles",ok_answer["preload"]["getProfiles"]);
+				GamerotorServer.setPreloadedApiAnswer("friends.get",ok_answer["preload"]["friends.get"]);
+				GamerotorServer.setPreloadedApiAnswer("friends.getAppUsers",ok_answer["preload"]["friends.getAppUsers"]);
+			}
+			if(core_len(ok_answer["url"])>0){
+				var iframe_url = ok_answer["url"];
+				if(iframe_url.indexOf("?")<0){
+					iframe_url += "?";
+				}else{
+					iframe_url += "&";
+				}
+				iframe_url += "api_origin="+escape(document.location);
+				var iframe_referrer = core_coalesce($.Storage.get(window.CONST_JSSTORE_REFER),'');
+				if(core_len(iframe_referrer)>0){
+					iframe_url += "&referrer="+iframe_referrer;
+				}
+				//if(core_len(window.bootstrap_config['referrer'])>0){
+				//	iframe_url += "&referrer_location="+escape(window.bootstrap_config['referrer']);
+				//}
+				var iframe_referrerurl = core_coalesce($.Storage.get(window.CONST_JSSTORE_REFERURL),'');
+				if(core_len(iframe_referrerurl)>0){
+					iframe_url += "&referrer_origin="+iframe_referrerurl;
+				}
+				iframe_url += "&gr_lang="+window.jq_detectLang(false);
+				core_log("wdget url: "+iframe_url);
+				$('#widget_canvas').prop('src', iframe_url);
+			}
+			$('#widget_canvas').show();
+			$('#legal_notes').show();
+		}
+		,function(err_answer){
+			core_log("on_js_init: widget_canvas_url:",err_answer);
+			if(err_answer && ""+err_answer.error_code == "-110"){
+				jq_logout_user(window.bootstrap_config['focus_widget']);
+			}
+		});
+};
+jq_bootstrap(on_js_init);
+</script>
+</body>
+</html>

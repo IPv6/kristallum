@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ru" xmlns:og="http://opengraphprotocol.org/schema/"
+itemscope itemtype="http://schema.org/Article" 
+xmlns:fb="http://www.facebook.com/2008/fbml" 
+xmlns:fb="http://ogp.me/ns/fb#"><!-- Обявление стандарта. Не убирать! -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<!--# include file="ssi_metas.html?$args" -->
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/jquery/jquery.storage.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/jquery/jquery.json-2.2.min.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/jquery/jquery.purl.pp.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/head.load.min.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/site_bootstrap.js"></script>
+<script type="text/javascript" src="https://secure.xsolla.com/paybar/jswidget/paybar.js"></script>
+<link type="text/css" rel="stylesheet" href="/css/xsolla.css">
+
+<script>
+window.jq_payment_email = '';
+// iframe paystation?
+// ping for payment success
+var pingBalance_maxtry = 0;
+var pingBalance_timeout = 0;
+var pingBalance_balancechange = -1;
+var pingBalance_payOpts = {};
+var focus_widget = window.bootstrap_config['focus_widget'];
+var userLang = window.jq_detectLang(false);
+window.jq_ui_ApiPaymentCancel = function()
+{
+	core_log("jq_ui_ApiPaymentCancel");
+	clearInterval(pingBalance_timeout);
+	pingBalance_timeout = 0;
+	pingBalance_maxtry = 0;
+	window.location.hash = "#payment_cancel";
+}
+window.jq_ui_ApiPaymentFinished = function()
+{
+	alert($._b("Payment received"));
+	$("#widget_paybar_info").html($._b("Payment received"));
+	clearInterval(pingBalance_timeout);
+	pingBalance_timeout = 0;
+	pingBalance_maxtry = 0;
+	window.location.hash = "#payment_ok";
+}
+window.jq_query_api = function(meth,query_params,onOk,onFail) {
+	if(!GamerotorServer.ready()){
+		return;
+	}
+	var auth = null;//$.Storage.get(window.CONST_JSSTORE_AUTH);
+	return GamerotorServer.QueryApi(meth,query_params,auth,onOk,onFail);
+}
+window.jq_ui_ApiPaymentPingBalance = function()
+{
+	if(pingBalance_maxtry <= 0){
+		jq_ui_ApiPaymentCancel();
+		return;
+	}
+	pingBalance_maxtry = pingBalance_maxtry-1;
+	jq_query_api("lpts"
+		,{ widget: focus_widget, user_id: pingBalance_payOpts.user_id }
+		,function(ok_answer){
+			core_log("jq_ui_ApiPaymentPingBalance ok_answer",ok_answer);
+			var change_ts = core_coalesce(ok_answer.change_ts,0);
+			if(pingBalance_balancechange < 0){
+				pingBalance_balancechange = ok_answer.change_ts;
+			}
+			if(change_ts != 0){
+				if(pingBalance_balancechange != ok_answer.change_ts){
+					pingBalance_balancechange = ok_answer.change_ts;
+					jq_ui_ApiPaymentFinished();
+				}
+			}
+		}
+		,function(err_answer){
+			core_log("jq_ui_ApiPaymentPingBalance err_answer",err_answer);
+			pingBalance_maxtry = 0;
+		});
+}
+
+window.jq_ui_ApiPayment = function(data)
+{
+	core_log("jq_ui_ApiPayment",data);
+	//$('#widget_canvas').css('visibility', 'hidden');
+	var req_v1 = data.user_id+"|"+data.service+"|"+((new Date()).getTime());
+	pingBalance_payOpts = data;
+	pingBalance_payOpts.service = core_coalesce(pingBalance_payOpts.service,0);
+	var req_price = data.price*1.0;// virtual to rub = 1;
+	$("#widget_paybar_content").show();
+	var xsolla_pb_req = {
+		element_id: 'widget_paybar_content',
+		type: 'lightbox',
+		project: $._conf("widget_urls")[focus_widget]["xsolla_id"],
+		v1: req_v1,
+		out: req_price,
+		email: jq_payment_email,
+		phone: '',
+		local: userLang,
+		template: { id: 'inline', icon_count: 7, other: true },
+		errorCallback: function(message, category) { 
+			jq_ui_ApiPaymentCancel();
+			core_log('Payment error "' + message + '" at ' + category);
+		},
+	}
+	window.xsolla_req = xsolla_pb_req;
+	core_log("jq_ui_ApiPayment xsolla_req",window.xsolla_req);
+	XPBWidget.init(window.xsolla_req);
+
+	pingBalance_maxtry = 300;
+	// balance ping is done by client
+	//pingBalance_timeout = window.setInterval(jq_ui_ApiPaymentPingBalance, 7000);
+	core_log("jq_ui_ApiPayment balance ping #"+pingBalance_timeout);
+	var info_text = $._b("Payment option");
+	info_text = core_str_replace(info_text,"%(title)",data.title);
+	$("#widget_paybar_info").html(info_text);
+}
+
+jq_bootstrap(function(){
+	var apiconf = $.gr_getConf();
+	GamerotorServer.BootstrapApi(window.bootstrap_config['focus_widget'],apiconf);
+	var user_id = $.url().param("user_id");
+	var service = $.url().param("service");
+	var price = $.url().param("price");
+	var title = $.url().param("title");
+	if(core_len(user_id) == 0 || core_len(service) == 0 || core_len(price) == 0 || core_len(title) == 0){
+		$("#widget_paybar_info").html($._b("Invalid request"));
+		alert($._b("Invalid request"));
+		return;
+	}
+	window.jq_ui_ApiPayment({user_id: user_id, service: service, price:price, title:title});
+},".");
+</script>
+</head>
+<body style="background:url(img/bg_gamepage.jpg);background-repeat:no-repeat;background-position:center top;background-color: black;">
+<center>
+<div id="widget_paybar_info" style="width: 90%; padding: 20px 20px 20px 20px; margin: 20px 20px 20px 20px;">...</div>
+<div id="widget_paybar_content" style="display: none; width: 90%; padding: 20px 20px 20px 20px; margin: 20px 20px 20px 20px;"></div>
+
+<!-- a id="paycancel_bt" href="javascript:jq_ui_ApiPaymentCancel();" style="display: inline-block; width: 150px; height: 50px; background:url(/img/bt_green_1_ww150_hh50.png); background-repeat:no-repeat;background-position:center top; padding-top: 18px; text-decoration: none; font-weight: bold;">ЗАКРЫТЬ</a -->
+</center>
+</body>
+</html>

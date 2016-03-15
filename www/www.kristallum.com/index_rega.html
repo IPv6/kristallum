@@ -1,0 +1,257 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ru" xmlns:og="http://opengraphprotocol.org/schema/"
+itemscope itemtype="http://schema.org/Article" 
+xmlns:fb="http://www.facebook.com/2008/fbml" 
+xmlns:fb="http://ogp.me/ns/fb#"><!-- Обявление стандарта. Не убирать! -->
+<head>
+
+
+<meta name="google-site-verification" content="8crVJ32nxrc4agjRCV9jwBD80Yi6cmhpM628VEyM8mQ" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<!--# include file="ssi_metas.html?$args" -->
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/jquery/jquery.storage.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/jquery/jquery.json-2.2.min.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/jquery/jquery.purl.pp.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/head.load.min.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/site_bootstrap.js"></script>
+<script type="text/javascript" src="http://static.lumarnia.com/scripts/sites/site_regwidgets.js"></script>
+<link rel="stylesheet" type="text/css" href="css/animation.css" />
+
+<style>
+#background_cycler{padding:0;margin:0;width:100%;position:absolute;top:0;left:0;z-index:-1}
+#background_cycler img{position:absolute;left:0;top:0;width:100%;z-index:1}
+#background_cycler img.active{z-index:3}
+</style>
+
+<style type="text/css">
+.sharingnext {
+	-moz-box-shadow:inset 0px 2px 0px 0px #fce2c1;
+	-webkit-box-shadow:inset 0px 2px 0px 0px #fce2c1;
+	box-shadow:inset 0px 2px 0px 0px #fce2c1;
+	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ffc477), color-stop(1, #fb9e25) );
+	background:-moz-linear-gradient( center top, #ffc477 5%, #fb9e25 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffc477', endColorstr='#fb9e25');
+	background-color:#ffc477;
+	-webkit-border-top-left-radius:20px;
+	-moz-border-radius-topleft:20px;
+	border-top-left-radius:20px;
+	-webkit-border-top-right-radius:20px;
+	-moz-border-radius-topright:20px;
+	border-top-right-radius:20px;
+	-webkit-border-bottom-right-radius:20px;
+	-moz-border-radius-bottomright:20px;
+	border-bottom-right-radius:20px;
+	-webkit-border-bottom-left-radius:20px;
+	-moz-border-radius-bottomleft:20px;
+	border-bottom-left-radius:20px;
+	text-indent:0;
+	border:1px solid #eeb44f;
+	display:inline-block;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:15px;
+	font-weight:bold;
+	font-style:normal;
+	text-decoration:none;
+	text-align:center;
+	text-shadow:1px 1px 0px #cc9f52;
+	width:100%;
+	height:100%;
+}
+.sharingnext:hover {
+	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #fb9e25), color-stop(1, #ffc477) );
+	background:-moz-linear-gradient( center top, #fb9e25 5%, #ffc477 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#fb9e25', endColorstr='#ffc477');
+	background-color:#fb9e25;
+}
+.sharingnext:active {
+	position:relative;
+	top:1px;
+}
+</style>
+
+<script>
+window.js_inited = 0;
+window.auto_reg_newusers = 0;
+window.can_be_logged = 0;
+function showLoginFormAdvn(){
+	if(window.FLAG_ADVANCEDJS_LOADED != 1){
+		// Not loaded yet
+		core_log("showLoginFormAdvn: waiting");
+		setTimeout(showLoginFormAdvn,1000);
+		return;
+	}
+	core_log("showLoginFormAdvn: done");
+	showLoginForm();
+}
+
+function showLoginForm(){
+	window.gr_enterdialog_bg_style = "";
+	window.gr_enterdialog_bg_parent = "#lgform";
+	if(window.jq_ui_popupLoginForm == null || window.js_inited == 0){
+		// Not loaded yet
+		core_log("showLoginForm: waiting");
+		setTimeout(showLoginForm,1000);
+		return;
+	}
+	if(window.can_be_logged > 0){
+		// check auth and auto login
+		var overloads = {target_widget: window.bootstrap_config['focus_widget']};
+		jq_redirect2page(overloads);
+		return;
+	}
+	
+	var regok = $.Storage.get(window.CONST_JSSTORE_REGOK);
+	jq_ui_popupLoginForm({mode: 4, target_widget: window.bootstrap_config['focus_widget']});
+	//$(document).ready(function(){
+	//	regwidgets.showNoDownloadLure({id_toptext: 'dg-toptext', post_lure: "Кристаллум", post_title:"казуальное PvP с продуманным балансом", post_text:"Три империи борются за ценные ресурсы в недрах звезд. Окунись в сюжет и победи других игроков!"});
+	//	regwidgets.cycleImagesInDiv({id_div:'background_cycler'});
+	//});
+	continue_url = $.url().param("c_url64");
+	if(continue_url != null && continue_url.length > 0){
+		try{
+			continue_url = atob(continue_url);
+		}catch(e){}
+		var continue_block = "<div style='margin-top:20px; color:white; cursor: pointer; cursor: hand;'>Рекламная пауза. Нажмите, чтобы продолжить";
+		$('#sharing_continue_text').html(continue_block);
+		$('#sharing_continue_text').click(function(){
+			window.open(continue_url, "_blank");//document.location=continue_url;
+			$('#sharing_continue').hide();
+		});
+		$('#sharing_continue').show();
+		$('#sharing_continue').addClass("pulse");
+	}else{
+		$('#gr_enterdialog_bg').addClass("pulse");
+	}
+}
+</script>
+<script>
+function on_js_init(){
+	show_legals();
+	$(document).ready(function(){
+		var apiconf = $.gr_getConf();
+		apiconf.onProviderData = jq_login_viasn_callback;
+		GamerotorServer.BootstrapApi(window.bootstrap_config['focus_widget'],apiconf);
+		jq_check_friendinvites(false);
+		jq_statHitPage("ui_rega");
+		window.js_inited++;
+		
+		var oldauth = $.Storage.get(window.CONST_JSSTORE_AUTH);
+		core_log(window.CONST_JSSTORE_AUTH+": "+oldauth);
+		if(core_len(oldauth)>0){
+			window.can_be_logged++;
+		}
+		__view2open = $.url().param("view");
+		if(__view2open == "auto_reg"){
+			core_log("auto_reg mode ON");
+			window.auto_reg_newusers++;
+		}
+		core_log(window.CONST_JSSTORE_REFER+": "+$.url().param(window.CONST_JSSTORE_REFER));
+		if(core_len($.url().param(window.CONST_JSSTORE_REFER)) > 0){
+			core_log("gr_refer: auto_reg mode ON");
+			window.auto_reg_newusers++;
+		}
+		if(window.auto_reg_newusers > 0){
+			if(window.can_be_logged == 0){
+				// Autoregistration with randomg login/password
+				jq_auto_rega({target_widget: window.bootstrap_config['focus_widget']});
+				return;
+			}
+			core_log("auto_reg mode OFF: login possible "+window.can_be_logged);
+		}
+		showLoginFormAdvn();
+	});
+};
+jq_bootstrap(on_js_init);
+</script>
+</head>
+
+<body style="background: url(img/bg_regpage.jpg); background-repeat: repeat; background-position: center top; background-color: black;">
+<div style="position:absolute;left:70%;top:0px;z-index:1000;">
+<iframe width='360px' height='30px' frameborder='0' src='/fb_like.html' scrolling='no' style='background:transparent;margin-left:10px;margin-top:10px;'></iframe>
+</div>
+
+<!-- sharing continue -->
+<div style="position:absolute;left:35%;top:60px;width:300px;height:70px;text-align:center;z-index:1000;display:none;" id="sharing_continue">
+<div class="sharingnext" id="sharing_continue_text"></div>
+</div>
+
+<center>
+<table width="700px" style="padding-top:150px;padding-bottom:50px;" border="0">
+<tr>
+	<!-- Lure block
+	<td>
+		<div id="dg-toptext" style="display: none; width:250px; text-align:center; background:url(/img/bg_lure_block.png); background-repeat:no-repeat; background-position:center top; height:250px;">
+		<div style="padding:30px 15px 30px 15px; text-align:center;">
+			<div id="dg-toptext-lure" style="font-size: 18px;"></div>
+			<div id="dg-toptext-title" style="font-size: 16px;"></div>
+			<div id="dg-toptext-text" style="font-size: 16px;padding-top:30px;"></div>
+		</div>
+		</div>
+	</td>
+	-->
+	<td align="left" height="350px"><!-- login form -->
+		<div id="lgform"></div>
+	</td>
+	<td>
+	</td>
+</tr>
+<!-- game news
+<tr>
+	<td colspan="3" align="center">
+		<table width="800px" cellpadding="0" cellspacing="0" style="padding-top: 30px;">
+			<tr style="background: url(/img/bg_infopage_top_up.png); background-repeat:no-repeat;">
+				<td style="width: 800px; height:30px;">&nbsp;</td>
+			</tr>
+			<tr style="background: url(/img/bg_infopage_top_center.png); background-repeat:repeat-y;">
+				<td style="width: 800px; height:600px;">
+				<iframe id="kri-news" style="width:776px; height: 580px; border: 0px; padding-left: 12px;" src="http://gamerotor.com/images_ldu/_api/forum_hcomments.html">
+				</iframe>
+				</td>
+			</tr>
+			<tr style="background: url(/img/bg_infopage_top_bottom.png); background-repeat:no-repeat;">
+				<td style="width: 800px; height:58px;">&nbsp;</td>
+			</tr>
+		</table>
+	</td>
+</tr>
+-->
+<tr>
+	<td>
+	</td>
+	<td align="right">
+	<!-- game info -->
+	<br>
+	<div style="width:250px;padding-left:0px;text-align:center;color:white;font-size:14px;">
+	Добро пожаловать на Станцию Омега! Здесь вас ждут:
+	</div>
+	<br><br>
+	<div style="width:250px;padding-left:0px;text-align:left;color:white;font-size:14px;">
+	<br>
+	- Интересные фантастические истории с новыми персонажами.<br><br>
+	- Путешествия к центру звезды и сражения с живыми игроками в безумных локациях<br><br>
+	- Хорошее комьюнити и новые друзъя!
+	</div>
+	</td>
+</tr>
+</table>
+
+<!-- legal stuff panel -->
+<div id="legal_notes_and_seo" style="background: url('/img/bg_footer_1.png') repeat-x; background-position: top center; padding-top:20px; position: relative; top:0px;" class="ui_small_text">
+<div id="seo_text"><!--# echo var="og_seo" --></div>
+<hr>
+<div id="legal_notes"></div>
+</div>
+</center>
+
+<!-- background rotation 
+<div id="background_cycler" style="display:none; height: 650px; overflow:hidden;">
+<img src="/img/bgslides/bg_slider1.jpg" alt=""/>
+<img src="/img/bgslides/bg_slider2.jpg" alt=""/>
+<img src="/img/bgslides/bg_slider3.jpg" class="active" alt=""/>
+<img src="/img/bgslides/bg_slider4.jpg" alt=""/>
+</div>
+-->
+</body>
+</html>

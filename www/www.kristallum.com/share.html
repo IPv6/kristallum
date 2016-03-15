@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ru" xmlns:og="http://opengraphprotocol.org/schema/"
+itemscope itemtype="http://schema.org/Article" 
+xmlns:fb="http://www.facebook.com/2008/fbml" 
+xmlns:fb="http://ogp.me/ns/fb#"><!-- Обявление стандарта. Не убирать! -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<!--# include file="ssi_metas.html?$args" -->
+<body>
+<div class="share42init"></div>
+<script>
+var target_url = "http://www.kristallum.com/";
+var od_game_url = "http://odnoklassniki.ru/game/kristallum";
+var group_url = "http://vk.com/krajsveta";//"https://www.facebook.com/pages/Kristallum-Online-Community/570323146340252";
+</script>
+
+<script>
+var share42updDOM = function(miniurl,fullurl,datatitle,datadesc,dataimg,datapath, go_n){
+	d=document.getElementsByTagName('div');
+	u=encodeURIComponent(fullurl);
+	u2=encodeURIComponent(fullurl);
+	u3=encodeURIComponent(miniurl);
+	
+	datadesc=encodeURIComponent(datadesc);
+	dataimg=encodeURIComponent(dataimg);
+	
+	t=encodeURIComponent(datatitle);
+	t=t.replace('\'','%27');
+	
+	for(var i=0;i<d.length;i++){
+		if(d[i].className.indexOf('share42init')!=-1){
+			var s=new Array(
+				['http://www.facebook.com/sharer.php?u='+u+'&t='+t,'"#" onclick="window_open(\'$url\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=200, top=200, width=550, height=440, toolbar=0, status=0\');return false" title="Поделиться в Facebook"','fb']
+				,['https://plus.google.com/share?url='+u,'"#" onclick="window_open(\'$url\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=200, top=200, width=550, height=440, toolbar=0, status=0\');return false" title="Поделиться в Google+"','gp']
+				,['http://www.livejournal.com/update.bml?event='+u+'&subject='+t,'"$url" title="Опубликовать в LiveJournal"','lj']
+				,['http://connect.mail.ru/share?url='+u+'&title='+t,'"$url" title="Поделиться в Моем Мире@Mail.Ru"','ml']
+				,['http://www.odnoklassniki.ru/dk?st.cmd=addShare&st._surl='+u2+'&title='+t,'"#" onclick="window_open(\'$url\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=200, top=200, width=550, height=440, toolbar=0, status=0\');return false" title="Добавить в Одноклассники"','od']
+				,['http://twitter.com/share?text='+t+'&url='+u3,'"#" onclick="window_open(\'$url\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=200, top=200, width=550, height=440, toolbar=0, status=0\');return false" title="Добавить в Twitter"','tw']
+				,['http://vk.com/share.php?url='+miniurl+'&image='+dataimg+'&description='+datadesc+'&title='+datatitle,'"#" onclick="window_open(\'$url\', \'_blank\', \'scrollbars=0, resizable=1, menubar=0, left=200, top=200, width=554, height=421, toolbar=0, status=0\');return false" title="Поделиться В Контакте"','vk']
+				);
+			var l='';
+			for(j=0;j<s.length;j++){
+				if(j==1){continue;};// Fuck G+, long links are not valid here...
+				if(j==2){continue;};// Fuck LJ, rare beast...
+				if(go_n == s[j][2]){
+					window_open(s[j][0]);
+					return;
+				}
+				var html = s[j][1];
+				html = core_str_replace(html,"$url",s[j][0]);
+				l+='<a rel="nofollow" id="sh42_bt'+j+'" style="display:inline-block;vertical-align:bottom;width:32px;height:32px;margin:0 6px 6px 0;padding:0;outline:none;background:url('+datapath+'icons.png) -'+32*j+'px 0 no-repeat" href='+html+'></a>'
+			};
+			d[i].innerHTML='<span id="share42">'+l+'</span>';
+		}
+	};
+};
+
+function window_open(url,a,b,c,d,e,f) {
+	document.location.href = url;
+}
+
+function showStuff(id) {
+	var e = document.getElementById(id);
+	if(e){
+		e.style.display = 'block';
+	}
+}
+function hideStuff(id) {
+	var e = document.getElementById(id);
+	if(e){
+		e.style.display = 'none';
+	}
+}
+
+function core_coalesce(obj,def)
+{
+	// && !isNaN(obj)
+	if(typeof(obj)!="undefined" && obj != null){
+		// Type coalescing
+		if(typeof(def)=="string"){
+			obj = ""+obj;
+		}
+		if(typeof(def)=="number"){
+			obj = Number(obj);
+		}
+		return obj;
+	};
+	if(typeof(def) != "undefined"){
+		return def;
+	};
+	return null;
+};
+
+function core_len(obj){
+	if(typeof(obj)=="undefined" || obj == null){
+		return 0;
+	}
+	if(typeof(obj)=="string"){
+		return obj.length;
+	}
+	if(typeof(obj)=="object" && obj.length){
+		return obj.length;
+	}
+	return 0;
+}
+
+function core_str_replace(what, search, replace) {
+	if(core_coalesce(what) == null || core_coalesce(search) == null){
+		return "";
+	}
+	replace = core_coalesce(replace,"");
+	return what.split(search).join(replace);
+}
+
+function core_getQueryParams(qs) {
+	if(qs == null){
+		qs = document.location.search;
+	}
+	qs = qs.split("+").join(" ");
+	var params = {}, tokens, re = /[?&]?([^=]+)=([^&]*)/g;
+	while (tokens = re.exec(qs)) {
+		params[decodeURIComponent(tokens[1])] = decodeURIComponent(tokens[2]);
+	}
+	return params;
+}
+</script>
+
+<script>
+var params = core_getQueryParams();
+
+function share_stuff() {
+	data_image = params.i;
+	data_title = params.t;
+	data_text = params.b;
+	go_n = params.n;
+
+	var invite_link = target_url+"?share_ts="+parseInt((new Date()).getTime()/1000);
+
+	data_image = core_str_replace(data_image,"\"","'");
+	data_image = core_str_replace(data_image,"\n"," ");
+	data_image = core_str_replace(data_image,"  "," ");
+	data_image = core_str_replace(data_image,"\r","");
+	invite_link += "&og_i="+encodeURIComponent(data_image);
+
+	data_title = core_str_replace(data_title,"\"","'");
+	data_title = core_str_replace(data_title,"\n"," ");
+	data_title = core_str_replace(data_title,"  "," ");
+	data_title = core_str_replace(data_title,"\r","");
+	invite_link += "&og_t="+encodeURIComponent(data_title);
+
+	data_text = core_str_replace(data_text,"\"","'");
+	data_text = core_str_replace(data_text,"\n"," ");
+	data_text = core_str_replace(data_text,"  "," ");
+	data_text = core_str_replace(data_text,"\r","");
+	invite_link += "&og_d="+encodeURIComponent(data_text);
+
+	//alert(invite_link);
+	share42updDOM(target_url,invite_link,data_title,data_text,data_image,'/img/share_ru/',go_n);
+}
+
+if(params.action == "follow"){
+	var ts = Math.ceil((new Date().getTime())/1000);
+	var param_ts = (params.ts==null)?(ts+365*24*60*60):parseInt(params.ts);
+	var c_url64 = params.c_url64;
+	var waithours = 5;
+	if(params.wh != null){
+		waithours = parseFloat(params.wh);
+	}
+	var adv_url = null;
+	if(c_url64 != null && ts - param_ts < waithours*60*60){
+		try{
+			adv_url = atob(c_url64);
+		}catch(e){}
+	}else{
+		adv_url = "http://www.kristallum.com/index_rega.html?gr_lang=ru";
+		if(c_url64 != null){
+			adv_url += "&c_url64="+c_url64
+		}
+	}
+	try{
+		document.write("Redirecting to <a href='"+adv_url+"'>"+adv_url+"</a>");
+	}catch(e){}
+	window_open(adv_url);
+}else if(params.action == "od-game"){
+	window_open(od_game_url);
+}else if(params.action == "group"){
+	window_open(group_url);
+}else{
+	share_stuff();
+}
+</script>
+</body>
+</html>
