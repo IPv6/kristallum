@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Hubs up and running!
+title: Hubs up!
 ---
 
-Hello world!
+First post to see... Jekyll is good.
