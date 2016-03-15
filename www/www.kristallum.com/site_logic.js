@@ -76,7 +76,7 @@ window.init_lang = function(){
 init_lang();
 
 head.js(
-	"http://static.lumarnia.com/scripts/sites/jquery/jquery.lightbox_me.js"
+	"http://static.gamerotor.com/scripts/sites/jquery/jquery.lightbox_me.js"
 	,function(){
 		window.FLAG_ADVANCEDJS_LOADED = 1;
 	}
@@ -85,10 +85,10 @@ head.js(
 var jsonRqType = "json";
 if ( !$.browser.msie ) {// Fuck that, thats why
 	head.js(
-		"http://static.lumarnia.com/scripts/sites/jquery/jquery.noty.js"
-		,"http://static.lumarnia.com/scripts/sites/jquery/jquery.noty.top.js"
-		,"http://static.lumarnia.com/scripts/sites/jquery/jquery.noty.inline.js"
-		,"http://static.lumarnia.com/scripts/sites/jquery/jquery.noty.default.js"
+		"http://static.gamerotor.com/scripts/sites/jquery/jquery.noty.js"
+		,"http://static.gamerotor.com/scripts/sites/jquery/jquery.noty.top.js"
+		,"http://static.gamerotor.com/scripts/sites/jquery/jquery.noty.inline.js"
+		,"http://static.gamerotor.com/scripts/sites/jquery/jquery.noty.default.js"
 	);
 }else{
 	jsonRqType = "jsonp";
@@ -796,7 +796,7 @@ window.jq_login = function(overloads) {
 window.viasn_popup = null;
 window.viasn_overloads = null;
 window.jq_open_hybridauth = function(provider){
-	var wnd = window.open(window.CONST_HYBRIDAUTH_URL+provider+"&ie9stub="+escape("http://static.lumarnia.com/scripts/sites/iframe_cb.html"),"grlogin","width=750,height=500,left=200,top=120");
+	var wnd = window.open(window.CONST_HYBRIDAUTH_URL+provider+"&ie9stub="+escape("http://static.gamerotor.com/scripts/sites/iframe_cb.html"),"grlogin","width=750,height=500,left=200,top=120");
 	wnd.focus();
 	return wnd;
 }
