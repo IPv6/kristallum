@@ -5,6 +5,7 @@ permalink: /ru/pages/about/
 ---
 
 ![ru-logo](http://anivisual.net/_sf/4/436.png)
+
 Мирное будущее. Десятки планет и цивилизаций, живущих по своим правилам.
 
 ---
@@ -18,8 +19,9 @@ permalink: /ru/pages/about/
 
 ---
 А еще можно заглянуть по этим ссылкам:
-- [http://anivisual.net/](http://anivisual.net/stuff/2-1-0-436)
-- [https://vk.com/](https://vk.com/app3739891)
-- [http://ok.ru/](http://ok.ru/game/kristallum)
-- [https://www.facebook.com/](https://apps.facebook.com/omegastation/)
-- [http://www.kristallum.com/](http://www.kristallum.com/)
+
+* [http://anivisual.net/](http://anivisual.net/stuff/2-1-0-436)
+* [https://vk.com/](https://vk.com/app3739891)
+* [http://ok.ru/](http://ok.ru/game/kristallum)
+* [https://www.facebook.com/](https://apps.facebook.com/omegastation/)
+* [http://www.kristallum.com/](http://www.kristallum.com/)
