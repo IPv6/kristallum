@@ -6,7 +6,7 @@ layout: ru-default
   {% for post in paginator.posts %}
     <article class="post">
 
-      <h1><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h1>
+      <h1><a href="{{ site.baseurl }}{{ post.url }}#disqus_thread">{{ post.title }}</a></h1>
 
       <div class="entry">
         {{ post.excerpt }}
