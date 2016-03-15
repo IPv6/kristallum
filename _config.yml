@@ -81,7 +81,7 @@ gems:
   - jekyll-feed # Create an Atom feed using the official Jekyll feed gem
 
 include:
-  - _content_ru/_pages
+  - "_content_ru/*"
 
 # Exclude these files from your production _site
 exclude:
