@@ -1,7 +1,7 @@
 ---
-layout: page
+layout: ru-page
 title: Wiki
-permalink: /pages/wiki-index/
+permalink: /ru/pages/wiki-index/
 ---
 
 1. [Предыстория]({% post_url 2016-1-05-Wiki-Gamestory %})
