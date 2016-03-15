@@ -3,7 +3,7 @@ layout: ru-default
 ---
 
 <div class="posts">
-  {% for post in site.posts %}
+  {% for post in paginator.posts %}
     <article class="post">
 
       <h1><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h1>
@@ -15,4 +15,35 @@ layout: ru-default
       <a href="{{ site.baseurl }}{{ post.url }}" class="read-more">Read More</a>
     </article>
   {% endfor %}
+</div>
+
+<div id="post-pagination" class="pagination">
+  <ul class="pages">
+	{% if paginator.previous_page %}
+	<li class="prev">
+	  {% if paginator.previous_page == 1 %}
+		<a href="/">前一页</a>
+	  {% else %}
+		<a href="{{ paginator.previous_page_path }}">&lt;&lt;&lt;</a>
+	  {% endif %}
+	</li>
+	{% else %}
+	<li class="prev disabled">
+	  <a>&lt;&lt;&lt;</a>
+	</li>
+	{% endif %}
+
+    <li class="page disabled">
+	    <a>{{ paginator.page }}</a>
+	</li>
+
+	{% if paginator.next_page %}
+	<li class="next">
+	    <a href="{{ paginator.next_page_path }}">&gt;&gt;&gt;</a>
+	</li>
+	{% else %}
+	<li class="next disabled">
+	    <a>&gt;&gt;&gt;</a>
+	</li>
+	{% endif %}
 </div>
