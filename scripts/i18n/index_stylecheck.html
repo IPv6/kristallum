@@ -1,0 +1,207 @@
+<html lang="en">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<head>
+<script type="text/javascript" src="head.load.min.js"></script>
+<style>
+
+body {
+	text-align: center; font-family: Helvetica, Arial, sans-serif; font-size: 13px;
+	color: #000;
+}
+.inv {color: #fff; background-color: gray}
+* { color: #555; text-shadow: #fff 0 1px 0px; }
+h3 { color: #333; font-size: 16px; margin-bottom: 0; padding-bottom: 0; }
+
+</style>
+<script>
+var _sameworda = "_sameworda";
+var rulezz = [
+	{name:"many",ignoreIf:["--","at"],countIf:[" я "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:1},
+	{name:"many",ignoreIf:["--","at"],countIf:[" и "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:1},
+	{name:"many",ignoreIf:["--","at"],countIf:[" понят "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+	{name:"many",ignoreIf:["--","at"],countIf:[" ладно "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+	{name:"many",ignoreIf:["--","at"],countIf:[" хорошо "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+	{name:"same",ignoreIf:["--","at"],countIf:[_sameworda],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
+	{name:"lengthy_adlg",ignoreIf:["at"],countIf:["=>","<="],resetIf:["scene","**", "-!", "-o"],okIfMaxRepeat:20},
+	{name:"lengthy_rdlg",ignoreIf:["at"],countIf:["=>"],resetIf:["scene","**","<=", "-!", "-o"],okIfMaxRepeat:7},
+	{name:"lengthy_ldlg",ignoreIf:["at"],countIf:["<="],resetIf:["scene","**","=>", "-!", "-o"],okIfMaxRepeat:7}
+];
+
+var extendedWhitespaceCharsList = [".",",","?","!",":","-",";","'","  ","  ","  "];// "<",">" used in countIf
+var extendedIgnoredCharsList = ["\t","{","}","(",")","[","]","\""];// "<",">" used in countIf
+function normalizeLinr(raw_text) {
+	for(var i=0;i<extendedIgnoredCharsList.length;i++){
+		//raw_text = raw_text.replace(extendedIgnoredCharsList[i],"");
+		raw_text = raw_text.split(extendedIgnoredCharsList[i]).join("");
+	}
+	if(raw_text.length == 0){
+		return raw_text;
+	}
+	for(var i=0;i<extendedWhitespaceCharsList.length;i++){
+		//raw_text = raw_text.replace(extendedWhitespaceCharsList[i]," ");
+		raw_text = raw_text.split(extendedWhitespaceCharsList[i]).join(" ");
+	}
+	raw_text = " "+raw_text.toLowerCase()+" ";
+	return raw_text;
+}
+
+function normalizeWodrd(normalized) {
+	var words = normalized.split(" ");
+	var res = [];
+	for(var i=0;i<words.length;i++){
+		var str = words[i];
+		if(!isWordOk4samecheck(str)){
+			continue;
+		}
+		if(str.length > 7){
+			str = str.substr(0,7);
+		}
+		res.push(str);
+	}
+	return res;
+}
+
+function isWordOk4samecheck(str) {
+	if(str == null || str.length < 3){
+		return false;
+	}
+	if(!(/[а-яА-ЯЁё]/.test(str))){
+		//console.log("isWordOk4samecheck: NOT ok "+str);
+		return false;
+	}
+	//console.log("isWordOk4samecheck: ok "+str);
+	return true;
+}
+
+function checkStyle() {
+	var raw_text = $('#part_jsta').val();
+	var res = "";
+	var raw_lines = raw_text.split("\n");
+	for(var j=0;j<rulezz.length;j++){
+		rulezz[j].state = {cntPresent: 0};
+		rulezz[j].history = [];
+	}
+	for(var i=0;i<raw_lines.length;i++){
+		var original = raw_lines[i];
+		var normalized = normalizeLinr(original);
+		if(normalized.length <= 1){
+			continue;
+		}
+		var normalized_byword = normalizeWodrd(normalized);
+		var failedRules = [];
+		//console.log("DBG:" + "-normalized: [["+normalized+"]]");
+		for(var j=0;j<rulezz.length;j++){
+			var rule = rulezz[j];
+			var isIgnored = 0;
+			for(var k=0;k<rule.ignoreIf.length;k++){
+				if(normalized.indexOf(rule.ignoreIf[k]) >= 0){
+					isIgnored = 1;
+					break;
+				}
+			}
+			for(var k=0;k<rule.resetIf.length;k++){
+				if(original.indexOf(rule.resetIf[k]) >= 0){
+					rule.history = [];
+					rule.state.cntPresent = 0;
+					isIgnored = 2;
+					//console.log("DBG:" + rule.name + "-reset");
+					break;
+				}
+			}
+			if(isIgnored > 0){
+				if(isIgnored > 1){
+					// STILL adding to history - samewording on -!** should work
+					normalized_byword.unshift(normalized);
+					rule.history.push(normalized_byword);
+				}
+				continue;
+			}
+			rule.dbg_info = null;
+			var isPresent = false;
+			for(var k=0;k<rule.countIf.length;k++){
+				if(normalized.indexOf(rule.countIf[k]) >= 0){
+					isPresent = true;
+				}
+			}
+			if(rule.okIfMinDistanceInLines != null){
+				rule.dbg_info = null;
+				var isLineOk = true;
+				var deepness = rule.okIfMinDistanceInLines;
+				for(var k=0;k<rule.countIf.length;k++){
+					if(rule.countIf[k] == _sameworda){
+						for(var k2=0; k2<normalized_byword.length; k2++){
+							for(var k3=rule.history.length-1; k3>=0 && k3>=rule.history.length-deepness; k3--){
+								if(rule.history[k3].indexOf(normalized_byword[k2]) >= 0){
+									rule.dbg_info = "'" + normalized_byword[k2] + "' in [["+rule.history[k3][0]+"]], min "+deepness;
+									k2 = 9999999;
+									k = 999999;
+									isLineOk = false;
+									break;
+								}
+							}
+						}
+					}else if(isPresent){
+						for(var k3=rule.history.length-1; k3>=0 && k3>=rule.history.length-deepness; k3--){
+							if(rule.history[k3][0].indexOf(rule.countIf[k]) >= 0){// normalized
+								rule.dbg_info = "'" + rule.countIf[k] + "' in [["+rule.history[k3][0]+"]], min "+deepness;
+								k = 999999;
+								isLineOk = false;
+								break;
+							}
+						}
+					}
+				}
+				if(!isLineOk){
+					failedRules.push(rule.name + (rule.dbg_info?(": "+rule.dbg_info):""));
+				}
+			}
+			if(rule.okIfMaxRepeat != null){
+				if(isPresent){
+					rule.state.cntPresent = rule.state.cntPresent + 1;
+					if(rule.state.cntPresent > rule.okIfMaxRepeat){
+						failedRules.push(rule.name + (rule.dbg_info?(": "+rule.dbg_info):""));
+					}
+				}
+				if(!isPresent){
+					rule.state.cntPresent = 0;
+				}
+			}
+			// adding to history
+			normalized_byword.unshift(normalized);
+			rule.history.push(normalized_byword);
+		}
+		if(res.length > 0){
+			res += "\n";
+		}
+		res += original;
+		if(failedRules.length > 0){
+			for(var k=0;k<failedRules.length;k++){
+				res += "\n^--------- style errors: "+failedRules[k]+" ---------";
+			}
+			res += "\n";
+		}
+	}
+	$("#part_outputa").val(res);
+}
+
+function initClient() {
+	$(document).ready(function(e){
+	});
+}
+head.js("jquery-1.7.1.min.js","jquery.json-2.2.min.js",initClient);
+</script>
+</head>
+<body scroll="no" class="bg">
+<center>
+<div id="part_js" style="width:100%;height:600px;">
+<textarea id="part_jsta" style="width:100%;height:100%;font-size:20px;">
+</textarea>
+</div>
+<input type="button" value="Check Style" onClick="checkStyle();" style="-webkit-appearance:none;margin:5px 5px 5px 5px;width:200px;height:40px;font-size:20px;">
+<div id="part_output" style="width:100%;height:280px;">
+<textarea id="part_outputa" style="width:100%;height:100%;font-size:15px;">
+</textarea>
+</div>
+</center>
+</body>
+</html>

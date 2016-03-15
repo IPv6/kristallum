@@ -1,0 +1,129 @@
+<html lang="en">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<head>
+<script type="text/javascript" src="head.load.min.js"></script>
+<style>
+body { 
+	text-align: center; font-family: Helvetica, Arial, sans-serif; font-size: 13px;
+}
+* { color: #555; text-shadow: #fff 0 1px 0px; }
+h3 { color: #333; font-size: 16px; margin-bottom: 0; padding-bottom: 0; }
+a.button { display: block; padding: 11px; background: #fff; border: 1px solid #ababab; border-bottom: 0; font-weight: bold; color: #000; text-decoration: none; font-size: 16px; margin: 0 1px; }
+a.button.top-rounded { border-top-left-radius: 10px; border-top-right-radius: 10px; }
+a.button.bottom-rounded { border-bottom: 1px solid #ababab; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
+
+</style>
+<script>
+function initClient() {
+	$(document).ready(function(e){
+	});
+}
+
+function convJs2Xml() {
+	jsonst = $('#part_jsta').val();
+	jsoned = $.evalJSON(jsonst);
+	xmled = "";
+	for(var key in jsoned){
+		xmled += "\n";
+		ll = key;
+		ll = ll.replace("\n"," ");
+		ll = ll.replace("\r","");
+		xmled += "#: "+ll+"\n";
+		xmled += "msgid "+$.quoteString(key)+"\n";
+		xmled += "msgstr "+$.quoteString(jsoned[key])+"\n";
+	}
+	$('#part_xmlta').val(xmled);
+}
+
+function convXml2Js() {
+	xmlst = $('#part_jsta').val();
+	// Mapping "***"...\n"***" to "*******"
+	xmlst = xmlst.replace(/\r/g,"");
+	xmlst = xmlst.replace(/"\n"/g,"");
+	$('#part_jsta').val(xmlst);
+	// Splitting
+	lines = xmlst.split("\n");
+	xmled = "{";
+	fli = 0;
+	var unmaped_strings ={};
+	for(var i=0;i<lines.length;i++){
+		var ll = $.trim(lines[i]);
+		if (ll == null || ll.length == 0){
+			continue;
+		}
+		//xmled += "\nChecing line: [["+ll+"]]\n";
+		if (ll.indexOf("#duplication_from_to")>=0){
+			i++;
+			var ll1 = $.trim(lines[i]);
+			if(ll1[0] == "#"){
+				ll1 = ll1.substr(1);
+			}else{
+				xmled += i+": !!!ERROR!!!(e1 Bad formatting)\n";
+			}
+			i++;
+			var ll2 = $.trim(lines[i]);
+			if(ll2[0] == "#"){
+				ll2 = ll2.substr(1);
+			}else{
+				xmled += i+": !!!ERROR!!!(e2 Bad formatting)\n";
+			}
+			if(unmaped_strings[ll1] == null){
+				xmled += ll1+": !!!ERROR!!!(e3 No string for duplication)\n";
+			}else{
+				xmled += ",\n\t";
+				xmled += ll2+": "+unmaped_strings[ll1];
+			}
+			continue;
+		}
+		if(ll[0] == "#"){
+			continue;
+		}
+		if (ll.indexOf("msgid")>=0){
+			ll = ll.replace("msgid","");
+			ll = $.trim(ll);
+			if(ll == '""'){
+				// SKIPPING NEXT LINE TOO
+				i++;
+				continue;
+			}
+			if (fli>0){
+				xmled += ",";
+			}
+			fli++;
+			xmled += "\n\t";
+			xmled += ll+": ";
+			i++;
+			var ll2 = $.trim(lines[i]);
+			if (ll2.indexOf("msgstr")>=0){
+				ll2 = ll2.replace("msgstr","");
+				ll2 = $.trim(ll2);
+				xmled += ll2;
+				unmaped_strings[ll] = ll2;
+			}else{
+				xmled += ll + ": !!!ERROR!!!(e4 Broken translation)\n";
+			}
+		}else{
+			xmled += i+": !!!ERROR!!!(e5 Bad formatting) in [["+ll+"]];\n";
+		}
+	}
+	xmled += "\n}";
+	$('#part_xmlta').val(xmled);
+}
+
+head.js("jquery-1.7.1.min.js","jquery.json-2.2.min.js",initClient);
+</script>
+</head>
+<body scroll="no" class="bg">
+<center>
+<div id="part_js" style="width:100%;height:400px;">
+<textarea id="part_jsta" style="width:100%;height:400px;">
+</textarea>
+</div>
+<input type="button" value="js to PO" onClick="convJs2Xml();">&nbsp;|&nbsp;<input type="button" value="po to JS" onClick="convXml2Js();">
+<div id="part_xml" style="width:100%;height:400px;">
+<textarea id="part_xmlta" style="width:100%;height:400px;">
+</textarea>
+</div>
+</center>
+</body>
+</html>
