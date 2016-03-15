@@ -44,11 +44,12 @@ disqus:
 google_analytics:
 
 # Social group
-ru-community: https://vk.com/krajsveta
+ru-community: "https://vk.com/krajsveta"
+ru-playnow: "http://www.kristallum.com"
 
 # Your website URL (e.g. http://barryclark.github.io or http://www.barryclark.co)
 # Used for Sitemap.xml and your RSS feed
-url: http://www.kristallum.com
+url: "http://www.kristallum.com"
 
 # If you're hosting your site at a Project repository on GitHub pages
 # (http://yourusername.github.io/repository-name)
