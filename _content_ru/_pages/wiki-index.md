@@ -4,10 +4,10 @@ title: Wiki
 permalink: /ru/pages/wiki-index/
 ---
 
-1. [Предыстория]({% post_url 2016-1-01-ru-wiki-lor-introduction %})
-    1. [Предыстория]({% post_url 2016-1-01-ru-wiki-lor-kristallum %})
-		1. [Кристаллум]({% post_url 2016-1-01-ru-wiki-lor-l-channels %})
-		1. [L-каналы]({% post_url 2016-1-01-ru-wiki-lor-introduction %})
+1. [Предыстория]({% post_url 2016-1-20-ru-wiki-lor-introduction %})
+    1. [Предыстория]({% post_url 2016-1-20-ru-wiki-introduction %})
+		1. [Кристаллум]({% post_url 2016-1-21-ru-wiki-lor-kristallum %})
+		1. [L-каналы]({% post_url 2016-1-22-ru-wiki-lor-l-channels %})
 1. [Станция Омега]({% post_url 2016-1-01-ru-wiki-station-about %})
     1. [Станция Омега]({% post_url 2016-1-01-ru-wiki-station-about %})
     2. [Gazrom]({% post_url 2016-1-04-ru-wiki-corp1 %})
