@@ -18,12 +18,6 @@ xmlns:fb="http://ogp.me/ns/fb#"><!-- Обявление стандарта. Не
 <script type="text/javascript" src="http://static.gamerotor.com/scripts/sites/site_regwidgets.js"></script>
 <link rel="stylesheet" type="text/css" href="css/animation.css" />
 
-<style>
-#background_cycler{padding:0;margin:0;width:100%;position:absolute;top:0;left:0;z-index:-1}
-#background_cycler img{position:absolute;left:0;top:0;width:100%;z-index:1}
-#background_cycler img.active{z-index:3}
-</style>
-
 <style type="text/css">
 .sharingnext {
 	-moz-box-shadow:inset 0px 2px 0px 0px #fce2c1;
@@ -104,10 +98,6 @@ function showLoginForm(){
 	
 	var regok = $.Storage.get(window.CONST_JSSTORE_REGOK);
 	jq_ui_popupLoginForm({mode: 4, target_widget: window.bootstrap_config['focus_widget']});
-	//$(document).ready(function(){
-	//	regwidgets.showNoDownloadLure({id_toptext: 'dg-toptext', post_lure: "Кристаллум", post_title:"казуальное PvP с продуманным балансом", post_text:"Три империи борются за ценные ресурсы в недрах звезд. Окунись в сюжет и победи других игроков!"});
-	//	regwidgets.cycleImagesInDiv({id_div:'background_cycler'});
-	//});
 	continue_url = $.url().param("c_url64");
 	if(continue_url != null && continue_url.length > 0){
 		try{
@@ -120,10 +110,11 @@ function showLoginForm(){
 			$('#sharing_continue').hide();
 		});
 		$('#sharing_continue').show();
-		$('#sharing_continue').addClass("pulse");
-	}else{
-		$('#gr_enterdialog_bg').addClass("pulse");
+		//$('#sharing_continue').addClass("pulse");
 	}
+	//else{
+	//	$('#gr_enterdialog_bg').addClass("pulse");
+	//}
 }
 </script>
 <script>
@@ -177,61 +168,20 @@ jq_bootstrap(on_js_init);
 </div>
 
 <center>
-<table width="700px" style="padding-top:150px;padding-bottom:50px;" border="0">
+<table width="750px" style="padding-top:130px;padding-bottom:50px;" border="0">
 <tr>
-	<!-- Lure block
-	<td>
-		<div id="dg-toptext" style="display: none; width:250px; text-align:center; background:url(/img/bg_lure_block.png); background-repeat:no-repeat; background-position:center top; height:250px;">
-		<div style="padding:30px 15px 30px 15px; text-align:center;">
-			<div id="dg-toptext-lure" style="font-size: 18px;"></div>
-			<div id="dg-toptext-title" style="font-size: 16px;"></div>
-			<div id="dg-toptext-text" style="font-size: 16px;padding-top:30px;"></div>
-		</div>
-		</div>
-	</td>
-	-->
 	<td align="left" height="350px"><!-- login form -->
 		<div id="lgform"></div>
 	</td>
 	<td>
 	</td>
 </tr>
-<!-- game news
-<tr>
-	<td colspan="3" align="center">
-		<table width="800px" cellpadding="0" cellspacing="0" style="padding-top: 30px;">
-			<tr style="background: url(/img/bg_infopage_top_up.png); background-repeat:no-repeat;">
-				<td style="width: 800px; height:30px;">&nbsp;</td>
-			</tr>
-			<tr style="background: url(/img/bg_infopage_top_center.png); background-repeat:repeat-y;">
-				<td style="width: 800px; height:600px;">
-				<iframe id="kri-news" style="width:776px; height: 580px; border: 0px; padding-left: 12px;" src="http://gamerotor.com/images_ldu/_api/forum_hcomments.html">
-				</iframe>
-				</td>
-			</tr>
-			<tr style="background: url(/img/bg_infopage_top_bottom.png); background-repeat:no-repeat;">
-				<td style="width: 800px; height:58px;">&nbsp;</td>
-			</tr>
-		</table>
-	</td>
-</tr>
--->
 <tr>
 	<td>
 	</td>
 	<td align="right">
-	<!-- game info -->
-	<br>
-	<div style="width:250px;padding-left:0px;text-align:center;color:white;font-size:14px;">
-	Добро пожаловать на Станцию Омега! Здесь вас ждут:
-	</div>
-	<br><br>
-	<div style="width:250px;padding-left:0px;text-align:left;color:white;font-size:14px;">
-	<br>
-	- Интересные фантастические истории с новыми персонажами.<br><br>
-	- Путешествия к центру звезды и сражения с живыми игроками в безумных локациях<br><br>
-	- Хорошее комьюнити и новые друзъя!
-	</div>
+		<!-- game info -->
+		<h3>Добро пожаловать на Станцию Омега!</h3>
 	</td>
 </tr>
 </table>
@@ -242,21 +192,12 @@ jq_bootstrap(on_js_init);
 </span>
 <span>
 &nbsp;|&nbsp;
-<a href='http://hubs.kristallum.com/'><nobr>News</nobr></a>&nbsp;|&nbsp;
-<a href='http://hubs.kristallum.com/ru/pages/about/'><nobr>About</nobr></a>&nbsp;|&nbsp;
-<a href='http://hubs.kristallum.com/ru/pages/wiki-index/'><nobr>FAQ</nobr></a>&nbsp;|&nbsp;
+<a href='http://hubs.kristallum.com/'>News</a>&nbsp;|&nbsp;
+<a href='http://hubs.kristallum.com/ru/pages/about/'>About</a>&nbsp;|&nbsp;
+<a href='http://hubs.kristallum.com/ru/pages/wiki-index/'>FAQ</a>&nbsp;|&nbsp;
 </span>
 <br><div id="seo_text"><!--# echo var="og_seo" --></div>
 </div>
 </center>
-
-<!-- background rotation 
-<div id="background_cycler" style="display:none; height: 650px; overflow:hidden;">
-<img src="/img/bgslides/bg_slider1.jpg" alt=""/>
-<img src="/img/bgslides/bg_slider2.jpg" alt=""/>
-<img src="/img/bgslides/bg_slider3.jpg" class="active" alt=""/>
-<img src="/img/bgslides/bg_slider4.jpg" alt=""/>
-</div>
--->
 </body>
 </html>
