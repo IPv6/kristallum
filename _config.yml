@@ -4,13 +4,13 @@
 # Example: https://github.com/plusjade/jekyll-bootstrap/
 
 # Name of your site (displayed in the header)
-ru-name: На краю света
-en-name: On the edge of the world
+ru-name: Станция 'Омега'
+en-name: Omega Station
 
 
 # Short bio or description (displayed in the header)
-ru-description: Визуальная новелла про будущее
-en-description: Visual novell with twists
+ru-description: ВН 'На краю света' и другие истории
+en-description: VN 'On the edge of the world'
 
 # URL of your avatar or profile pic (you could use your GitHub profile pic)
 avatar: https://pp.vk.me/c629525/v629525682/463cd/QkktXJvWJ9U.jpg
