@@ -240,7 +240,7 @@ function reloadProfile() {
 			core_log("profile_info ok_answer",ok_answer);
 			var uid_info = ok_answer[uid2view];
 			var me_uid = ok_answer["me_uid"];
-			jq_ui_upduserpanel('#user_info', window.bootstrap_config['focus_widget'], uid_info);
+			rqw_upduserpanel('#user_info', window.bootstrap_config['focus_widget'], uid_info);
 			updateUserProfilePanel(allowFrendovan?me_uid:null,allowFrendovan?uid2view:null,uid_info);
 		}
 		,function(err_answer){

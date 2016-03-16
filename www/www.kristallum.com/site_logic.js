@@ -13,7 +13,6 @@ window.CONST_JSSTORE_INVBY = "gr_invby";
 window.CONST_JSSTORE_REFER = "gr_refer";
 window.CONST_JSSTORE_REFERURL = "gr_referurl";
 window.CONST_JSSTORE_SOCNLA = "gr_socnla";
-window.CONST_JSSTORE_BOOKMARKED = "gr_bookmrkd";
 window.CONST_HYBRIDAUTH_URL = "http://www.gamerotor.com/php/hybridauth/gr_main.php?provider=";
 window.CONST_GUEST_PREFIX = "Guest";
 window.CONST_GUEST_PSW = "***";
@@ -885,7 +884,7 @@ window.jq_resetauth = function() {
 }
 
 window.jq_logout_user_ask = function(focus_widget, user_uid) {
-	var userinfo = window.users_cache[user_uid];
+	var userinfo = rqw_getcacheduser(user_uid);
 	if(userinfo != null && (userinfo.u_flags & window.FLAGS_USER_SOCPRESENT) == 0){
 		if(confirm($._b("Do you want to add social network to your profile before logging off"))){
 			jq_redirect2page({target_widget:focus_widget},"profile_edit");
@@ -991,47 +990,6 @@ window.jq_query_api = function(meth,query_params,onOk,onFail) {
 	}
 	var auth = $.Storage.get(window.CONST_JSSTORE_AUTH);
 	return GamerotorServer.QueryApi(meth,query_params,auth,onOk,onFail);
-}
-
-window.users_cache = {};
-window.jq_addbookmark = function()
-{
-	 $.Storage.set(window.CONST_JSSTORE_BOOKMARKED,"1");
-	 $('#bmk_element').hide();
-	 alert(navigator.userAgent.toLowerCase().indexOf('mac') != - 1 ? $._b("Add bookmark manually Mac"):$._b("Add bookmark manually Win"));
-}
-
-window.jq_ui_upduserpanel = function(div_selector, focus_widget, userinfo)
-{
-	if(userinfo == null || userinfo["u_nick"] == null){
-		return;
-	}
-	window.users_cache[userinfo.uid] = userinfo;
-	jq_payment_email = core_coalesce(userinfo.email);
-	var divhtml = "<table width='100%' height='30px' style='background-color:black;'><tr>";
-	var bmklevel = $.Storage.get(window.CONST_JSSTORE_BOOKMARKED);
-	if(bmklevel != "1"){
-		divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='javascript:jq_addbookmark();'><nobr>"+$._b("Add bookmark")+"</nobr></a></td>";
-	}
-	if(userinfo != null && (userinfo.u_flags & window.FLAGS_USER_SOCPRESENT) == 0){
-		divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;'>";
-		divhtml += "<a href='javascript:jq_redirect2page({target_widget:\""+focus_widget+"\"},\"profile_edit\");'><nobr>"+$._b("Add social account here")+"</nobr></a>";
-		divhtml += "&nbsp;|&nbsp;";
-		divhtml += "<a href='javascript:jq_redirect2page({target_widget:\""+focus_widget+"\"},\"profile_edit\");'><nobr>"+$._b("Change avatar")+"</nobr></a>";
-		divhtml += "</div></td>";
-	}
-
-	divhtml += "<td align='right' width='99%' valign='top'><div style='padding-top:8px;'>";
-	divhtml += userinfo.u_nick;
-	divhtml += "&nbsp;|&nbsp;";
-	divhtml += "<a href='javascript:jq_redirect2page({target_widget:\""+focus_widget+"\"},\"profile_edit\");'>"+$._b("Edit profile")+"</a>";
-	divhtml += "&nbsp;|&nbsp;";
-	divhtml += "<a href='javascript:jq_logout_user_ask(\""+focus_widget+"\",\""+userinfo.uid+"\");'>"+$._b("Logout")+"</a>";
-	divhtml += "</div></td>";
-	divhtml += "<td align='left' width='1%' valign='top'><iframe width='360px' height='30px' frameborder='0' src='/fb_like.html' scrolling='no' style='background:transparent;display:block-inline;margin-left:10px;margin-top:7px;'></iframe>";
-	divhtml += "</td>";
-	divhtml += "</table>";
-	$(div_selector).html(divhtml);
 }
 
 window.jq_getInviteLink = function(focus_widget)
@@ -1346,4 +1304,62 @@ window.show_legals = function() {
 		}
 		$('#legal_notes').html(footer_html);
 	});
+}
+
+window.users_cache = {};
+window.CONST_JSSTORE_BOOKMARKED = "gr_bookmrkd";
+window.rqw_getcacheduser = function(user_uid)
+{
+	return window.users_cache[user_uid];
+}
+
+window.rqw_addcacheduser = function(user_uid,userinfo)
+{
+	if(user_uid){
+		window.users_cache[user_uid] = userinfo;
+	}
+}
+
+window.rqw_addbookmark = function()
+{
+	$.Storage.set(window.CONST_JSSTORE_BOOKMARKED,"1");
+	$('#bmk_element').hide();
+	alert(navigator.userAgent.toLowerCase().indexOf('mac') != - 1 ? $._b("Add bookmark manually Mac"):$._b("Add bookmark manually Win"));
+}
+
+window.rqw_upduserpanel = function(div_selector, focus_widget, userinfo)
+{
+	var divhtml = "<table width='100%' height='30px' style='background-color:black;'><tr>";
+	var bmklevel = $.Storage.get(window.CONST_JSSTORE_BOOKMARKED);
+	if(bmklevel != "1"){
+		divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='javascript:rqw_addbookmark();'><nobr>"+$._b("Add bookmark")+"</nobr></a></td>";
+	}
+	divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='http://hubs.kristallum.com/'><nobr>"+$._b("News")+"</nobr></a></td>";
+	divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='http://hubs.kristallum.com/ru/pages/about/'><nobr>"+$._b("About")+"</nobr></a></td>";
+	divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='http://hubs.kristallum.com/ru/pages/wiki-index/'><nobr>"+$._b("FAQ")+"</nobr></a></td>";
+	if(userinfo != null && userinfo["u_nick"] != null){
+		rqw_addcacheduser(userinfo.uid,userinfo);
+		jq_payment_email = core_coalesce(userinfo.email);
+		if((userinfo.u_flags & window.FLAGS_USER_SOCPRESENT) == 0){
+			divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;'>";
+			divhtml += "<a href='javascript:jq_redirect2page({target_widget:\""+focus_widget+"\"},\"profile_edit\");'><nobr>"+$._b("Add social account here")+"</nobr></a>";
+			divhtml += "&nbsp;|&nbsp;";
+			divhtml += "<a href='javascript:jq_redirect2page({target_widget:\""+focus_widget+"\"},\"profile_edit\");'><nobr>"+$._b("Change avatar")+"</nobr></a>";
+			divhtml += "</div></td>";
+		}
+
+		divhtml += "<td align='right' width='99%' valign='top'><div style='padding-top:8px;'>";
+		divhtml += userinfo.u_nick;
+		divhtml += "&nbsp;|&nbsp;";
+		divhtml += "<a href='javascript:jq_redirect2page({target_widget:\""+focus_widget+"\"},\"profile_edit\");'>"+$._b("Edit profile")+"</a>";
+		divhtml += "&nbsp;|&nbsp;";
+		divhtml += "<a href='javascript:jq_logout_user_ask(\""+focus_widget+"\",\""+userinfo.uid+"\");'>"+$._b("Logout")+"</a>";
+		divhtml += "</div></td>";
+	}else{
+		divhtml += "<td align='right' width='99%' valign='top'><div style='padding-top:8px;'></td>";
+	}
+	divhtml += "<td align='right' width='1%' valign='top'><iframe width='360px' height='30px' frameborder='0' src='/fb_like.html' scrolling='no' style='background:transparent;display:block-inline;margin-left:10px;margin-top:7px;'></iframe>";
+	divhtml += "</td>";
+	divhtml += "</table>";
+	$(div_selector).html(divhtml);
 }

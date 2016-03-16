@@ -83,7 +83,12 @@ function on_js_init(){
 		,{user_ids:"me"}
 		,function(ok_answer){
 			core_log("profile_info ok_answer",ok_answer);
-			jq_ui_upduserpanel('#user_info',window.bootstrap_config['focus_widget'],ok_answer["me"]);
+			var userinfo = ok_answer["me"];
+			if(userinfo != null && userinfo["u_nick"] != null){
+				rqw_addcacheduser(userinfo.uid,userinfo);
+				jq_payment_email = core_coalesce(userinfo.email);
+				rqw_upduserpanel('#user_info',window.bootstrap_config['focus_widget'],userinfo);
+			}
 		}
 		,function(err_answer){
 			core_log("on_js_init: profile_info:",err_answer);

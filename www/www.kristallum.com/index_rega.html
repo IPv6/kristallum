@@ -160,6 +160,7 @@ function on_js_init(){
 			}
 			core_log("auto_reg mode OFF: login possible "+window.can_be_logged);
 		}
+		rqw_upduserpanel('#user_info',window.bootstrap_config['focus_widget'],null);
 		showLoginFormAdvn();
 	});
 };
@@ -168,9 +169,7 @@ jq_bootstrap(on_js_init);
 </head>
 
 <body style="background: url(img/bg_regpage.jpg); background-repeat: repeat; background-position: center top; background-color: black;">
-<div style="position:absolute;left:70%;top:0px;z-index:1000;">
-<iframe width='360px' height='30px' frameborder='0' src='/fb_like.html' scrolling='no' style='background:transparent;margin-left:10px;margin-top:10px;'></iframe>
-</div>
+<div id="user_info" style="position: relative; left:0%; top: 0%; width:100%;"></div>
 
 <!-- sharing continue -->
 <div style="position:absolute;left:35%;top:60px;width:300px;height:70px;text-align:center;z-index:1000;display:none;" id="sharing_continue">
@@ -239,9 +238,15 @@ jq_bootstrap(on_js_init);
 
 <!-- legal stuff panel -->
 <div id="legal_notes_and_seo" style="background: url('/img/bg_footer_1.png') repeat-x; background-position: top center; padding-top:20px; position: relative; top:0px;" class="ui_small_text">
-<div id="seo_text"><!--# echo var="og_seo" --></div>
-<hr>
-<div id="legal_notes"></div>
+<span id="legal_notes">
+</span>
+<span>
+&nbsp;|&nbsp;
+<a href='http://hubs.kristallum.com/'><nobr>News</nobr></a>&nbsp;|&nbsp;
+<a href='http://hubs.kristallum.com/ru/pages/about/'><nobr>About</nobr></a>&nbsp;|&nbsp;
+<a href='http://hubs.kristallum.com/ru/pages/wiki-index/'><nobr>FAQ</nobr></a>&nbsp;|&nbsp;
+</span>
+<br><div id="seo_text"><!--# echo var="og_seo" --></div>
 </div>
 </center>
 
