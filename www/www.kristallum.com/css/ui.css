@@ -2,15 +2,15 @@
 body, html {
 	margin:0;
 	padding:0;
+	font-size:13px;
+	font-family:Helvetica, Arial, sans-serif;
 }
 td, tr, div, span, nobr, li, a, a:hover, a:active, a:visited {
-	font-size:14px;
-	font-family:Helvetica, Arial;
 	padding: 0px 0px 0px 0px;
 	margin: 0px 0px 0px 0px;
 	border: 0px;
-	border-style: none; 
-	border-color: transparent; 
+	border-style: none;
+	border-color: transparent;
 	color: #ffffff;
 }
 
@@ -39,8 +39,6 @@ img {
 
 .ui_form, .ui_form td {
 	padding: 3px 3px 3px 3px;
-	font-size:14px;
-	font-family:Helvetica, Arial;
 	color: #f6e29c;
 }
 
@@ -52,16 +50,14 @@ img {
 }
 
 .ui_form *, .ui_form a:hover, .ui_form a:active, .ui_form  a:visited {
-	font-family:Helvetica, Arial;
-	font-size:14px;
 	color: #f6e29c;
 }
 
 .ui_form input[type=text], .ui_form input[type=password] {
 	outline: none;
 	border: 0px;
-	border-style: none; 
-	border-color: transparent; 
+	border-style: none;
+	border-color: transparent;
 	margin-top: -7px;
 	padding: 0px 10px 5px 5px;
 	height: 25px;
