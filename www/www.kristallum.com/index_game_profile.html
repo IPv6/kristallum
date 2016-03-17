@@ -16,9 +16,11 @@ xmlns:fb="http://ogp.me/ns/fb#">
 <script type="text/javascript" src="http://static.gamerotor.com/scripts/sites/site_bootstrap.js"></script>
 
 </head>
-<body style="background:url(img/bg_gamepage.jpg);background-repeat:repeat;background-position:center top;background-color: black;">
+<body style="background: url(img/bg_regpage.jpg); background-repeat: repeat; background-position: center top; background-color: black;">
+
 <!-- user panel -->
-<div id="user_info" style="position: relative; left:0%; top: 0%; width:99%;"></div>
+<div id="user_info" class="page-topper"></div>
+
 <!-- user profile panel -->
 <center>
 <a id="ui_playgame" href="javascript:playGame();">
@@ -48,8 +50,7 @@ xmlns:fb="http://ogp.me/ns/fb#">
 	<img src="/img/bt_igrat_ru_1_ww483_hh145.png" src2="/img/bt_igrat_ru_1_ovl.png">
 </a>
 </center>
-<!-- legal stuff panel -->
-<div id="legal_notes" style="position: relative; left:1%; width:98%; height: 20px; text-align:center;" class="ui_small_text"></div>
+
 <script>
 function playGame() {
 	jq_redirect2page({target_widget:window.bootstrap_config['focus_widget']},"game");

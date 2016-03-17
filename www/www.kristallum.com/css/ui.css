@@ -1,9 +1,14 @@
 /* common */
+* {
+	margin: 0;
+}
+
 body, html {
 	margin:0;
 	padding:0;
 	font-size:13px;
 	font-family:Helvetica, Arial, sans-serif;
+	height: 100%;
 }
 td, tr, div, span, nobr, li, a, a:hover, a:active, a:visited {
 	padding: 0px 0px 0px 0px;
@@ -16,6 +21,27 @@ td, tr, div, span, nobr, li, a, a:hover, a:active, a:visited {
 
 img {
 	border-style: none;
+}
+
+.content-wrapper {
+}
+
+.page-topper {
+	position: relative; 
+	left:0%; 
+	top: 0%; 
+	width:100%;
+}
+
+.page-footer {
+	background: url('/img/bg_footer_1.png') repeat-x; 
+	background-position: top center; 
+	padding-top:20px;
+	padding-bottom:10px;
+	width:100%;
+	text-align:center;
+	position: fixed;
+	bottom: 0px;
 }
 
 .inline_img {

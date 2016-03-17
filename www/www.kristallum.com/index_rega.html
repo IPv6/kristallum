@@ -160,7 +160,8 @@ jq_bootstrap(on_js_init);
 </head>
 
 <body style="background: url(img/bg_regpage.jpg); background-repeat: repeat; background-position: center top; background-color: black;">
-<div id="user_info" style="position: relative; left:0%; top: 0%; width:100%;"></div>
+<!-- user panel -->
+<div id="user_info" class="page-topper"></div>
 
 <!-- sharing continue -->
 <div style="position:absolute;left:35%;top:60px;width:300px;height:70px;text-align:center;z-index:1000;display:none;" id="sharing_continue">
@@ -168,26 +169,16 @@ jq_bootstrap(on_js_init);
 </div>
 
 <center>
-<table width="750px" style="padding-top:130px;padding-bottom:50px;" border="0">
-<tr>
-	<td align="left" height="350px"><!-- login form -->
-		<div id="lgform"></div>
-	</td>
-	<td>
-	</td>
-</tr>
-<tr>
-	<td>
-	</td>
-	<td align="right">
-		<!-- game info -->
-		<h3>Добро пожаловать на Станцию Омега!</h3>
-	</td>
-</tr>
-</table>
+<div>
+	<div style="position:absolute;left:25%;top:170px;">
+	<h3>Добро пожаловать на Станцию Омега!</h3>
+	<br><br>
+	<div id="lgform"></div>
+	</div>
+</div>
 
 <!-- legal stuff panel -->
-<div id="legal_notes_and_seo" style="background: url('/img/bg_footer_1.png') repeat-x; background-position: top center; padding-top:20px; position: relative; top:0px;" class="ui_small_text">
+<div id="legal_notes_and_seo" class="page-footer ui_small_text">
 <span id="legal_notes">
 </span>
 <span>
