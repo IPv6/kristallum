@@ -1,4 +1,4 @@
-// cscript "c:\_WPLabs\PROJECTS_GAMES\Github-kristallum\scripts\misc\ffmpeg_slice_video15.js" "d:\_Video\Gravity Falls" "f:\_ZRips"
+// cscript "c:\_WPLabs\PROJECTS_GAMES\Github-kristallum\scripts\misc\ffmpeg_slice_video15.js" "d:\_Video\_ipv6\gintama_TV_PSP" "f:\_ZRips"
 
 
 
