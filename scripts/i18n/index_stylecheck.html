@@ -16,15 +16,15 @@ h3 { color: #333; font-size: 16px; margin-bottom: 0; padding-bottom: 0; }
 <script>
 var _sameworda = "_sameworda";
 var rulezz = [
-	{name:"many",ignoreIf:["--","at"],countIf:[" я "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:1},
-	{name:"many",ignoreIf:["--","at"],countIf:[" и "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:1},
-	{name:"many",ignoreIf:["--","at"],countIf:[" понят "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
-	{name:"many",ignoreIf:["--","at"],countIf:[" ладно "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
-	{name:"many",ignoreIf:["--","at"],countIf:[" хорошо "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
-	{name:"same",ignoreIf:["--","at"],countIf:[_sameworda],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
-	{name:"lengthy_adlg",ignoreIf:["at"],countIf:["=>","<="],resetIf:["scene","**", "-!", "-o"],okIfMaxRepeat:20},
-	{name:"lengthy_rdlg",ignoreIf:["at"],countIf:["=>"],resetIf:["scene","**","<=", "-!", "-o"],okIfMaxRepeat:7},
-	{name:"lengthy_ldlg",ignoreIf:["at"],countIf:["<="],resetIf:["scene","**","=>", "-!", "-o"],okIfMaxRepeat:7}
+	{name:"many",ignoreIf:["--","\"at:","\"effects"],countIf:[" я "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:1},
+	{name:"many",ignoreIf:["--","\"at:","\"effects"],countIf:[" и "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:1},
+	{name:"many",ignoreIf:["--","\"at:","\"effects"],countIf:[" понят "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+	{name:"many",ignoreIf:["--","\"at:","\"effects"],countIf:[" ладно "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+	{name:"many",ignoreIf:["--","\"at:","\"effects"],countIf:[" хорошо "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+	{name:"same",ignoreIf:["--","\"at:","\"effects"],countIf:[_sameworda],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
+	{name:"lengthy_adlg",ignoreIf:["\"at:"],countIf:["=>","<="],resetIf:["scene","**", "-!", "-o"],okIfMaxRepeat:20},
+	{name:"lengthy_rdlg",ignoreIf:["\"at:"],countIf:["=>"],resetIf:["scene","**","<=", "-!", "-o"],okIfMaxRepeat:7},
+	{name:"lengthy_ldlg",ignoreIf:["\"at:"],countIf:["<="],resetIf:["scene","**","=>", "-!", "-o"],okIfMaxRepeat:7}
 ];
 
 var extendedWhitespaceCharsList = [".",",","?","!",":","-",";","'","  ","  ","  "];// "<",">" used in countIf
@@ -93,8 +93,10 @@ function checkStyle() {
 		for(var j=0;j<rulezz.length;j++){
 			var rule = rulezz[j];
 			var isIgnored = 0;
+			var isIgnoredReason = "";
 			for(var k=0;k<rule.ignoreIf.length;k++){
-				if(normalized.indexOf(rule.ignoreIf[k]) >= 0){
+				if(original.indexOf(rule.ignoreIf[k]) >= 0){
+					isIgnoredReason = rule.ignoreIf[k];
 					isIgnored = 1;
 					break;
 				}
@@ -103,6 +105,7 @@ function checkStyle() {
 				if(original.indexOf(rule.resetIf[k]) >= 0){
 					rule.history = [];
 					rule.state.cntPresent = 0;
+					isIgnoredReason = rule.resetIf[k];
 					isIgnored = 2;
 					//console.log("DBG:" + rule.name + "-reset");
 					break;
@@ -114,6 +117,8 @@ function checkStyle() {
 					normalized_byword.unshift(normalized);
 					rule.history.push(normalized_byword);
 				}
+
+				//res += "[["+rule.name + " - ignored "+isIgnoredReason+"]]";
 				continue;
 			}
 			rule.dbg_info = null;
@@ -132,10 +137,11 @@ function checkStyle() {
 						for(var k2=0; k2<normalized_byword.length; k2++){
 							for(var k3=rule.history.length-1; k3>=0 && k3>=rule.history.length-deepness; k3--){
 								if(rule.history[k3].indexOf(normalized_byword[k2]) >= 0){
-									rule.dbg_info = "'" + normalized_byword[k2] + "' in [["+rule.history[k3][0]+"]], min "+deepness;
-									k2 = 9999999;
-									k = 999999;
-									isLineOk = false;
+									var err = "'" + normalized_byword[k2] + "' in [["+rule.history[k3][0]+"]], min "+deepness;
+									rule.dbg_info = err
+									//k2 = 9999999;
+									//k = 999999;
+									failedRules.push(rule.name + " " +err);
 									break;
 								}
 							}
@@ -143,16 +149,14 @@ function checkStyle() {
 					}else if(isPresent){
 						for(var k3=rule.history.length-1; k3>=0 && k3>=rule.history.length-deepness; k3--){
 							if(rule.history[k3][0].indexOf(rule.countIf[k]) >= 0){// normalized
-								rule.dbg_info = "'" + rule.countIf[k] + "' in [["+rule.history[k3][0]+"]], min "+deepness;
-								k = 999999;
-								isLineOk = false;
+								var err = "'" + rule.countIf[k] + "' in [["+rule.history[k3][0]+"]], min "+deepness;
+								rule.dbg_info = err
+								failedRules.push(rule.name + " " +err);
+								//k = 999999;
 								break;
 							}
 						}
 					}
-				}
-				if(!isLineOk){
-					failedRules.push(rule.name + (rule.dbg_info?(": "+rule.dbg_info):""));
 				}
 			}
 			if(rule.okIfMaxRepeat != null){
