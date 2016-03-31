@@ -137,7 +137,7 @@ function checkStyle() {
 						for(var k2=0; k2<normalized_byword.length; k2++){
 							for(var k3=rule.history.length-1; k3>=0 && k3>=rule.history.length-deepness; k3--){
 								if(rule.history[k3].indexOf(normalized_byword[k2]) >= 0){
-									var err = "'" + normalized_byword[k2] + "' in [["+rule.history[k3][0]+"]], min "+deepness;
+									var err = "'" + normalized_byword[k2] + "' in [["+rule.history[k3][0]+"]], min "+deepness+"("+(rule.history.length-k3)+")";
 									rule.dbg_info = err
 									//k2 = 9999999;
 									//k = 999999;
@@ -149,7 +149,7 @@ function checkStyle() {
 					}else if(isPresent){
 						for(var k3=rule.history.length-1; k3>=0 && k3>=rule.history.length-deepness; k3--){
 							if(rule.history[k3][0].indexOf(rule.countIf[k]) >= 0){// normalized
-								var err = "'" + rule.countIf[k] + "' in [["+rule.history[k3][0]+"]], min "+deepness;
+								var err = "'" + rule.countIf[k] + "' in [["+rule.history[k3][0]+"]], min "+deepness+"("+(rule.history.length-k3)+")";
 								rule.dbg_info = err
 								failedRules.push(rule.name + " " +err);
 								//k = 999999;
