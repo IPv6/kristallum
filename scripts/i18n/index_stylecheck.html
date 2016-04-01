@@ -15,19 +15,43 @@ h3 { color: #333; font-size: 16px; margin-bottom: 0; padding-bottom: 0; }
 </style>
 <script>
 var _sameworda = "_sameworda";
+var _minen4sameword = 4;
 var rulezz = [
-	{name:"many",ignoreIf:["--","\"at:","\"effects"],countIf:[" я "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:1},
-	{name:"many",ignoreIf:["--","\"at:","\"effects"],countIf:[" и "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:1},
-	{name:"many",ignoreIf:["--","\"at:","\"effects"],countIf:[" понят "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
-	{name:"many",ignoreIf:["--","\"at:","\"effects"],countIf:[" ладно "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
-	{name:"many",ignoreIf:["--","\"at:","\"effects"],countIf:[" хорошо "],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
-	{name:"same",ignoreIf:["--","\"at:","\"effects"],countIf:[_sameworda],resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
-	{name:"lengthy_adlg",ignoreIf:["\"at:"],countIf:["=>","<="],resetIf:["scene","**", "-!", "-o"],okIfMaxRepeat:20},
-	{name:"lengthy_rdlg",ignoreIf:["\"at:"],countIf:["=>"],resetIf:["scene","**","<=", "-!", "-o"],okIfMaxRepeat:7},
-	{name:"lengthy_ldlg",ignoreIf:["\"at:"],countIf:["<="],resetIf:["scene","**","=>", "-!", "-o"],okIfMaxRepeat:7}
+	{name:"many",countIf:[" поня", " ладно"],
+		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+	{name:"many",countIf:["хорошо", "отлично"],
+		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+
+	{name:"same",countIf:[_sameworda], // dbg: true,
+		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
+	//{name:"same_l",countIf:[_sameworda],
+	//	onlyIf:["<="], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
+	//{name:"same_r",countIf:[_sameworda],
+	//	onlyIf:["=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
+	//{name:"same_c",countIf:[_sameworda],
+	//	onlyIf:["**"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
+
+	{name:"leng_adlg",countIf:["=>", "<="],
+		onlyIf:["**", "<=", "=>"], resetIf:["**", "scene","-!", "-o"],okIfMaxRepeat:20},
+	{name:"leng_rdlg",countIf:["=>"],
+		onlyIf:["**", "<=", "=>"], resetIf:["**", "<=", "scene","-!", "-o"],okIfMaxRepeat:7},
+	{name:"leng_ldlg",countIf:["<="],
+		onlyIf:["**", "<=", "=>"], resetIf:["**", "=>", "scene","-!", "-o"],okIfMaxRepeat:7}
 ];
 
-var extendedWhitespaceCharsList = [".",",","?","!",":","-",";","'","  ","  ","  "];// "<",">" used in countIf
+var single_manis = [" я ", " и ", " нет ", " да ", " про ", " для ", " это ", " эти ",
+	" мне ", " он ", " она ", " они ", " его ", " ее ", " их ", " ней ", " что ", " кто ", 
+	" где ", " уже ", " еще ", " все ", " все жe ", " как ", " так ", " там ", " тут ", " был "
+]
+for(var i=0;i<single_manis.length;i++){
+	rulezz.push(
+	{name:"many",countIf:[single_manis[i]],
+		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:1}
+	);
+}
+	
+
+var extendedWhitespaceCharsList = [".",",","?","!",":",";","'","  ","  ","  "];// "<",">" used in countIf. "-" in words
 var extendedIgnoredCharsList = ["\t","{","}","(",")","[","]","\""];// "<",">" used in countIf
 function normalizeLinr(raw_text) {
 	for(var i=0;i<extendedIgnoredCharsList.length;i++){
@@ -56,13 +80,16 @@ function normalizeWodrd(normalized) {
 		if(str.length > 7){
 			str = str.substr(0,7);
 		}
-		res.push(str);
+		if(str.length > 0 && res.indexOf(str) < 0){
+			res.push(str);
+		}
 	}
+	//console.log("normalizeWodrd: ",res);
 	return res;
 }
 
 function isWordOk4samecheck(str) {
-	if(str == null || str.length < 3){
+	if(str == null || str.length < _minen4sameword){
 		return false;
 	}
 	if(!(/[а-яА-ЯЁё]/.test(str))){
@@ -88,60 +115,72 @@ function checkStyle() {
 			continue;
 		}
 		var normalized_byword = normalizeWodrd(normalized);
+		normalized_byword.unshift(normalized + "_at_line"+(i+1)+"_");
 		var failedRules = [];
 		//console.log("DBG:" + "-normalized: [["+normalized+"]]");
-		for(var j=0;j<rulezz.length;j++){
+		for(var j=0;j < rulezz.length;j++){
 			var rule = rulezz[j];
 			var isIgnored = 0;
-			var isIgnoredReason = "";
-			for(var k=0;k<rule.ignoreIf.length;k++){
-				if(original.indexOf(rule.ignoreIf[k]) >= 0){
-					isIgnoredReason = rule.ignoreIf[k];
-					isIgnored = 1;
-					break;
+			//var isIgnoredReason = "";
+			if(rule.resetIf != null){
+				for(var k=0;k<rule.resetIf.length;k++){
+					if(original.indexOf(rule.resetIf[k]) >= 0){
+						rule.history = [];
+						rule.state.cntPresent = 0;
+						//isIgnoredReason = rule.resetIf[k];
+						isIgnored = 2;
+						break;
+					}
 				}
 			}
-			for(var k=0;k<rule.resetIf.length;k++){
-				if(original.indexOf(rule.resetIf[k]) >= 0){
-					rule.history = [];
-					rule.state.cntPresent = 0;
-					isIgnoredReason = rule.resetIf[k];
-					isIgnored = 2;
-					//console.log("DBG:" + rule.name + "-reset");
-					break;
+			if(rule.ignoreIf != null){
+				for(var k=0;k<rule.ignoreIf.length;k++){
+					if(original.indexOf(rule.ignoreIf[k]) >= 0){
+						//isIgnoredReason = rule.ignoreIf[k];
+						isIgnored = 1;
+						break;
+					}
+				}
+			}
+			if(rule.onlyIf != null){
+				var isAnyPresent = false;
+				for(var k=0;k<rule.onlyIf.length;k++){
+					if(original.indexOf(rule.onlyIf[k]) >= 0){
+						isAnyPresent = true;
+					}
+				}
+				if(!isAnyPresent){
+					//isIgnoredReason = rule.onlyIf[k];
+					isIgnored = 3;
 				}
 			}
 			if(isIgnored > 0){
-				if(isIgnored > 1){
-					// STILL adding to history - samewording on -!** should work
-					normalized_byword.unshift(normalized);
+				if(isIgnored == 1 || isIgnored == 2){
+					// STILL adding to history - samewording on '-!**' and resetters should work
 					rule.history.push(normalized_byword);
 				}
-
-				//res += "[["+rule.name + " - ignored "+isIgnoredReason+"]]";
+				//console.log("DBG: ignored " + isIgnored+", " +rule.name, normalized_byword);
 				continue;
 			}
-			rule.dbg_info = null;
 			var isPresent = false;
-			for(var k=0;k<rule.countIf.length;k++){
+			for(var k=0;k < rule.countIf.length; k++){
 				if(normalized.indexOf(rule.countIf[k]) >= 0){
 					isPresent = true;
 				}
 			}
 			if(rule.okIfMinDistanceInLines != null){
-				rule.dbg_info = null;
 				var isLineOk = true;
 				var deepness = rule.okIfMinDistanceInLines;
-				for(var k=0;k<rule.countIf.length;k++){
+				for(var k=0;k < rule.countIf.length; k++){
 					if(rule.countIf[k] == _sameworda){
-						for(var k2=0; k2<normalized_byword.length; k2++){
-							for(var k3=rule.history.length-1; k3>=0 && k3>=rule.history.length-deepness; k3--){
+						for(var k2=1; k2 < normalized_byword.length; k2++){
+							for(var k3=rule.history.length-1; k3 >= 0 && k3>=rule.history.length-deepness; k3--){
 								if(rule.history[k3].indexOf(normalized_byword[k2]) >= 0){
-									var err = "'" + normalized_byword[k2] + "' in [["+rule.history[k3][0]+"]], min "+deepness+"("+(rule.history.length-k3)+")";
-									rule.dbg_info = err
+									var err = "'" + normalized_byword[k2] + "' in {"+rule.history[k3][0]+"}, min "+deepness+"("+(rule.history.length-k3)+")";
 									//k2 = 9999999;
 									//k = 999999;
 									failedRules.push(rule.name + " " +err);
+									//console.log("DBG:" + rule.name, normalized_byword);
 									break;
 								}
 							}
@@ -149,10 +188,10 @@ function checkStyle() {
 					}else if(isPresent){
 						for(var k3=rule.history.length-1; k3>=0 && k3>=rule.history.length-deepness; k3--){
 							if(rule.history[k3][0].indexOf(rule.countIf[k]) >= 0){// normalized
-								var err = "'" + rule.countIf[k] + "' in [["+rule.history[k3][0]+"]], min "+deepness+"("+(rule.history.length-k3)+")";
-								rule.dbg_info = err
+								var err = "'" + rule.countIf[k] + "' in {"+rule.history[k3][0]+"}, min "+deepness+"("+(rule.history.length-k3)+")";
 								failedRules.push(rule.name + " " +err);
 								//k = 999999;
+								//console.log("DBG:" + rule.name, normalized_byword);
 								break;
 							}
 						}
@@ -163,15 +202,18 @@ function checkStyle() {
 				if(isPresent){
 					rule.state.cntPresent = rule.state.cntPresent + 1;
 					if(rule.state.cntPresent > rule.okIfMaxRepeat){
-						failedRules.push(rule.name + (rule.dbg_info?(": "+rule.dbg_info):""));
+						failedRules.push(rule.name + " max "+rule.okIfMaxRepeat+"("+rule.state.cntPresent+")");
+						//console.log("DBG:" + rule.name, normalized_byword);
 					}
 				}
 				if(!isPresent){
 					rule.state.cntPresent = 0;
 				}
 			}
+			if(rule.dbg == true){
+				console.log("DBG:" + rule.name, [normalized_byword, failedRules, rule]);
+			}
 			// adding to history
-			normalized_byword.unshift(normalized);
 			rule.history.push(normalized_byword);
 		}
 		if(res.length > 0){
@@ -197,12 +239,12 @@ head.js("jquery-1.7.1.min.js","jquery.json-2.2.min.js",initClient);
 </head>
 <body scroll="no" class="bg">
 <center>
-<div id="part_js" style="width:100%;height:600px;">
+<div id="part_js" style="width:100%;height:280px">
 <textarea id="part_jsta" style="width:100%;height:100%;font-size:20px;">
 </textarea>
 </div>
 <input type="button" value="Check Style" onClick="checkStyle();" style="-webkit-appearance:none;margin:5px 5px 5px 5px;width:200px;height:40px;font-size:20px;">
-<div id="part_output" style="width:100%;height:280px;">
+<div id="part_output" style="width:100%;height:600px;">
 <textarea id="part_outputa" style="width:100%;height:100%;font-size:15px;">
 </textarea>
 </div>
