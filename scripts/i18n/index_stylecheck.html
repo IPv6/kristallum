@@ -40,7 +40,7 @@ var rulezz = [
 ];
 
 var single_manis = [" я ", " и ", " нет ", " да ", " про ", " для ", " это ", " эти ",
-	" мне ", " он ", " она ", " они ", " его ", " ее ", " их ", " ней ", " что ", " кто ", 
+	" мне ", " он ", " она ", " они ", " его ", " ее ", " их ", " ней ", " что ", " кто ",
 	" где ", " уже ", " еще ", " все ", " все жe ", " как ", " так ", " там ", " тут ", " был "
 ]
 for(var i=0;i<single_manis.length;i++){
@@ -49,7 +49,7 @@ for(var i=0;i<single_manis.length;i++){
 		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:1}
 	);
 }
-	
+
 
 var extendedWhitespaceCharsList = [".",",","?","!",":",";","'","  ","  ","  "];// "<",">" used in countIf. "-" in words
 var extendedIgnoredCharsList = ["\t","{","}","(",")","[","]","\""];// "<",">" used in countIf
@@ -232,6 +232,38 @@ function checkStyle() {
 
 function initClient() {
 	$(document).ready(function(e){
+		$("#part_outputa").dblclick(function() {
+			var t = $("#part_outputa")[0];
+			var tv = t.value;
+			var lastlineCharPos = t.selectionStart;
+			while(lastlineCharPos < tv.length && tv.charAt(lastlineCharPos) != "\n"){
+				lastlineCharPos++;
+			}
+			var lines = tv.substr(0, lastlineCharPos).split("\n");
+    		var line = lines[lines.length-1];
+			var testRE = line.match("_at_line(.*)_");
+			//console.log("DBG:" + line, testRE);
+			if(testRE && testRE[1]){
+				var jump2line = parseInt(testRE[1]);
+				var t2 = $("#part_jsta")[0];
+				var tv2 = t2.value;
+				var tv2lines = tv2.split("\n");
+			    // calculate start/end
+			    var startPos = 0;
+			    for(var x = 0; x < tv2lines.length; x++) {
+			        if(x == jump2line-1) {
+						t2.focus();
+						//t2.selectionStart = startPos;
+				        //t2.selectionEnd = startPos+(tv2lines[x].length)-1;
+						t2.setSelectionRange(startPos,startPos+(tv2lines[x].length)-1);
+						var lineHeight = parseInt($("#part_jsta").css('line-height'));
+						$("#part_jsta").scrollTop((jump2line-3) * lineHeight);
+			            break;
+			        }
+			        startPos += (tv2lines[x].length+1);
+			    }
+			}
+		});
 	});
 }
 head.js("jquery-1.7.1.min.js","jquery.json-2.2.min.js",initClient);
@@ -240,7 +272,7 @@ head.js("jquery-1.7.1.min.js","jquery.json-2.2.min.js",initClient);
 <body scroll="no" class="bg">
 <center>
 <div id="part_js" style="width:100%;height:280px">
-<textarea id="part_jsta" style="width:100%;height:100%;font-size:20px;">
+<textarea id="part_jsta" style="width:100%;height:100%;font-size:20px;line-height:24px;">
 </textarea>
 </div>
 <input type="button" value="Check Style" onClick="checkStyle();" style="-webkit-appearance:none;margin:5px 5px 5px 5px;width:200px;height:40px;font-size:20px;">
