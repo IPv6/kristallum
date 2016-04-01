@@ -244,25 +244,30 @@ function initClient() {
     		var line = lines[lines.length-1];
 			var testRE = line.match("_at_line(.*)_");
 			//console.log("DBG:" + line, testRE);
+			var jump2line = -1;
+			var t2 = $("#part_jsta")[0];
+			var tv2 = t2.value;
+			var tv2lines = tv2.split("\n");
 			if(testRE && testRE[1]){
-				var jump2line = parseInt(testRE[1]);
-				var t2 = $("#part_jsta")[0];
-				var tv2 = t2.value;
-				var tv2lines = tv2.split("\n");
 			    // calculate start/end
-			    var startPos = 0;
-			    for(var x = 0; x < tv2lines.length; x++) {
-			        if(x == jump2line-1) {
+				jump2line = parseInt(testRE[1])-1;
+			}else{
+				jump2line = tv2lines.indexOf(line);
+			}
+			if(jump2line >= 0){
+				var startPos = 0;
+				for(var x = 0; x < tv2lines.length; x++) {
+					if(x == jump2line) {
 						t2.focus();
 						//t2.selectionStart = startPos;
-				        //t2.selectionEnd = startPos+(tv2lines[x].length)-1;
+						//t2.selectionEnd = startPos+(tv2lines[x].length)-1;
 						t2.setSelectionRange(startPos,startPos+(tv2lines[x].length)-1);
 						var lineHeight = parseInt($("#part_jsta").css('line-height'));
 						$("#part_jsta").scrollTop((jump2line-3) * lineHeight);
-			            break;
-			        }
-			        startPos += (tv2lines[x].length+1);
-			    }
+						break;
+					}
+					startPos += (tv2lines[x].length+1);
+				}
 			}
 		});
 	});
