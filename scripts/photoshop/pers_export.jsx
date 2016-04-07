@@ -334,15 +334,15 @@ if(exportTo == "kasatka"){
 if(exportTo == "marina"){
 
 	var bodies = [
-		["marina_p1_dress1a","posa1","hairs1a+body+dress1+hairs2+hairs2_shadow+hairs3a+hairs4a"],
-		["marina_p1_dress2a","posa1","hairs1a+body+dress2+hairs2+hairs2_shadow+hairs3a+hairs4a"],
-		["marina_p2_dress1a","posa2","hairs1a+body+dress1+hairs2+hairs2_shadow+hairs3a+hairs4a"],
-		["marina_p2_dress2a","posa2","hairs1a+body+dress2+hairs2+hairs2_shadow+hairs3a+hairs4a"],
+		["marina_p1_dress1a","posa1","hairs3b+body+dress1+hairs2a+hairs2_shadow+hairs3a+hairs4a"],
+		["marina_p1_dress2a","posa1","hairs3b+body+dress2+hairs2a+hairs2_shadow+hairs3a+hairs4a"],
+		["marina_p2_dress1a","posa2","hairs3b+body+dress1+hairs2a+hairs2_shadow+hairs3a+hairs4a"],
+		["marina_p2_dress2a","posa2","hairs3b+body+dress2+hairs2a+hairs2_shadow+hairs3a+hairs4a"],
 		
-		["marina_p1_dress1b","posa1","hairs1b+body+dress1+hairs2+hairs2_shadow"],
-		["marina_p1_dress2b","posa1","hairs1b+body+dress2+hairs2+hairs2_shadow"],
-		["marina_p2_dress1b","posa2","hairs1b+body+dress1+hairs2+hairs2_shadow"],
-		["marina_p2_dress2b","posa2","hairs1b+body+dress2+hairs2+hairs2_shadow"]
+		["marina_p1_dress1b","posa1","hairs1+body+dress1+hairs2a+hairs2_shadow"],
+		["marina_p1_dress2b","posa1","hairs1+body+dress2+hairs2a+hairs2_shadow"],
+		["marina_p2_dress1b","posa2","hairs1+body+dress1+hairs2a+hairs2_shadow"],
+		["marina_p2_dress2b","posa2","hairs1+body+dress2+hairs2a+hairs2_shadow"]
 	];
 
 	var emots = [
@@ -360,11 +360,11 @@ if(exportTo == "marina"){
 	];
 
 	var avats = [
-		["_marina_nrm","posa1","hairs1a+body+hairs2+hairs3a+hairs4a+nrm"],
-		["_marina_hm","posa1","hairs1a+body+hairs2+hairs3a+hairs4a+hm"],
-		["_marina_smi","posa1","hairs1a+body+hairs2+hairs3a+hairs4a+smi"],
-		["_marina_lau","posa1","hairs1a+body+hairs2+hairs3a+hairs4a+lau"],
-		["_marina_sur","posa1","hairs1a+body+hairs2+hairs3a+hairs4a+sur"]
+		["_marina_nrm","posa1","hairs3b+body+hairs2a+hairs3a+hairs4a+nrm"],
+		["_marina_hm","posa1","hairs3b+body+hairs2a+hairs3a+hairs4a+hm"],
+		["_marina_smi","posa1","hairs3b+body+hairs2a+hairs3a+hairs4a+smi"],
+		["_marina_lau","posa1","hairs3b+body+hairs2a+hairs3a+hairs4a+lau"],
+		["_marina_sur","posa1","hairs3b+body+hairs2a+hairs3a+hairs4a+sur"]
 	];
 
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
