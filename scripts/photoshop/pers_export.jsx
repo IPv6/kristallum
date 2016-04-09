@@ -1,23 +1,23 @@
 //@include "libs/comixgen.jsx"
 //@include "libs/persutils.jsx"
 
+var exportTo = "anna";
+//var exportTo = "belpoli";
+//var exportTo = "samanta";
+//var exportTo = "vera";
+//var exportTo = "kasatka";
+//var exportTo = "marina";
+
 //var exportTo = "tamojk";
-//var exportTo = "prof";
-//var exportTo = "sasha";
 //var exportTo = "gena";
 //var exportTo = "artem";
 //var exportTo = "anton";
 //var exportTo = "ura";
 //var exportTo = "janna";
 
-//var exportTo = "belpoli";
-var exportTo = "samanta";
-//var exportTo = "anna";
 //var exportTo = "katya";
-//var exportTo = "vera";
-//var exportTo = "kasatka";
-//var exportTo = "marina";
-
+//var exportTo = "prof";
+//var exportTo = "sasha";
 
 var globals = {};
 initComix("d:/Downloads/"+exportTo, globals);
@@ -66,7 +66,8 @@ if(exportTo == "tamojk"){
 if(exportTo == "prof"){
 
 	var bodies = [
-		["prof_p1_dress1","posa1","body+dress+hairs"]
+		["prof_p1_dress1","posa1","body+dress1+hairs"],
+		["prof_p1_dress2","posa1","body+dress2+hairs"],
 	];
 
 	// Emotions prof
@@ -93,10 +94,10 @@ if(exportTo == "prof"){
 if(exportTo == "sasha"){
 
 	var bodies = [
-		["sasha_p1_dress1","posa1","body+dress1+hairs1+hairs2"],
-		["sasha_p1_dress2","posa1","body+dress2+hairs1+hairs2"],
-		["sasha_p2_dress1","posa2","body+dress1+hairs1+hairs2"],
-		["sasha_p2_dress2","posa2","body+dress2+hairs1+hairs2"]
+		["sasha_p1_dress1","posa1","body+dress1+hairs1+hairs2+hairs2_shadow"],
+		["sasha_p1_dress2","posa1","body+dress2+hairs1+hairs2+hairs2_shadow"],
+		["sasha_p2_dress1","posa2","body+dress1+hairs1+hairs2+hairs2_shadow"],
+		["sasha_p2_dress2","posa2","body+dress2+hairs1+hairs2+hairs2_shadow"]
 	];
 
 	// Emotions sasha
@@ -201,28 +202,95 @@ if(exportTo == "anna"){
 		["anna_p1_dress2","posa1","hairs1+body+dress2+hairs2+hairs2_shadow"],
 		["anna_p2_dress1","posa2","hairs1+body+dress1+hairs2+hairs2_shadow+body_part2"],
 		["anna_p2_dress2","posa2","hairs1+body+dress2+hairs2+hairs2_shadow+body_part2"],
+		["anna_p3_dress1","posa3","hairs1+body+dress1+hairs2+hairs2_shadow+body_part2"],
+		["anna_p3_dress2","posa3","hairs1+body+dress2+hairs2+hairs2_shadow+body_part2"],
+		["anna_p4_dress1","posa4","hairs1+body+dress1+hairs2+hairs2_shadow"],
+		["anna_p4_dress2","posa4","hairs1+body+dress2+hairs2+hairs2_shadow"],
+		["anna_p5_dress1","posa5","hairs1+body+dress1+hairs2+hairs2_shadow+body_part2"],
+		["anna_p5_dress2","posa5","hairs1+body+dress2+hairs2+hairs2_shadow+body_part2"],
+		["anna_p6_dress1","posa6","hairs1+body+dress1+hairs2+hairs2_shadow"],
+		["anna_p6_dress2","posa6","hairs1+body+dress2+hairs2+hairs2_shadow"],
 	];
 
 	var emots = [
 		["anna_p1_nrm","posa1","nrm"],
 		["anna_p1_smi","posa1","smi"],
+		["anna_p1_smi_z","posa1","smi_z"],
 		["anna_p1_lau","posa1","lau"],
 		["anna_p1_sur","posa1","sur"],
 		["anna_p1_hm","posa1","hm"],
+		["anna_p1_hm_z","posa1","hm_z"],
+		["anna_p1_hate","posa1","hate"],
+		["anna_p1_drim","posa1","drim"],
+		["anna_p1_wtf","posa1","wtf"],
 		
 		["anna_p2_nrm","posa2","nrm"],
 		["anna_p2_smi","posa2","smi"],
+		["anna_p2_smi_z","posa2","smi_z"],
 		["anna_p2_lau","posa2","lau"],
 		["anna_p2_sur","posa2","sur"],
-		["anna_p2_hm","posa2","hm"]
+		["anna_p2_hm_z","posa2","hm_z"],
+		["anna_p2_hm","posa2","hm"],
+		["anna_p2_hate","posa2","hate"],
+		["anna_p2_drim","posa2","drim"],
+		["anna_p2_wtf","posa2","wtf"],
+		
+		["anna_p3_nrm","posa3","nrm"],
+		["anna_p3_smi","posa3","smi"],
+		["anna_p3_smi_z","posa3","smi_z"],
+		["anna_p3_lau","posa3","lau"],
+		["anna_p3_sur","posa3","sur"],
+		["anna_p3_hm_z","posa3","hm_z"],
+		["anna_p3_hm","posa3","hm"],
+		["anna_p3_hate","posa3","hate"],
+		["anna_p3_drim","posa3","drim"],
+		["anna_p3_wtf","posa3","wtf"],
+		
+		["anna_p4_nrm","posa4","nrm"],
+		["anna_p4_smi","posa4","smi"],
+		["anna_p4_smi_z","posa4","smi_z"],
+		["anna_p4_lau","posa4","lau"],
+		["anna_p4_sur","posa4","sur"],
+		["anna_p4_hm_z","posa4","hm_z"],
+		["anna_p4_hm","posa4","hm"],
+		["anna_p4_hate","posa4","hate"],
+		["anna_p4_drim","posa4","drim"],
+		["anna_p4_wtf","posa4","wtf"],
+		
+		["anna_p5_nrm","posa5","nrm"],
+		["anna_p5_smi","posa5","smi"],
+		["anna_p5_smi_z","posa5","smi_z"],
+		["anna_p5_lau","posa5","lau"],
+		["anna_p5_sur","posa5","sur"],
+		["anna_p5_hm_z","posa5","hm_z"],
+		["anna_p5_hm","posa5","hm"],
+		["anna_p5_hate","posa5","hate"],
+		["anna_p5_drim","posa5","drim"],
+		["anna_p5_wtf","posa5","wtf"],
+		
+		["anna_p6_nrm","posa6","nrm"],
+		["anna_p6_smi","posa6","smi"],
+		["anna_p6_smi_z","posa6","smi_z"],
+		["anna_p6_lau","posa6","lau"],
+		["anna_p6_sur","posa6","sur"],
+		["anna_p6_hm_z","posa6","hm_z"],
+		["anna_p6_hm","posa6","hm"],
+		["anna_p6_hate","posa6","hate"],
+		["anna_p6_drim","posa6","drim"],
+		["anna_p6_wtf","posa6","wtf"],
 	];
 
 	var avats = [
 		["_anna_nrm","posa1","hairs1+body+hairs2+hairs2_shadow+nrm"],
 		["_anna_hm","posa1","hairs1+body+hairs2+hairs2_shadow+hm"],
+		["_anna_hm_z","posa1","hairs1+body+hairs2+hairs2_shadow+hm_z"],
 		["_anna_smi","posa1","hairs1+body+hairs2+hairs2_shadow+smi"],
+		["_anna_smi_z","posa1","hairs1+body+hairs2+hairs2_shadow+smi_z"],
 		["_anna_lau","posa1","hairs1+body+hairs2+hairs2_shadow+lau"],
-		["_anna_sur","posa1","hairs1+body+hairs2+hairs2_shadow+sur"]
+		["_anna_sur","posa1","hairs1+body+hairs2+hairs2_shadow+sur"],
+		["_anna_hate","posa1","hairs1+body+hairs2+hairs2_shadow+hate"],
+		["_anna_drim","posa1","hairs1+body+hairs2+hairs2_shadow+drim"],
+		["_anna_wtf","posa1","hairs1+body+hairs2+hairs2_shadow+wtf"]
 	];
 
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);

@@ -30,9 +30,9 @@ function initComix(_path_out, _globals) {
 }
 
 ////////////////////////////////////////////////////////////////////
-function cloneDocument(ww, hh) {
+function cloneDocument(ww, hh, origin) {
 	xlayers_cache = null;
-	var duppedDocument = initialBaseDocument.duplicate();
+	var duppedDocument = origin?origin.duplicate():initialBaseDocument.duplicate();
 	if(ww && hh){
 		duppedDocument.resizeImage(UnitValue(ww,"px"),UnitValue(hh,"px"));
 	}
@@ -348,7 +348,9 @@ function exportSpriteWithRelOffset(prefix, group1, group2) {
 		}
 	}
 	app.activeDocument.crop(lr_bounds);
-	var ssp = prefix+"_ox"+(getBoundsCenter(lr_bounds)[0]-getBoundsCenter(ad_bounds)[0])+"_oy"+(getBoundsCenter(lr_bounds)[1]-getBoundsCenter(ad_bounds)[1]);
+	var ssp = prefix+
+		"_ox"+(getBoundsCenter(lr_bounds)[0]-getBoundsCenter(ad_bounds)[0])+
+		"_oy"+(getBoundsCenter(lr_bounds)[1]-getBoundsCenter(ad_bounds)[1]);
 	return exportSprite(ssp);
 }
 

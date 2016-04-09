@@ -1,4 +1,4 @@
-//@include "../../_tools/Photoshop/comixgen.jsx"
+//@include "comixgen.jsx"
 //======================================================
 function exportCharacter(bodies, emots, avats, jsonprefx, scaleFactor, pathPref, charTag){
 	var AvatarBounds = getLayerByName(app.activeDocument, "AvatarBounds", null, null);
@@ -45,10 +45,10 @@ function exportCharacter(bodies, emots, avats, jsonprefx, scaleFactor, pathPref,
 		}
 	}
 
+	duppedDocument = cloneDocument();
+	app.activeDocument = duppedDocument;
+	cropToLayerBoundsAndResize("PersBounds",null,null,scaleFactor);
 	if(bodies != null){
-		duppedDocument = cloneDocument();
-		app.activeDocument = duppedDocument;
-		cropToLayerBoundsAndResize("PersBounds",null,null,scaleFactor);
 		for(var i=0;i < bodies.length;i++){
 			switchScene(null, null);
 			switchScene(bodies[i][1],bodies[i][2],null,true);
@@ -56,22 +56,21 @@ function exportCharacter(bodies, emots, avats, jsonprefx, scaleFactor, pathPref,
 			json_cnt+="\t\t\""+bodies[i][0]+"\": \""+pathPref + jsonprefx+"/"+filename+"\",";
 			json_cnt+="\n";
 		}
-		duppedDocument.close(SaveOptions.DONOTSAVECHANGES);
 	}
 
 	if(emots != null){
 		//json_cnt+="\n";
 		for(var i=0;i < emots.length;i++){
-			duppedDocument = cloneDocument();
-			app.activeDocument = duppedDocument;
-			cropToLayerBoundsAndResize("PersBounds",null,null,scaleFactor);
+			var duppedDocument2 = cloneDocument(null,null,duppedDocument);
+			app.activeDocument = duppedDocument2;
 			switchScene(null, null);
 			var filename = exportSpriteWithRelOffset(emots[i][0], emots[i][1], emots[i][2]);
-			duppedDocument.close(SaveOptions.DONOTSAVECHANGES);
+			duppedDocument2.close(SaveOptions.DONOTSAVECHANGES);
 			json_cnt+="\t\t\""+emots[i][0]+"\": \"" + pathPref + jsonprefx+"/"+filename+"\",";
 			json_cnt+="\n";
 		}
 	}
+	duppedDocument.close(SaveOptions.DONOTSAVECHANGES);
 	json_cnt += "\t\t\"hash_"+charTag+"\": \"...\"";
 	json_cnt += "\n\t}\n}";
 	saveText(jsonprefx+"_defns.json",json_cnt);
