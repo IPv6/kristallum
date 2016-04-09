@@ -115,9 +115,14 @@ function moveLayersInsideGroup(newrootName, layersToMove) {
 	return prnt;
 }
 
+function getLayerId(layer) {
+	return layer.name+"."+(layer.parent != null?getLayerId(layer.parent):"");
+}
+
 function getLayersByName(target, name, namepart, ofKind) {
 	// this basically loops all the layers to find
-	var cache_key = "cc"+target.name+"_"+(name?name:"")+"_"+(namepart?namepart:"")+"_"+(ofKind?ofKind:"");
+	//alert("ln=["+target.name+"] id="+getLayerId(target));
+	var cache_key = "cc"+getLayerId(target)+"_"+(name?name:"")+"_"+(namepart?namepart:"")+"_"+(ofKind?ofKind:"");
 	if(!xlayers_cache){
 		xlayers_cache = {};
 	}
@@ -347,6 +352,7 @@ function exportSpriteWithRelOffset(prefix, group1, group2) {
 			lr_bounds[3].value = tbn[3].value;
 		}
 	}
+	//alert("exportSpriteWithRelOffset: "+prefix+"/"+group1+"/"+group2+": "+getLayerId(layers[0]));
 	app.activeDocument.crop(lr_bounds);
 	var ssp = prefix+
 		"_ox"+(getBoundsCenter(lr_bounds)[0]-getBoundsCenter(ad_bounds)[0])+

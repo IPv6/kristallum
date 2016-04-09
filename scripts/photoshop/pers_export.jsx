@@ -1,12 +1,12 @@
 //@include "libs/comixgen.jsx"
 //@include "libs/persutils.jsx"
 
-var exportTo = "anna";
-//var exportTo = "belpoli";
-//var exportTo = "samanta";
+//var exportTo = "anna";
 //var exportTo = "vera";
-//var exportTo = "kasatka";
+//var exportTo = "samanta";
+//var exportTo = "belpoli";
 //var exportTo = "marina";
+var exportTo = "kasatka";
 
 //var exportTo = "tamojk";
 //var exportTo = "gena";
@@ -127,39 +127,6 @@ if(exportTo == "sasha"){
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
 }
 
-if(exportTo == "belpoli"){
-
-	var bodies = [
-		["bpl_p1_dress1","posa1","body+dress1+hairs2+hairs2_shadow"],
-		["bpl_p1_dress2","posa1","body+dress2+hairs2+hairs2_shadow"],
-		["bpl_p2_dress1","posa2","body+dress1+hairs2+hairs2_shadow"],
-		["bpl_p2_dress2","posa2","body+dress2+hairs2+hairs2_shadow"],
-	];
-
-	var emots = [
-		["bpl_p1_nrm","posa1","nrm"],
-		["bpl_p1_smi","posa1","smi"],
-		["bpl_p1_lau","posa1","lau"],
-		["bpl_p1_sur","posa1","sur"],
-		["bpl_p1_hm","posa1","hm"],
-		
-		["bpl_p2_nrm","posa2","nrm"],
-		["bpl_p2_smi","posa2","smi"],
-		["bpl_p2_lau","posa2","lau"],
-		["bpl_p2_sur","posa2","sur"],
-		["bpl_p2_hm","posa2","hm"]
-	];
-
-	var avats = [
-		["_bpl_nrm","posa1","body+hairs2+hairs2_shadow+nrm"],
-		["_bpl_hm","posa1","body+hairs2+hairs2_shadow+hm"],
-		["_bpl_smi","posa1","body+hairs2+hairs2_shadow+smi"],
-		["_bpl_lau","posa1","body+hairs2+hairs2_shadow+lau"],
-		["_bpl_sur","posa1","body+hairs2+hairs2_shadow+sur"]
-	];
-
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
-}
 
 if(exportTo == "samanta"){
 
@@ -168,6 +135,8 @@ if(exportTo == "samanta"){
 		["samanta_p1_dress2","posa1","hairs1+body+dress2+hairs2+hairs2_shadow"],
 		["samanta_p2_dress1","posa2","hairs1+body+dress1+hairs2+hairs2_shadow"],
 		["samanta_p2_dress2","posa2","hairs1+body+dress2+hairs2+hairs2_shadow"],
+		["samanta_p3_dress1","posa3","hairs1+body+dress1+hairs2+hairs2_shadow"],
+		["samanta_p3_dress2","posa3","hairs1+body+dress2+hairs2+hairs2_shadow"],
 	];
 
 	var emots = [
@@ -176,20 +145,100 @@ if(exportTo == "samanta"){
 		["samanta_p1_lau","posa1","lau"],
 		["samanta_p1_sur","posa1","sur"],
 		["samanta_p1_hm","posa1","hm"],
+		["samanta_p1_shy","posa1","shy"],
 		
 		["samanta_p2_nrm","posa2","nrm"],
 		["samanta_p2_smi","posa2","smi"],
 		["samanta_p2_lau","posa2","lau"],
 		["samanta_p2_sur","posa2","sur"],
-		["samanta_p2_hm","posa2","hm"]
+		["samanta_p2_hm","posa2","hm"],
+		["samanta_p2_shy","posa2","shy"],
+		
+		["samanta_p3_nrm","posa3","nrm"],
+		["samanta_p3_smi","posa3","smi"],
+		["samanta_p3_lau","posa3","lau"],
+		["samanta_p3_sur","posa3","sur"],
+		["samanta_p3_hm","posa3","hm"],
+		["samanta_p3_shy","posa3","shy"],
 	];
 
 	var avats = [
-		["_samanta_nrm","posa1","hairs1+body+hairs2+hairs2_shadow+nrm"],
-		["_samanta_hm","posa1","hairs1+body+hairs2+hairs2_shadow+hm"],
-		["_samanta_smi","posa1","hairs1+body+hairs2+hairs2_shadow+smi"],
-		["_samanta_lau","posa1","hairs1+body+hairs2+hairs2_shadow+lau"],
-		["_samanta_sur","posa1","hairs1+body+hairs2+hairs2_shadow+sur"]
+		["_samanta_nrm","posa1","hairs1+body+hairs2+nrm"],
+		["_samanta_hm","posa1","hairs1+body+hairs2+hm"],
+		["_samanta_smi","posa1","hairs1+body+hairs2+smi"],
+		["_samanta_lau","posa1","hairs1+body+hairs2+lau"],
+		["_samanta_sur","posa1","hairs1+body+hairs2+sur"],
+		["_samanta_shy","posa1","hairs1+body+hairs2+shy"],
+	];
+
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+}
+
+if(exportTo == "belpoli"){
+
+	var bodies = [
+		["bpl_p1_dress1","posa1","body+dress1+hairs2+hairs2_shadow"],
+		["bpl_p1_dress2","posa1","body+dress2+hairs2+hairs2_shadow"],
+		["bpl_p2_dress1","posa2","body+dress1+hairs2+hairs2_shadow"],
+		["bpl_p2_dress2","posa2","body+dress2+hairs2+hairs2_shadow"],
+		["bpl_p3a_dress1","posa3","body+body_part2_1+dress1+hairs2+hairs2_shadow+dress1_part2"],
+		["bpl_p3a_dress2","posa3","body+body_part2_1+dress2+hairs2+hairs2_shadow"],
+		["bpl_p3b_dress1","posa3","body+body_part2_2+dress1+hairs2+hairs2_shadow+dress1_part2"],
+		["bpl_p3b_dress2","posa3","body+body_part2_2+dress2+hairs2+hairs2_shadow"],
+		["bpl_p3c_dress1","posa3","body+body_part2_3+dress1+hairs2+hairs2_shadow+dress1_part2"],
+		["bpl_p3c_dress2","posa3","body+body_part2_3+dress2+hairs2+hairs2_shadow"],
+	];
+
+	var emots = [
+		["bpl_p1_nrm","posa1","nrm"],
+		["bpl_p1_smi","posa1","smi"],
+		["bpl_p1_smi_z","posa1","smi_z"],
+		["bpl_p1_lau","posa1","lau"],
+		["bpl_p1_sur","posa1","sur"],
+		["bpl_p1_hm","posa1","hm"],
+		["bpl_p1_drim","posa1","drim"],
+		
+		["bpl_p2_nrm","posa2","nrm"],
+		["bpl_p2_smi","posa2","smi"],
+		["bpl_p2_smi_z","posa2","smi_z"],
+		["bpl_p2_lau","posa2","lau"],
+		["bpl_p2_sur","posa2","sur"],
+		["bpl_p2_hm","posa2","hm"],
+		["bpl_p2_drim","posa2","drim"],
+		
+		["bpl_p3a_nrm","posa3","nrm"],
+		["bpl_p3a_smi","posa3","smi"],
+		["bpl_p3a_smi_z","posa3","smi_z"],
+		["bpl_p3a_lau","posa3","lau"],
+		["bpl_p3a_sur","posa3","sur"],
+		["bpl_p3a_hm","posa3","hm"],
+		["bpl_p3a_drim","posa3","drim"],
+		
+		["bpl_p3b_nrm","posa3","nrm"],
+		["bpl_p3b_smi","posa3","smi"],
+		["bpl_p3b_smi_z","posa3","smi_z"],
+		["bpl_p3b_lau","posa3","lau"],
+		["bpl_p3b_sur","posa3","sur"],
+		["bpl_p3b_hm","posa3","hm"],
+		["bpl_p3b_drim","posa3","drim"],
+		
+		["bpl_p3c_nrm","posa3","nrm"],
+		["bpl_p3c_smi","posa3","smi"],
+		["bpl_p3c_smi_z","posa3","smi_z"],
+		["bpl_p3c_lau","posa3","lau"],
+		["bpl_p3c_sur","posa3","sur"],
+		["bpl_p3c_hm","posa3","hm"],
+		["bpl_p3c_drim","posa3","drim"],
+	];
+
+	var avats = [
+		["_bpl_nrm","posa1","body+hairs2+nrm"],
+		["_bpl_hm","posa1","body+hairs2+hm"],
+		["_bpl_smi","posa1","body+hairs2+smi"],
+		["_bpl_smi_z","posa1","body+hairs2+smi_z"],
+		["_bpl_lau","posa1","body+hairs2+lau"],
+		["_bpl_sur","posa1","body+hairs2+sur"],
+		["_bpl_drim","posa1","body+hairs2+drim"],
 	];
 
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
@@ -281,16 +330,16 @@ if(exportTo == "anna"){
 	];
 
 	var avats = [
-		["_anna_nrm","posa1","hairs1+body+hairs2+hairs2_shadow+nrm"],
-		["_anna_hm","posa1","hairs1+body+hairs2+hairs2_shadow+hm"],
-		["_anna_hm_z","posa1","hairs1+body+hairs2+hairs2_shadow+hm_z"],
-		["_anna_smi","posa1","hairs1+body+hairs2+hairs2_shadow+smi"],
-		["_anna_smi_z","posa1","hairs1+body+hairs2+hairs2_shadow+smi_z"],
-		["_anna_lau","posa1","hairs1+body+hairs2+hairs2_shadow+lau"],
-		["_anna_sur","posa1","hairs1+body+hairs2+hairs2_shadow+sur"],
-		["_anna_hate","posa1","hairs1+body+hairs2+hairs2_shadow+hate"],
-		["_anna_drim","posa1","hairs1+body+hairs2+hairs2_shadow+drim"],
-		["_anna_wtf","posa1","hairs1+body+hairs2+hairs2_shadow+wtf"]
+		["_anna_nrm","posa1","hairs1+body+hairs2+nrm"],
+		["_anna_hm","posa1","hairs1+body+hairs2+hm"],
+		["_anna_hm_z","posa1","hairs1+body+hairs2+hm_z"],
+		["_anna_smi","posa1","hairs1+body+hairs2+smi"],
+		["_anna_smi_z","posa1","hairs1+body+hairs2+smi_z"],
+		["_anna_lau","posa1","hairs1+body+hairs2+lau"],
+		["_anna_sur","posa1","hairs1+body+hairs2+sur"],
+		["_anna_hate","posa1","hairs1+body+hairs2+hate"],
+		["_anna_drim","posa1","hairs1+body+hairs2+drim"],
+		["_anna_wtf","posa1","hairs1+body+hairs2+wtf"]
 	];
 
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
@@ -335,6 +384,10 @@ if(exportTo == "vera"){
 		["vera_p1_dress2","posa1","body+dress2+hairs2+hairs2_shadow+hairs3_dress2"],
 		["vera_p2_dress1","posa2","body+dress1+hairs2+hairs2_shadow+hairs3_dress1+body_part2"],
 		["vera_p2_dress2","posa2","body+dress2+hairs2+hairs2_shadow+hairs3_dress2+body_part2"],
+		["vera_p3_dress1","posa3","body+dress1+hairs2+hairs2_shadow+hairs3_dress1"],
+		["vera_p3_dress2","posa3","body+dress2+hairs2+hairs2_shadow+hairs3_dress2"],
+		["vera_p4_dress1","posa4","body+dress1+hairs2+hairs2_shadow+hairs3_dress1"],
+		["vera_p4_dress2","posa4","body+dress2+hairs2+hairs2_shadow+hairs3_dress2"],
 	];
 
 	var emots = [
@@ -350,16 +403,30 @@ if(exportTo == "vera"){
 		["vera_p2_lau","posa2","lau"],
 		["vera_p2_sur","posa2","sur"],
 		["vera_p2_rage","posa2","rage"],
-		["vera_p2_hm","posa2","hm"]
+		["vera_p2_hm","posa2","hm"],
+		
+		["vera_p3_nrm","posa3","nrm"],
+		["vera_p3_smi","posa3","smi"],
+		["vera_p3_lau","posa3","lau"],
+		["vera_p3_sur","posa3","sur"],
+		["vera_p3_rage","posa3","rage"],
+		["vera_p3_hm","posa3","hm"],
+		
+		["vera_p4_nrm","posa4","nrm"],
+		["vera_p4_smi","posa4","smi"],
+		["vera_p4_lau","posa4","lau"],
+		["vera_p4_sur","posa4","sur"],
+		["vera_p4_rage","posa4","rage"],
+		["vera_p4_hm","posa4","hm"],
 	];
 
 	var avats = [
-		["_vera_nrm","posa1","body+hairs2+hairs2_shadow+nrm"],
-		["_vera_smi","posa1","body+hairs2+hairs2_shadow+smi"],
-		["_vera_lau","posa1","body+hairs2+hairs2_shadow+lau"],
-		["_vera_sur","posa1","body+hairs2+hairs2_shadow+sur"],
-		["_vera_hm","posa1","body+hairs2+hairs2_shadow+hm"],
-		["_vera_rage","posa1","body+hairs2+hairs2_shadow+rage"]
+		["_vera_nrm","posa1","body+hairs2+nrm"],
+		["_vera_smi","posa1","body+hairs2+smi"],
+		["_vera_lau","posa1","body+hairs2+lau"],
+		["_vera_sur","posa1","body+hairs2+sur"],
+		["_vera_hm","posa1","body+hairs2+hm"],
+		["_vera_rage","posa1","body+hairs2+rage"]
 	];
 
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
@@ -368,10 +435,12 @@ if(exportTo == "vera"){
 if(exportTo == "kasatka"){
 
 	var bodies = [
-		["kasatka_p1_dress1","posa1","hairs1+body+dress1+hairs2+hairs2_shadow"],
-		["kasatka_p1_dress2","posa1","hairs1+body+dress2+hairs2+hairs2_shadow"],
-		["kasatka_p2_dress1","posa2","hairs1+body+dress1+hairs2+hairs2_shadow"],
-		["kasatka_p2_dress2","posa2","hairs1+body+dress2+hairs2+hairs2_shadow"],
+		["kasatka_p1_dress1","posa1","body+dress1+hairs2+hairs2_shadow"],//hairs1
+		["kasatka_p1_dress2","posa1","body+dress2+hairs2+hairs2_shadow"],
+		["kasatka_p2_dress1","posa2","body+dress1+hairs2+hairs2_shadow"],
+		["kasatka_p2_dress2","posa2","body+dress2+hairs2+hairs2_shadow"],
+		["kasatka_p3_dress1","posa3","body+dress1+hairs2+hairs2_shadow"],
+		["kasatka_p3_dress2","posa3","body+dress2+hairs2+hairs2_shadow"],
 	];
 
 	var emots = [
@@ -385,15 +454,21 @@ if(exportTo == "kasatka"){
 		["kasatka_p2_smi","posa2","smi"],
 		["kasatka_p2_lau","posa2","lau"],
 		["kasatka_p2_sur","posa2","sur"],
-		["kasatka_p2_hm","posa2","hm"]
+		["kasatka_p2_hm","posa2","hm"],
+		
+		["kasatka_p3_nrm","posa3","nrm"],
+		["kasatka_p3_smi","posa3","smi"],
+		["kasatka_p3_lau","posa3","lau"],
+		["kasatka_p3_sur","posa3","sur"],
+		["kasatka_p3_hm","posa3","hm"],
 	];
 
 	var avats = [
-		["_kasatka_nrm","posa1","hairs1+body+hairs2+hairs2_shadow+nrm"],
-		["_kasatka_hm","posa1","hairs1+body+hairs2+hairs2_shadow+hm"],
-		["_kasatka_smi","posa1","hairs1+body+hairs2+hairs2_shadow+smi"],
-		["_kasatka_lau","posa1","hairs1+body+hairs2+hairs2_shadow+lau"],
-		["_kasatka_sur","posa1","hairs1+body+hairs2+hairs2_shadow+sur"]
+		["_kasatka_nrm","posa1","body+hairs2+nrm"],//hairs1
+		["_kasatka_hm","posa1","body+hairs2+hm"],
+		["_kasatka_smi","posa1","body+hairs2+smi"],
+		["_kasatka_lau","posa1","body+hairs2+lau"],
+		["_kasatka_sur","posa1","body+hairs2+sur"]
 	];
 
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
@@ -402,15 +477,21 @@ if(exportTo == "kasatka"){
 if(exportTo == "marina"){
 
 	var bodies = [
-		["marina_p1_dress1a","posa1","hairs3b+body+dress1+hairs2a+hairs2_shadow+hairs3a+hairs4a"],
-		["marina_p1_dress2a","posa1","hairs3b+body+dress2+hairs2a+hairs2_shadow+hairs3a+hairs4a"],
-		["marina_p2_dress1a","posa2","hairs3b+body+dress1+hairs2a+hairs2_shadow+hairs3a+hairs4a"],
-		["marina_p2_dress2a","posa2","hairs3b+body+dress2+hairs2a+hairs2_shadow+hairs3a+hairs4a"],
+		["marina_p1_dress1","posa1","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
+		["marina_p1_dress2","posa1","hairs4b+hairs4a+body+dress2+hairs2a+hairs2_shadow"],
+		["marina_p1_dress3","posa1","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
+
+		["marina_p2_dress1","posa2","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
+		["marina_p2_dress2","posa2","hairs4b+hairs4a+body+dress2+hairs2a+hairs2_shadow"],
+		["marina_p2_dress3","posa2","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
 		
-		["marina_p1_dress1b","posa1","hairs1+body+dress1+hairs2a+hairs2_shadow"],
-		["marina_p1_dress2b","posa1","hairs1+body+dress2+hairs2a+hairs2_shadow"],
-		["marina_p2_dress1b","posa2","hairs1+body+dress1+hairs2a+hairs2_shadow"],
-		["marina_p2_dress2b","posa2","hairs1+body+dress2+hairs2a+hairs2_shadow"]
+		["marina_p3_dress1","posa3","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
+		["marina_p3_dress2","posa3","hairs4b+hairs4a+body+dress2+hairs2a+hairs2_shadow"],
+		["marina_p3_dress3","posa3","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
+		
+		["marina_p4_dress1","posa4","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
+		["marina_p4_dress2","posa4","hairs4b+hairs4a+body+dress2+hairs2a+hairs2_shadow"],
+		["marina_p4_dress3","posa4","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
 	];
 
 	var emots = [
@@ -424,15 +505,27 @@ if(exportTo == "marina"){
 		["marina_p2_smi","posa2","smi"],
 		["marina_p2_lau","posa2","lau"],
 		["marina_p2_sur","posa2","sur"],
-		["marina_p2_hm","posa2","hm"]
+		["marina_p2_hm","posa2","hm"],
+		
+		["marina_p3_nrm","posa3","nrm"],
+		["marina_p3_smi","posa3","smi"],
+		["marina_p3_lau","posa3","lau"],
+		["marina_p3_sur","posa3","sur"],
+		["marina_p3_hm","posa3","hm"],
+		
+		["marina_p4_nrm","posa4","nrm"],
+		["marina_p4_smi","posa4","smi"],
+		["marina_p4_lau","posa4","lau"],
+		["marina_p4_sur","posa4","sur"],
+		["marina_p4_hm","posa4","hm"],
 	];
 
 	var avats = [
-		["_marina_nrm","posa1","hairs3b+body+hairs2a+hairs3a+hairs4a+nrm"],
-		["_marina_hm","posa1","hairs3b+body+hairs2a+hairs3a+hairs4a+hm"],
-		["_marina_smi","posa1","hairs3b+body+hairs2a+hairs3a+hairs4a+smi"],
-		["_marina_lau","posa1","hairs3b+body+hairs2a+hairs3a+hairs4a+lau"],
-		["_marina_sur","posa1","hairs3b+body+hairs2a+hairs3a+hairs4a+sur"]
+		["_marina_nrm","posa1","hairs3b+body+hairs2a+hairs3a+nrm"],
+		["_marina_hm","posa1","hairs3b+body+hairs2a+hairs3a+hm"],
+		["_marina_smi","posa1","hairs3b+body+hairs2a+hairs3a+smi"],
+		["_marina_lau","posa1","hairs3b+body+hairs2a+hairs3a+lau"],
+		["_marina_sur","posa1","hairs3b+body+hairs2a+hairs3a+sur"]
 	];
 
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
@@ -594,11 +687,11 @@ if(exportTo == "janna"){
 	];
 
 	var avats = [
-		["_janna_nrm","posa1","body+nrm+glasses+hairs2+hairs2_shadow"],
-		["_janna_hm","posa1","body+hm+glasses+hairs2+hairs2_shadow"],
-		["_janna_smi","posa1","body+smi+glasses+hairs2+hairs2_shadow"],
-		["_janna_lau","posa1","body+lau+glasses+hairs2+hairs2_shadow"],
-		["_janna_sur","posa1","body+sur+glasses+hairs2+hairs2_shadow"]
+		["_janna_nrm","posa1","body+nrm+glasses+hairs2"],
+		["_janna_hm","posa1","body+hm+glasses+hairs2"],
+		["_janna_smi","posa1","body+smi+glasses+hairs2"],
+		["_janna_lau","posa1","body+lau+glasses+hairs2"],
+		["_janna_sur","posa1","body+sur+glasses+hairs2"]
 	];
 
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
