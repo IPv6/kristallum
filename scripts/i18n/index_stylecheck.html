@@ -17,9 +17,13 @@ h3 { color: #333; font-size: 16px; margin-bottom: 0; padding-bottom: 0; }
 var _sameworda = "_sameworda";
 var _minen4sameword = 4;
 var rulezz = [
-	{name:"many",countIf:[" поня", " ладно"],
+	{name:"many",countIf:[" поня"],// понятно понял
 		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
-	{name:"many",countIf:["хорошо", "отлично"],
+	{name:"many",countIf:[" прост"],// просто прост
+		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+	{name:"many",countIf:[" вообщ"],
+		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+	{name:"many",countIf:["хорошо", "отлично", "ладно"],
 		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
 
 	{name:"same",countIf:[_sameworda], // dbg: true,
