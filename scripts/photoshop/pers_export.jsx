@@ -435,12 +435,12 @@ if(exportTo == "vera"){
 if(exportTo == "kasatka"){
 
 	var bodies = [
-		["kasatka_p1_dress1","posa1","body+dress1+hairs2+hairs2_shadow"],//hairs1
-		["kasatka_p1_dress2","posa1","body+dress2+hairs2+hairs2_shadow"],
-		["kasatka_p2_dress1","posa2","body+dress1+hairs2+hairs2_shadow"],
-		["kasatka_p2_dress2","posa2","body+dress2+hairs2+hairs2_shadow"],
-		["kasatka_p3_dress1","posa3","body+dress1+hairs2+hairs2_shadow"],
-		["kasatka_p3_dress2","posa3","body+dress2+hairs2+hairs2_shadow"],
+		["kasatka_p1_dress1","posa1","hairs1+body+dress1+hairs2+hairs2_shadow"],
+		["kasatka_p1_dress2","posa1","hairs1+body+dress2+hairs2+hairs2_shadow"],
+		["kasatka_p2_dress1","posa2","hairs1+body+dress1+hairs2+hairs2_shadow"],
+		["kasatka_p2_dress2","posa2","hairs1+body+dress2+hairs2+hairs2_shadow"],
+		["kasatka_p3_dress1","posa3","hairs1+body+dress1+hairs2+hairs2_shadow"],
+		["kasatka_p3_dress2","posa3","hairs1+body+dress2+hairs2+hairs2_shadow"],
 	];
 
 	var emots = [
@@ -464,11 +464,11 @@ if(exportTo == "kasatka"){
 	];
 
 	var avats = [
-		["_kasatka_nrm","posa1","body+hairs2+nrm"],//hairs1
-		["_kasatka_hm","posa1","body+hairs2+hm"],
-		["_kasatka_smi","posa1","body+hairs2+smi"],
-		["_kasatka_lau","posa1","body+hairs2+lau"],
-		["_kasatka_sur","posa1","body+hairs2+sur"]
+		["_kasatka_nrm","posa1","hairs1+body+hairs2+nrm"],
+		["_kasatka_hm","posa1","hairs1+body+hairs2+hm"],
+		["_kasatka_smi","posa1","hairs1+body+hairs2+smi"],
+		["_kasatka_lau","posa1","hairs1+body+hairs2+lau"],
+		["_kasatka_sur","posa1","hairs1+body+hairs2+sur"],
 	];
 
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
