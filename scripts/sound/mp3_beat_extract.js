@@ -1,5 +1,5 @@
-// cscript "c:\_WPLabs\PROJECTS_GAMES\Dropbox\_docs\_tools\Scripts\mp3_beat_extract.js" "c:\_WPLabs\PROJECTS_GAMES\Dropbox\web-static\static-ldu\vn_storyline\music2"
-// cscript "c:\_WPLabs\PROJECTS_GAMES\Dropbox\_docs\_tools\Scripts\mp3_beat_extract.js" "c:\_WPLabs\PROJECTS_GAMES\Dropbox\web-static\static-ldu\station"
+// cd "c:\_WPLabs\PROJECTS_GAMES\Github-kristallum\scripts\sound\"
+// cscript "c:\_WPLabs\PROJECTS_GAMES\Github-kristallum\scripts\sound\mp3_beat_extract.js" "c:\_WPLabs\PROJECTS_GAMES\Bitbucket-priv\Dropbox\web\static-ldu\vn_storyline\music2"
 
 // c:\_WPLabs\_Portable\SonicAnnot\sonic-annotator.exe -t beat-extract.rdf -w json d:\Downloads\bg_virtv2_bb.mp3
 
@@ -51,7 +51,7 @@ for(var i=0;i<totallist.length;i++){
 	var mp3file = totallist[i];
 	var beat_cmd = beat_exe_dir + "sonic-annotator.exe -t \"beat-extract.rdf\"  -w json \""+mp3file+"\"";
 	WScript.Echo("Grabbing: "+beat_cmd);
-	WshShell.Run(beat_cmd,7,true);//1 - normal
+	WshShell.Run(beat_cmd,7,true);//1 - normal, 7 - minimized
 	handled_ok++;
 }
 

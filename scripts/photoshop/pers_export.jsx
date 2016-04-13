@@ -3,10 +3,10 @@
 
 //var exportTo = "anna";
 //var exportTo = "vera";
-//var exportTo = "samanta";
+var exportTo = "samanta";
 //var exportTo = "belpoli";
 //var exportTo = "marina";
-var exportTo = "kasatka";
+//var exportTo = "kasatka";
 
 //var exportTo = "tamojk";
 //var exportTo = "gena";
@@ -478,54 +478,79 @@ if(exportTo == "marina"){
 
 	var bodies = [
 		["marina_p1_dress1","posa1","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
-		["marina_p1_dress2","posa1","hairs4b+hairs4a+body+dress2+hairs2a+hairs2_shadow"],
+		["marina_p1_dress2","posa1","hairs4b+body+dress2+hairs2a+hairs2_shadow"],
 		["marina_p1_dress3","posa1","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
 
 		["marina_p2_dress1","posa2","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
-		["marina_p2_dress2","posa2","hairs4b+hairs4a+body+dress2+hairs2a+hairs2_shadow"],
+		["marina_p2_dress2","posa2","hairs4b+body+dress2+hairs2a+hairs2_shadow"],
 		["marina_p2_dress3","posa2","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
 		
 		["marina_p3_dress1","posa3","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
-		["marina_p3_dress2","posa3","hairs4b+hairs4a+body+dress2+hairs2a+hairs2_shadow"],
+		["marina_p3_dress2","posa3","hairs4b+body+dress2+hairs2a+hairs2_shadow"],
 		["marina_p3_dress3","posa3","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
 		
 		["marina_p4_dress1","posa4","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
-		["marina_p4_dress2","posa4","hairs4b+hairs4a+body+dress2+hairs2a+hairs2_shadow"],
+		["marina_p4_dress2","posa4","hairs4b+body+dress2+hairs2a+hairs2_shadow"],
 		["marina_p4_dress3","posa4","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
 	];
 
 	var emots = [
-		["marina_p1_nrm","posa1","nrm"],
-		["marina_p1_smi","posa1","smi"],
-		["marina_p1_lau","posa1","lau"],
-		["marina_p1_sur","posa1","sur"],
-		["marina_p1_hm","posa1","hm"],
+		["marina_p1_nrm","posa1","nrm+hairs6b"],
+		["marina_p1_smi","posa1","smi+hairs6b"],
+		["marina_p1_lau","posa1","lau+hairs6b"],
+		["marina_p1_sur","posa1","sur+hairs6b"],
+		["marina_p1_hm","posa1","hm+hairs6b"],
+		["marina_p1_nrm_z","posa1","nrm+hairs6a"],
+		["marina_p1_smi_z","posa1","smi+hairs6a"],
+		["marina_p1_lau_z","posa1","lau+hairs6a"],
+		["marina_p1_sur_z","posa1","sur+hairs6a"],
+		["marina_p1_hm_z","posa1","hm+hairs6a"],
 		
-		["marina_p2_nrm","posa2","nrm"],
-		["marina_p2_smi","posa2","smi"],
-		["marina_p2_lau","posa2","lau"],
-		["marina_p2_sur","posa2","sur"],
-		["marina_p2_hm","posa2","hm"],
+		["marina_p2_nrm","posa2","nrm+hairs6b"],
+		["marina_p2_smi","posa2","smi+hairs6b"],
+		["marina_p2_lau","posa2","lau+hairs6b"],
+		["marina_p2_sur","posa2","sur+hairs6b"],
+		["marina_p2_hm","posa2","hm+hairs6b"],
+		["marina_p2_nrm_z","posa2","nrm+hairs6a"],
+		["marina_p2_smi_z","posa2","smi+hairs6a"],
+		["marina_p2_lau_z","posa2","lau+hairs6a"],
+		["marina_p2_sur_z","posa2","sur+hairs6a"],
+		["marina_p2_hm_z","posa2","hm+hairs6a"],
 		
-		["marina_p3_nrm","posa3","nrm"],
-		["marina_p3_smi","posa3","smi"],
-		["marina_p3_lau","posa3","lau"],
-		["marina_p3_sur","posa3","sur"],
-		["marina_p3_hm","posa3","hm"],
+		["marina_p3_nrm","posa3","nrm+hairs6b"],
+		["marina_p3_smi","posa3","smi+hairs6b"],
+		["marina_p3_lau","posa3","lau+hairs6b"],
+		["marina_p3_sur","posa3","sur+hairs6b"],
+		["marina_p3_hm","posa3","hm+hairs6b"],
+		["marina_p3_nrm_z","posa3","nrm+hairs6a"],
+		["marina_p3_smi_z","posa3","smi+hairs6a"],
+		["marina_p3_lau_z","posa3","lau+hairs6a"],
+		["marina_p3_sur_z","posa3","sur+hairs6a"],
+		["marina_p3_hm_z","posa3","hm+hairs6a"],
 		
-		["marina_p4_nrm","posa4","nrm"],
-		["marina_p4_smi","posa4","smi"],
-		["marina_p4_lau","posa4","lau"],
-		["marina_p4_sur","posa4","sur"],
-		["marina_p4_hm","posa4","hm"],
+		["marina_p4_nrm","posa4","nrm+hairs6b"],
+		["marina_p4_smi","posa4","smi+hairs6b"],
+		["marina_p4_lau","posa4","lau+hairs6b"],
+		["marina_p4_sur","posa4","sur+hairs6b"],
+		["marina_p4_hm","posa4","hm+hairs6b"],
+		["marina_p4_nrm_z","posa4","nrm+hairs6a"],
+		["marina_p4_smi_z","posa4","smi+hairs6a"],
+		["marina_p4_lau_z","posa4","lau+hairs6a"],
+		["marina_p4_sur_z","posa4","sur+hairs6a"],
+		["marina_p4_hm_z","posa4","hm+hairs6a"],
 	];
 
 	var avats = [
-		["_marina_nrm","posa1","hairs3b+body+hairs2a+hairs3a+nrm"],
-		["_marina_hm","posa1","hairs3b+body+hairs2a+hairs3a+hm"],
-		["_marina_smi","posa1","hairs3b+body+hairs2a+hairs3a+smi"],
-		["_marina_lau","posa1","hairs3b+body+hairs2a+hairs3a+lau"],
-		["_marina_sur","posa1","hairs3b+body+hairs2a+hairs3a+sur"]
+		["_marina_nrm","posa1","hairs3b+body+hairs2a+hairs3a+nrm+hairs6b"],
+		["_marina_hm","posa1","hairs3b+body+hairs2a+hairs3a+hm+hairs6b"],
+		["_marina_smi","posa1","hairs3b+body+hairs2a+hairs3a+smi+hairs6b"],
+		["_marina_lau","posa1","hairs3b+body+hairs2a+hairs3a+lau+hairs6b"],
+		["_marina_sur","posa1","hairs3b+body+hairs2a+hairs3a+sur+hairs6b"],
+		["_marina_nrm_z","posa1","hairs3b+body+hairs2a+hairs3a+nrm+hairs6a"],
+		["_marina_hm_z","posa1","hairs3b+body+hairs2a+hairs3a+hm+hairs6a"],
+		["_marina_smi_z","posa1","hairs3b+body+hairs2a+hairs3a+smi+hairs6a"],
+		["_marina_lau_z","posa1","hairs3b+body+hairs2a+hairs3a+lau+hairs6a"],
+		["_marina_sur_z","posa1","hairs3b+body+hairs2a+hairs3a+sur+hairs6a"],
 	];
 
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
