@@ -3,10 +3,10 @@
 
 //var exportTo = "anna";
 //var exportTo = "vera";
-var exportTo = "samanta";
+//var exportTo = "samanta";
 //var exportTo = "belpoli";
 //var exportTo = "marina";
-//var exportTo = "kasatka";
+var exportTo = "kasatka";
 
 //var exportTo = "tamojk";
 //var exportTo = "gena";
@@ -480,18 +480,27 @@ if(exportTo == "marina"){
 		["marina_p1_dress1","posa1","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
 		["marina_p1_dress2","posa1","hairs4b+body+dress2+hairs2a+hairs2_shadow"],
 		["marina_p1_dress3","posa1","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
+		["marina_p1_dress4","posa1","hairs5b+body+dress4+hairs2a+hairs2_shadow"],
 
 		["marina_p2_dress1","posa2","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
 		["marina_p2_dress2","posa2","hairs4b+body+dress2+hairs2a+hairs2_shadow"],
 		["marina_p2_dress3","posa2","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
+		["marina_p2_dress4","posa2","hairs5b+body+dress4+hairs2a+hairs2_shadow"],
 		
 		["marina_p3_dress1","posa3","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
 		["marina_p3_dress2","posa3","hairs4b+body+dress2+hairs2a+hairs2_shadow"],
 		["marina_p3_dress3","posa3","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
+		["marina_p3_dress4","posa3","hairs5b+body+dress4+hairs2a+hairs2_shadow"],
 		
 		["marina_p4_dress1","posa4","hairs3b+hairs3a+body+dress1+hairs2a+hairs2_shadow"],
 		["marina_p4_dress2","posa4","hairs4b+body+dress2+hairs2a+hairs2_shadow"],
 		["marina_p4_dress3","posa4","hairs5b+body+dress3+hairs2a+hairs2_shadow"],
+		["marina_p4_dress4","posa4","hairs5b+body+dress4+hairs2a+hairs2_shadow"],
+		
+		["marina_p5_dress1","posa5","hairs3b+hairs3a+body+body_part2+dress1+hairs2a+hairs2_shadow"],
+		["marina_p5_dress2","posa5","hairs4b+body+body_part2+dress2+dress2_part2+hairs2a+hairs2_shadow"],
+		["marina_p5_dress3","posa5","hairs5b+body+body_part2+dress3+hairs2a+hairs2_shadow"],
+		["marina_p5_dress4","posa5","hairs5b+body+body_part2+dress4+hairs2a+hairs2_shadow"],
 	];
 
 	var emots = [
@@ -538,6 +547,17 @@ if(exportTo == "marina"){
 		["marina_p4_lau_z","posa4","lau+hairs6a"],
 		["marina_p4_sur_z","posa4","sur+hairs6a"],
 		["marina_p4_hm_z","posa4","hm+hairs6a"],
+		
+		["marina_p5_nrm","posa5","nrm+hairs6b"],
+		["marina_p5_smi","posa5","smi+hairs6b"],
+		["marina_p5_lau","posa5","lau+hairs6b"],
+		["marina_p5_sur","posa5","sur+hairs6b"],
+		["marina_p5_hm","posa5","hm+hairs6b"],
+		["marina_p5_nrm_z","posa5","nrm+hairs6a"],
+		["marina_p5_smi_z","posa5","smi+hairs6a"],
+		["marina_p5_lau_z","posa5","lau+hairs6a"],
+		["marina_p5_sur_z","posa5","sur+hairs6a"],
+		["marina_p5_hm_z","posa5","hm+hairs6a"],
 	];
 
 	var avats = [
