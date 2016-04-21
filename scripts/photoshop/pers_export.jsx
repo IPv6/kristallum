@@ -6,7 +6,7 @@
 //var exportTo = "samanta";
 //var exportTo = "belpoli";
 //var exportTo = "marina";
-var exportTo = "kasatka";
+//var exportTo = "kasatka";
 
 //var exportTo = "tamojk";
 //var exportTo = "gena";
@@ -17,7 +17,7 @@ var exportTo = "kasatka";
 
 //var exportTo = "katya";
 //var exportTo = "prof";
-//var exportTo = "sasha";
+var exportTo = "sasha";
 
 var globals = {};
 initComix("d:/Downloads/"+exportTo, globals);
