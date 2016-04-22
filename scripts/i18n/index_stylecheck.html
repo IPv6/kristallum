@@ -26,21 +26,25 @@ var rulezz = [
 	{name:"many",countIf:["хорошо", "отлично", "ладно"],
 		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
 
-	{name:"same",countIf:[_sameworda], // dbg: true,
-		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
+	{name:"leng_adlg",countIf:["=>", "<="],
+		onlyIf:["**", "<=", "=>"], resetIf:["**", "scene","-!", "-o"],okIfMaxRepeat:20},
+	{name:"leng_rdlg",countIf:["=>"],
+		onlyIf:["**", "<=", "=>"], resetIf:["**", "<=", "scene","-!", "-o"],okIfMaxRepeat:7},
+	{name:"leng_ldlg",countIf:["<="],
+		onlyIf:["**", "<=", "=>"], resetIf:["**", "=>", "scene","-!", "-o"],okIfMaxRepeat:7},
+
+	{name:"need_sound",countIf:["**", "<=", "=>"],
+		onlyIf:["**", "<=", "=>"], resetIf:["sound"],okIfMaxRepeat:60},
+	{name:"need_music",countIf:["**", "<=", "=>"],
+		onlyIf:["**", "<=", "=>"], resetIf:["music"],okIfMaxRepeat:150},
 	//{name:"same_l",countIf:[_sameworda],
 	//	onlyIf:["<="], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
 	//{name:"same_r",countIf:[_sameworda],
 	//	onlyIf:["=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
 	//{name:"same_c",countIf:[_sameworda],
 	//	onlyIf:["**"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
-
-	{name:"leng_adlg",countIf:["=>", "<="],
-		onlyIf:["**", "<=", "=>"], resetIf:["**", "scene","-!", "-o"],okIfMaxRepeat:20},
-	{name:"leng_rdlg",countIf:["=>"],
-		onlyIf:["**", "<=", "=>"], resetIf:["**", "<=", "scene","-!", "-o"],okIfMaxRepeat:7},
-	{name:"leng_ldlg",countIf:["<="],
-		onlyIf:["**", "<=", "=>"], resetIf:["**", "=>", "scene","-!", "-o"],okIfMaxRepeat:7}
+	{name:"same",countIf:[_sameworda], // dbg: true,
+		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o", "sound", "music"],okIfMinDistanceInLines:4}
 ];
 
 var single_3manis = [
@@ -55,7 +59,7 @@ var single_3manis = [
 for(var i=0;i<single_3manis.length;i++){
 	rulezz.push(
 	{name:"many",countIf:[single_3manis[i]],
-		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:1}
+		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o", "sound", "music"],okIfMinDistanceInLines:1}
 	);
 }
 
