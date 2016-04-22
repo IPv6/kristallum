@@ -97,7 +97,9 @@ if(exportTo == "sasha"){
 		["sasha_p1_dress1","posa1","body+dress1+hairs1+hairs2+hairs2_shadow"],
 		["sasha_p1_dress2","posa1","body+dress2+hairs1+hairs2+hairs2_shadow"],
 		["sasha_p2_dress1","posa2","body+dress1+hairs1+hairs2+hairs2_shadow"],
-		["sasha_p2_dress2","posa2","body+dress2+hairs1+hairs2+hairs2_shadow"]
+		["sasha_p2_dress2","posa2","body+dress2+hairs1+hairs2+hairs2_shadow"],
+		["sasha_p3_dress1","posa3","body+dress1+hairs1+hairs2+hairs2_shadow"],
+		["sasha_p3_dress2","posa3","body+dress2+hairs1+hairs2+hairs2_shadow"],
 	];
 
 	// Emotions sasha
@@ -112,7 +114,13 @@ if(exportTo == "sasha"){
 		["sasha_p2_smi","posa2","smi"],
 		["sasha_p2_lau","posa2","lau"],
 		["sasha_p2_hm","posa2","hm"],
-		["sasha_p2_sur","posa2","sur"]
+		["sasha_p2_sur","posa2","sur"],
+		
+		["sasha_p3_nrm","posa3","nrm"],
+		["sasha_p3_smi","posa3","smi"],
+		["sasha_p3_lau","posa3","lau"],
+		["sasha_p3_hm","posa3","hm"],
+		["sasha_p3_sur","posa3","sur"],
 	];
 
 	// Avatar sasha
