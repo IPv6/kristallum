@@ -92,7 +92,8 @@ for(var i=0;i<totallist.length;i++){
 		WshFSO.CreateFolder(output_cat);
 	}
 	// http://stackoverflow.com/questions/19848511/make-thumbs-from-videos-with-handbrake-and-php
-	var handbrake_cmd = handbrake_exe + " -i \""+videof.path+"\" -o \""+output_cat+"\\"+output_filepref+".mp4\" -f av_mp4 -e mpeg4 -q 10 -r 30 -E av_aac -X 1024";
+	//var handbrake_cmd = handbrake_exe + " -i \""+videof.path+"\" -o \""+output_cat+"\\"+output_filepref+".mp4\" -f av_mp4 -e mpeg4 -q 10 -r 30 -E av_aac -X 1024";
+	var handbrake_cmd = handbrake_exe + " -i \""+videof.path+"\" -o \""+output_cat+"\\"+output_filepref+".mp4\" -f av_mp4 -e x264 --x264-profile main -q 20 -r 30 --pfr -E av_aac -X 1024";
 	WScript.Echo("Grabbing: "+handbrake_cmd);
 	//WScript.Echo(handbrake_cmd);
 	WshShell.Run(handbrake_cmd,7,true);//1 - normal
