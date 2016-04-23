@@ -412,6 +412,7 @@ if(exportTo == "vera"){
 		["vera_p2_lau","posa2","lau"],
 		["vera_p2_sur","posa2","sur"],
 		["vera_p2_hm","posa2","hm"],
+		["vera_p2_rage","posa2","rage"],
 		["vera_p2_rage_z","posa2","rage_z"],
 		
 		["vera_p3_nrm","posa3","nrm"],
@@ -419,6 +420,7 @@ if(exportTo == "vera"){
 		["vera_p3_lau","posa3","lau"],
 		["vera_p3_sur","posa3","sur"],
 		["vera_p3_hm","posa3","hm"],
+		["vera_p3_rage","posa3","rage"],
 		["vera_p3_rage_z","posa3","rage_z"],
 		
 		["vera_p4_nrm","posa4","nrm"],
@@ -426,6 +428,7 @@ if(exportTo == "vera"){
 		["vera_p4_lau","posa4","lau"],
 		["vera_p4_sur","posa4","sur"],
 		["vera_p4_hm","posa4","hm"],
+		["vera_p4_rage","posa4","rage"],
 		["vera_p4_rage_z","posa4","rage_z"],
 	];
 
