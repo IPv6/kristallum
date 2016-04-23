@@ -1,4 +1,4 @@
-// cscript "c:\_WPLabs\PROJECTS_GAMES\Github-kristallum\scripts\misc\handbrake_video2ipad.js" "d:\_Video\_ipv6\Gintama TV-1" "d:\_Video\_ipv6\_ipad"
+// cscript "c:\_WPLabs\PROJECTS_GAMES\Github-kristallum\scripts\misc\handbrake_video2ipad.js" "d:\_Video\_ipv6\gintama\Gintama TV-1" "d:\_Video\_ipv6\_ipad"
 
 
 
