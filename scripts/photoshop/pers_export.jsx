@@ -2,7 +2,7 @@
 //@include "libs/persutils.jsx"
 
 //var exportTo = "anna";
-var exportTo = "vera";
+//var exportTo = "vera";
 //var exportTo = "samanta";
 //var exportTo = "belpoli";
 //var exportTo = "marina";
@@ -13,7 +13,7 @@ var exportTo = "vera";
 //var exportTo = "artem";
 //var exportTo = "anton";
 //var exportTo = "ura";
-//var exportTo = "janna";
+var exportTo = "janna";
 
 //var exportTo = "katya";
 //var exportTo = "prof";
@@ -726,8 +726,11 @@ if(exportTo == "ura"){
 if(exportTo == "janna"){
 
 	var bodies = [
-		["janna_p1_dress1","posa1","body+dress1+hairs2+hairs2_shadow"],
-		["janna_p2_dress1","posa2","body+dress1+hairs2+hairs2_shadow"]
+		["janna_p1_dress1","posa1","body+dress1+body_part2+hairs2+hairs2_shadow"],
+		["janna_p2_dress1","posa2","body+dress1+hairs2+hairs2_shadow"],
+		["janna_p3_dress1","posa3","body+dress1+hairs2+hairs2_shadow"],
+		["janna_p4_dress1","posa4","body+dress1+body_part2+hairs2+hairs2_shadow"],
+		["janna_p5_dress1","posa5","body+dress1+body_part2+hairs2+hairs2_shadow"],
 	];
 
 	var emots = [
@@ -741,7 +744,25 @@ if(exportTo == "janna"){
 		["janna_p2_smi","posa2","smi+glasses"],
 		["janna_p2_lau","posa2","lau+glasses"],
 		["janna_p2_sur","posa2","sur+glasses"],
-		["janna_p2_hm","posa2","hm+glasses"]
+		["janna_p2_hm","posa2","hm+glasses"],
+		
+		["janna_p3_nrm","posa3","nrm+glasses"],
+		["janna_p3_smi","posa3","smi+glasses"],
+		["janna_p3_lau","posa3","lau+glasses"],
+		["janna_p3_sur","posa3","sur+glasses"],
+		["janna_p3_hm","posa3","hm+glasses"],
+		
+		["janna_p4_nrm","posa4","nrm+glasses"],
+		["janna_p4_smi","posa4","smi+glasses"],
+		["janna_p4_lau","posa4","lau+glasses"],
+		["janna_p4_sur","posa4","sur+glasses"],
+		["janna_p4_hm","posa4","hm+glasses"],
+		
+		["janna_p5_nrm","posa5","nrm+glasses"],
+		["janna_p5_smi","posa5","smi+glasses"],
+		["janna_p5_lau","posa5","lau+glasses"],
+		["janna_p5_sur","posa5","sur+glasses"],
+		["janna_p5_hm","posa5","hm+glasses"],
 	];
 
 	var avats = [
