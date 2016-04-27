@@ -25,6 +25,9 @@ var rulezz = [
 		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
 	{name:"many",countIf:["хорошо", "отлично", "ладно"],
 		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+		{name:"many",countIf:["очень"],
+			onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:0},
+
 
 	{name:"leng_adlg",countIf:["=>", "<="],
 		onlyIf:["**", "<=", "=>"], resetIf:["**", "scene","-!", "-o"],okIfMaxRepeat:20},
@@ -199,13 +202,19 @@ function checkStyle() {
 							}
 						}
 					}else if(isPresent){
-						for(var k3=rule.history.length-1; k3>=0 && k3>=rule.history.length-deepness; k3--){
-							if(rule.history[k3][0].indexOf(rule.countIf[k]) >= 0){// normalized
-								var err = "'" + rule.countIf[k] + "' in {"+rule.history[k3][0]+"}, min "+deepness+"("+(rule.history.length-k3)+")";
-								failedRules.push(rule.name + " " +err);
-								//k = 999999;
-								//console.log("DBG:" + rule.name, normalized_byword);
-								break;
+						if(deepness == 0){
+							var err = "'" + rule.countIf[k] + "', banned (direct speech only)";
+							failedRules.push(rule.name + " " +err);
+							break;
+						}else{
+							for(var k3=rule.history.length-1; k3>=0 && k3>=rule.history.length-deepness; k3--){
+								if(rule.history[k3][0].indexOf(rule.countIf[k]) >= 0){// normalized
+									var err = "'" + rule.countIf[k] + "' in {"+rule.history[k3][0]+"}, min "+deepness+"("+(rule.history.length-k3)+")";
+									failedRules.push(rule.name + " " +err);
+									//k = 999999;
+									//console.log("DBG:" + rule.name, normalized_byword);
+									break;
+								}
 							}
 						}
 					}
