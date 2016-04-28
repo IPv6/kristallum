@@ -94,12 +94,12 @@ if(exportTo == "prof"){
 if(exportTo == "sasha"){
 
 	var bodies = [
-		["sasha_p1_dress1","posa1","body+dress1+hairs1+hairs2+hairs2_shadow"],
-		["sasha_p1_dress2","posa1","body+dress2+hairs1+hairs2+hairs2_shadow"],
-		["sasha_p2_dress1","posa2","body+dress1+hairs1+hairs2+hairs2_shadow"],
-		["sasha_p2_dress2","posa2","body+dress2+hairs1+hairs2+hairs2_shadow"],
-		["sasha_p3_dress1","posa3","body+dress1+hairs1+hairs2+hairs2_shadow"],
-		["sasha_p3_dress2","posa3","body+dress2+hairs1+hairs2+hairs2_shadow"],
+		["sasha_p1_dress1","posa1","body+body_part3+dress1+hairs1+hairs2+hairs2_shadow"],
+		["sasha_p1_dress2","posa1","body+body_part3+dress2+hairs1+hairs2+hairs2_shadow"],
+		["sasha_p2_dress1","posa2","body+body_part3+dress1+hairs1+hairs2+hairs2_shadow"],
+		["sasha_p2_dress2","posa2","body+body_part3+dress2+hairs1+hairs2+hairs2_shadow"],
+		["sasha_p3_dress1","posa3","body+body_part3+dress1+hairs1+hairs2+hairs2_shadow"],
+		["sasha_p3_dress2","posa3","body+body_part3+dress2+hairs1+hairs2+hairs2_shadow"],
 	];
 
 	// Emotions sasha
@@ -125,11 +125,11 @@ if(exportTo == "sasha"){
 
 	// Avatar sasha
 	var avats = [
-		["_sasha_nrm","posa1","hairs1+body+nrm+hairs2"],
-		["_sasha_hm","posa1","hairs1+body+hm+hairs2"],
-		["_sasha_smi","posa1","hairs1+body+smi+hairs2"],
-		["_sasha_lau","posa1","hairs1+body+lau+hairs2"],
-		["_sasha_sur","posa1","hairs1+body+sur+hairs2"]
+		["_sasha_nrm","posa1","hairs1+body+body_part3+nrm+hairs2"],
+		["_sasha_hm","posa1","hairs1+body+body_part3+hm+hairs2"],
+		["_sasha_smi","posa1","hairs1+body+body_part3+smi+hairs2"],
+		["_sasha_lau","posa1","hairs1+body+body_part3+lau+hairs2"],
+		["_sasha_sur","posa1","hairs1+body+body_part3+sur+hairs2"]
 	];
 
 	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
