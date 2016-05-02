@@ -1,23 +1,24 @@
 //@include "libs/comixgen.jsx"
 //@include "libs/persutils.jsx"
 
+//var exportTo = "gena";
 //var exportTo = "anna";
 //var exportTo = "vera";
-//var exportTo = "samanta";
 //var exportTo = "belpoli";
 //var exportTo = "marina";
 //var exportTo = "kasatka";
-
-//var exportTo = "tamojk";
-//var exportTo = "gena";
+//var exportTo = "janna";
+var exportTo = "sasha";
 //var exportTo = "artem";
 //var exportTo = "anton";
 //var exportTo = "ura";
-var exportTo = "janna";
-
+//var exportTo = "samanta";
 //var exportTo = "katya";
+
 //var exportTo = "prof";
-//var exportTo = "sasha";
+//var exportTo = "tamojk";
+//var exportTo = "prodalx";
+
 
 var globals = {};
 initComix("d:/Downloads/"+exportTo, globals);
@@ -28,6 +29,34 @@ var json_cnt = "";
 switchScene(null, null);
 var scaleFactor = 0.58; //0.71145833333 - 2048 problem;// 1920->1366
 var refs_path = "/vn_storyline/art/pers2/";
+
+if(exportTo == "prodalx"){
+
+	var bodies = [
+		["prodalx_p1_dress1","posa1","body+dress1"],
+		["prodalx_p1_dress2","posa1","body+dress2"],
+	];
+
+	// Emotions prodalx
+	var emots = [
+		["prodalx_p1_nrm","posa1","nrm"],
+		["prodalx_p1_smi","posa1","smi"],
+		["prodalx_p1_lau","posa1","lau"],
+		["prodalx_p1_sur","posa1","sur"],
+		["prodalx_p1_hm","posa1","hm"],
+	];
+
+	// Avatar prodalx
+	var avats = [
+		["_prodalx_nrm","posa1","body+nrm"],
+		["_prodalx_smi","posa1","body+smi"],
+		["_prodalx_lau","posa1","body+lau"],
+		["_prodalx_sur","posa1","body+sur"],
+		["_prodalx_hm","posa1","body+hm"]
+	];
+
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+}
 
 if(exportTo == "tamojk"){
 
