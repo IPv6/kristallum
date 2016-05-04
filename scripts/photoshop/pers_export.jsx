@@ -22,7 +22,8 @@ var exportTo = "anna";
 
 var globals = {};
 var datever = date2str(new Date());
-initComix("d:/Downloads/"+exportTo+datever, globals);
+var exportToD = exportTo+datever;
+initComix("d:/Downloads/"+exportToD, globals);
 
 //======================================================
 var duppedDocument = null;
@@ -56,7 +57,7 @@ if(exportTo == "prodalx"){
 		["_prodalx_hm","posa1","body+hm"]
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "tamojk"){
@@ -90,7 +91,7 @@ if(exportTo == "tamojk"){
 		["_tamojk_hm","posa1","body+hm"]
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "prof"){
@@ -118,7 +119,7 @@ if(exportTo == "prof"){
 		["_prof_sur","posa1","body+sur+hairs"]
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "sasha"){
@@ -162,7 +163,7 @@ if(exportTo == "sasha"){
 		["_sasha_sur","posa1","hairs1+body+body_part3+sur+hairs2"]
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 
@@ -209,7 +210,7 @@ if(exportTo == "samanta"){
 		["_samanta_shy","posa1","hairs1+body+hairs2+shy"],
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "belpoli"){
@@ -279,7 +280,7 @@ if(exportTo == "belpoli"){
 		["_bpl_drim","posa1","body+hairs2+drim"],
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "anna"){
@@ -380,7 +381,7 @@ if(exportTo == "anna"){
 		["_anna_wtf","posa1","hairs1+body+hairs2+wtf"]
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "katya"){
@@ -412,7 +413,7 @@ if(exportTo == "katya"){
 		["_katya_sur","posa1","hairs1+body+hairs2+hairs3+sur"]
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "vera"){
@@ -472,7 +473,7 @@ if(exportTo == "vera"){
 		["_vera_rage_z","posa1","body+hairs2+rage_z"],
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "kasatka"){
@@ -514,7 +515,7 @@ if(exportTo == "kasatka"){
 		["_kasatka_sur","posa1","hairs1+body+hairs2+sur"],
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "marina"){
@@ -616,7 +617,7 @@ if(exportTo == "marina"){
 		["_marina_sur_z","posa1","hairs3b+body+hairs2a+hairs3a+sur+hairs6a"],
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "gena"){
@@ -642,7 +643,7 @@ if(exportTo == "gena"){
 		["_gena_sur","posa1","body+hairs2+sur"]
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "artem"){
@@ -688,7 +689,7 @@ if(exportTo == "artem"){
 		["_artem_sur","posa1","body+sur"]
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "anton"){
@@ -714,7 +715,7 @@ if(exportTo == "anton"){
 		["_anton_sur","posa1","body+sur"]
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 if(exportTo == "ura"){
@@ -749,7 +750,7 @@ if(exportTo == "ura"){
 		["_ura_sur","posa1","body+sur"]
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 
@@ -803,7 +804,7 @@ if(exportTo == "janna"){
 		["_janna_sur","posa1","body+sur+glasses+hairs2"]
 	];
 
-	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportTo);
+	exportCharacter(bodies,emots,avats,exportTo,scaleFactor,refs_path,exportToD);
 }
 
 alert("Done!");
