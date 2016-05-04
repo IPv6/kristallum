@@ -2,13 +2,13 @@
 //@include "libs/persutils.jsx"
 
 //var exportTo = "gena";
-//var exportTo = "anna";
+var exportTo = "anna";
 //var exportTo = "vera";
 //var exportTo = "belpoli";
 //var exportTo = "marina";
 //var exportTo = "kasatka";
 //var exportTo = "janna";
-var exportTo = "sasha";
+//var exportTo = "sasha";
 //var exportTo = "artem";
 //var exportTo = "anton";
 //var exportTo = "ura";
@@ -21,7 +21,8 @@ var exportTo = "sasha";
 
 
 var globals = {};
-initComix("d:/Downloads/"+exportTo, globals);
+var datever = date2str(new Date());
+initComix("d:/Downloads/"+exportTo+datever, globals);
 
 //======================================================
 var duppedDocument = null;

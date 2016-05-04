@@ -7,6 +7,22 @@ var currentSpeakSet = null;
 var xlayers_cache = null;
 var initialBaseDocument = null;
 
+function int2str(numb, padzerosize){
+	var res = ""+numb;
+	while(res.length < padzerosize){res = "0"+res;};
+	return res;
+};
+function date2str(dt){
+	var dd = int2str(dt.getDate(),2);
+    var mm = int2str(dt.getMonth()+1,2); //January is 0!
+    var yyyy = dt.getFullYear();
+	if(yyyy > 2000){
+		yyyy -= 2000;
+	}
+	yyyy = int2str(yyyy,2);
+	return yyyy+mm+dd
+}
+
 function initComix(_path_out, _globals) {
 	if(_globals){
 		globals = _globals;
@@ -296,7 +312,6 @@ function say(layersParentName, visibleLayerName, text2say) {
 	exportPage(globals.pageIndex);
 }
 
-function int2str(numb, padzerosize){var res = ""+numb;while(res.length < padzerosize){res = "0"+res;}return res;}
 function exportPage(page_index) {
 	var saveFileName = exportPath +"/page_"+int2str(page_index,3)+".jpg";
 	var saveFile = new File(saveFileName);
