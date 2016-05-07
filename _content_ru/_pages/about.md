@@ -4,7 +4,7 @@ title: Об игре
 permalink: /ru/pages/about/
 ---
 
-[![ru-logo](https://pp.vk.me/c628224/v628224682/3fa71/y8s096tu_D4.jpg)](http://www.kristallum.com)
+[![ru-logo](http://gamerotor.com/images_ldu/_api/img/gamepromo3.png)](http://www.kristallum.com)
 
 ---
 2215 год. Мирное будущее. Десятки планет и цивилизаций, живущих по своим правилам.
