@@ -40,7 +40,7 @@ function exportCharacter(bodies, emots, avats, charTag, scaleFactor, pathPref, j
 			cropToLayerBoundsAndResize("AvatarBounds",100,100);
 			var filename = exportSprite(avats[i][0]);
 			duppedDocument.close(SaveOptions.DONOTSAVECHANGES);
-			json_cnt+="\t\t\""+avats[i][0]+"\": \"" + pathPref + charTag+"/"+filename+"\",";
+			json_cnt+="\t\t\""+avats[i][0]+"\": \"" + pathPref + jsonprefx+"/"+filename+"\",";
 			json_cnt+="\n";
 		}
 	}
@@ -53,7 +53,7 @@ function exportCharacter(bodies, emots, avats, charTag, scaleFactor, pathPref, j
 			switchScene(null, null);
 			switchScene(bodies[i][1],bodies[i][2],null,true);
 			var filename = exportSprite(bodies[i][0]);
-			json_cnt+="\t\t\""+bodies[i][0]+"\": \""+pathPref + charTag+"/"+filename+"\",";
+			json_cnt+="\t\t\""+bodies[i][0]+"\": \""+pathPref + jsonprefx+"/"+filename+"\",";
 			json_cnt+="\n";
 		}
 	}
@@ -66,12 +66,12 @@ function exportCharacter(bodies, emots, avats, charTag, scaleFactor, pathPref, j
 			switchScene(null, null);
 			var filename = exportSpriteWithRelOffset(emots[i][0], emots[i][1], emots[i][2]);
 			duppedDocument2.close(SaveOptions.DONOTSAVECHANGES);
-			json_cnt+="\t\t\""+emots[i][0]+"\": \"" + pathPref + charTag+"/"+filename+"\",";
+			json_cnt+="\t\t\""+emots[i][0]+"\": \"" + pathPref + jsonprefx+"/"+filename+"\",";
 			json_cnt+="\n";
 		}
 	}
 	duppedDocument.close(SaveOptions.DONOTSAVECHANGES);
 	json_cnt += "\t\t\"hash_"+charTag+"\": \"...\"";
 	json_cnt += "\n\t}\n}";
-	saveText(jsonprefx+"_defns.json",json_cnt);
+	saveText(charTag+"_defns.json",json_cnt);
 }
