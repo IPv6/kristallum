@@ -3,12 +3,12 @@ var globals = {};
 initComix("d:/Downloads/comix_pages", globals);
 
 //================ INTRO ============================
-//switchScene("bgs","logo");
-//switchScene("bgs_mods",null);
-//say("texts",null,null);
+switchScene("bgs","logo");
+switchScene("bgs_mods",null);
+switchScene("text_shade",null);
+say("texts",null,null);
+switchScene("text_shade","main_tbg");
 //================ LINES ===============================
-
-
 
 //switchScene("bgs","medpunkt_inner_night");
 //switchScene("chars","vl_right2",["texts","r"]);
