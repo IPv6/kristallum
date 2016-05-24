@@ -4,14 +4,18 @@ itemscope itemtype="http://schema.org/Article"
 xmlns:fb="http://www.facebook.com/2008/fbml" 
 xmlns:fb="http://ogp.me/ns/fb#"><!-- Обявление стандарта. Не убирать! -->
 <head>
+<script type="text/javascript" src="//gamerotor.com/images_ldu/_api/libs/utils_core.js"></script>
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <!--# include file="ssi_metas.html?$args" -->
 <body>
 <div class="share42init"></div>
 <script>
 var target_url = "http://www.kristallum.com/";
-var od_game_url = "http://odnoklassniki.ru/game/kristallum";
-var group_url = "http://vk.com/krajsveta";//"https://www.facebook.com/pages/Kristallum-Online-Community/570323146340252";
+var od_game_url = "https://ok.ru/game/kristallum";
+var vk_game_url = "https://vk.com/app3739891";
+var gr_game_url = "http://www.kristallum.com";
+var vk_group_url = "http://vk.com/krajsveta";//"https://www.facebook.com/pages/Kristallum-Online-Community/570323146340252";
 </script>
 
 <script>
@@ -71,63 +75,10 @@ function hideStuff(id) {
 		e.style.display = 'none';
 	}
 }
-
-function core_coalesce(obj,def)
-{
-	// && !isNaN(obj)
-	if(typeof(obj)!="undefined" && obj != null){
-		// Type coalescing
-		if(typeof(def)=="string"){
-			obj = ""+obj;
-		}
-		if(typeof(def)=="number"){
-			obj = Number(obj);
-		}
-		return obj;
-	};
-	if(typeof(def) != "undefined"){
-		return def;
-	};
-	return null;
-};
-
-function core_len(obj){
-	if(typeof(obj)=="undefined" || obj == null){
-		return 0;
-	}
-	if(typeof(obj)=="string"){
-		return obj.length;
-	}
-	if(typeof(obj)=="object" && obj.length){
-		return obj.length;
-	}
-	return 0;
-}
-
-function core_str_replace(what, search, replace) {
-	if(core_coalesce(what) == null || core_coalesce(search) == null){
-		return "";
-	}
-	replace = core_coalesce(replace,"");
-	return what.split(search).join(replace);
-}
-
-function core_getQueryParams(qs) {
-	if(qs == null){
-		qs = document.location.search;
-	}
-	qs = qs.split("+").join(" ");
-	var params = {}, tokens, re = /[?&]?([^=]+)=([^&]*)/g;
-	while (tokens = re.exec(qs)) {
-		params[decodeURIComponent(tokens[1])] = decodeURIComponent(tokens[2]);
-	}
-	return params;
-}
 </script>
 
 <script>
-var params = core_getQueryParams();
-
+var params = core_urlstring2map();
 function share_stuff() {
 	data_image = params.i;
 	data_title = params.t;
@@ -184,7 +135,23 @@ if(params.action == "follow"){
 }else if(params.action == "od-game"){
 	window_open(od_game_url);
 }else if(params.action == "group"){
-	window_open(group_url);
+	window_open(vk_group_url);
+}else if(params.action == "sn-game"){
+	var isKnown = false;
+	var referrer = ""+window.bootstrap_config['referrer'];
+	core_log(referrer);
+	if(!isKnown && referrer.indexOf("vk.") >= 0){
+		window_open(vk_game_url);
+		isKnown = true;
+	}
+	if(!isKnown && referrer.indexOf("ok") >= 0){
+		window_open(od_game_url);
+		isKnown = true;
+	}
+	if(!isKnown){
+		window_open(gr_game_url);
+		isKnown = true;
+	}
 }else{
 	share_stuff();
 }
