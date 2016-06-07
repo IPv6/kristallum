@@ -15,31 +15,35 @@ h3 { color: #333; font-size: 16px; margin-bottom: 0; padding-bottom: 0; }
 </style>
 <script>
 var _sameworda = "_sameworda";
+var _spichdirchange = "_spichdirchange";
+var _spichdirs = ["**", "<=", "=>"];
 var _minen4sameword = 4;
 var rulezz = [
 	{name:"many",countIf:[" поня"],// понятно понял
-		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+		onlyIf:_spichdirs, resetIf:["scene", "-!", "-o", _spichdirchange],okIfMinDistanceInLines:15},
 	{name:"many",countIf:[" прост"],// просто прост
-		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
+		onlyIf:_spichdirs, resetIf:["scene", "-!", "-o", _spichdirchange],okIfMinDistanceInLines:15},
 	{name:"many",countIf:[" вообщ"],
-		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
-	{name:"many",countIf:["хорошо", "отлично", "ладно"],
-		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:15},
-		{name:"many",countIf:["очень"],
-			onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:0},
+		onlyIf:_spichdirs, resetIf:["scene", "-!", "-o", _spichdirchange],okIfMinDistanceInLines:15},
+	{name:"many",countIf:["отличн"],
+		onlyIf:_spichdirs, resetIf:["scene", "-!", "-o", _spichdirchange],okIfMinDistanceInLines:15},
+	{name:"many",countIf:["ладно"],
+		onlyIf:_spichdirs, resetIf:["scene", "-!", "-o", _spichdirchange],okIfMinDistanceInLines:15},
+	{name:"many",countIf:["очень"],
+		onlyIf:_spichdirs, resetIf:["scene", "-!", "-o", _spichdirchange],okIfMinDistanceInLines:0},
 
 
 	{name:"leng_adlg",countIf:["=>", "<="],
-		onlyIf:["**", "<=", "=>"], resetIf:["**", "scene","-!", "-o"],okIfMaxRepeat:20},
+		onlyIf:_spichdirs, resetIf:["**", "scene","-!", "-o"],okIfMaxRepeat:20},
 	{name:"leng_rdlg",countIf:["=>"],
-		onlyIf:["**", "<=", "=>"], resetIf:["**", "<=", "scene","-!", "-o"],okIfMaxRepeat:7},
+		onlyIf:_spichdirs, resetIf:["**", "<=", "scene","-!", "-o"],okIfMaxRepeat:7},
 	{name:"leng_ldlg",countIf:["<="],
-		onlyIf:["**", "<=", "=>"], resetIf:["**", "=>", "scene","-!", "-o"],okIfMaxRepeat:7},
+		onlyIf:_spichdirs, resetIf:["**", "=>", "scene","-!", "-o"],okIfMaxRepeat:7},
 
 	{name:"need_sound",countIf:["**", "<=", "=>"],
-		onlyIf:["**", "<=", "=>"], resetIf:["sound"],okIfMaxRepeat:90},
+		onlyIf:_spichdirs, resetIf:["sound"],okIfMaxRepeat:90},
 	{name:"need_music",countIf:["**", "<=", "=>"],
-		onlyIf:["**", "<=", "=>"], resetIf:["music"],okIfMaxRepeat:200},
+		onlyIf:_spichdirs, resetIf:["music"],okIfMaxRepeat:200},
 	//{name:"same_l",countIf:[_sameworda],
 	//	onlyIf:["<="], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
 	//{name:"same_r",countIf:[_sameworda],
@@ -47,7 +51,7 @@ var rulezz = [
 	//{name:"same_c",countIf:[_sameworda],
 	//	onlyIf:["**"], resetIf:["scene", "-!", "-o"],okIfMinDistanceInLines:4},
 	{name:"same",countIf:[_sameworda], // dbg: true,
-		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o", "sound", "music"],okIfMinDistanceInLines:4}
+		onlyIf:_spichdirs, resetIf:["scene", "-!", "-o", "sound", "music", _spichdirchange],okIfMinDistanceInLines:4}
 ];
 
 var single_3manis = [
@@ -62,7 +66,7 @@ var single_3manis = [
 for(var i=0;i<single_3manis.length;i++){
 	rulezz.push(
 	{name:"many",countIf:[single_3manis[i]],
-		onlyIf:["**", "<=", "=>"], resetIf:["scene", "-!", "-o", "sound", "music"],okIfMinDistanceInLines:1}
+		onlyIf:_spichdirs, resetIf:["scene", "-!", "-o", "sound", "music", _spichdirchange],okIfMinDistanceInLines:1}
 	);
 }
 
@@ -124,6 +128,7 @@ function checkStyle() {
 		rulezz[j].state = {cntPresent: 0};
 		rulezz[j].history = [];
 	}
+	var lstSpichDir = -1;
 	for(var i=0;i<raw_lines.length;i++){
 		var original = raw_lines[i];
 		var normalized = normalizeLinr(original);
@@ -133,6 +138,16 @@ function checkStyle() {
 		var normalized_byword = normalizeWodrd(normalized);
 		normalized_byword.unshift(normalized + "_at_line"+(i+1)+"_");
 		var failedRules = [];
+		var isSpichdirchange = false;
+		for(var k=0;k<_spichdirs.length;k++){
+			if(original.indexOf(_spichdirs[k]) >= 0){
+				if(lstSpichDir != k){
+					isSpichdirchange = true;
+				}
+				lstSpichDir = k;
+				break;
+			}
+		}
 		//console.log("DBG:" + "-normalized: [["+normalized+"]]");
 		for(var j=0;j < rulezz.length;j++){
 			var rule = rulezz[j];
@@ -140,6 +155,13 @@ function checkStyle() {
 			//var isIgnoredReason = "";
 			if(rule.resetIf != null){
 				for(var k=0;k<rule.resetIf.length;k++){
+					if(rule.resetIf[k] == _spichdirchange && isSpichdirchange){
+						rule.history = [];
+						rule.state.cntPresent = 0;
+						//isIgnoredReason = rule.resetIf[k];
+						isIgnored = 2;
+						break;
+					}
 					if(original.indexOf(rule.resetIf[k]) >= 0){
 						rule.history = [];
 						rule.state.cntPresent = 0;
