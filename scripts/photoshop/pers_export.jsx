@@ -2,10 +2,10 @@
 //@include "libs/persutils.jsx"
 
 //var exportTo = "gena";
-//var exportTo = "anna";
+var exportTo = "anna";
 //var exportTo = "vera";
 //var exportTo = "belpoli";
-var exportTo = "marina";
+//var exportTo = "marina";
 //var exportTo = "kasatka";
 //var exportTo = "janna";
 //var exportTo = "sasha";
@@ -318,6 +318,7 @@ if(exportTo == "anna"){
 		["anna_p1_smi_cle","posa1","smi_cle"],
 		["anna_p1_lau","posa1","lau"],
 		["anna_p1_sur","posa1","sur"],
+		["anna_p1_fear","posa1","fear"],
 		["anna_p1_hm","posa1","hm"],
 		["anna_p1_hm_cle","posa1","hm_cle"],
 		["anna_p1_hate","posa1","hate"],
@@ -329,6 +330,7 @@ if(exportTo == "anna"){
 		["anna_p2_smi_cle","posa2","smi_cle"],
 		["anna_p2_lau","posa2","lau"],
 		["anna_p2_sur","posa2","sur"],
+		["anna_p2_fear","posa2","fear"],
 		["anna_p2_hm_cle","posa2","hm_cle"],
 		["anna_p2_hm","posa2","hm"],
 		["anna_p2_hate","posa2","hate"],
@@ -340,6 +342,7 @@ if(exportTo == "anna"){
 		["anna_p3_smi_cle","posa3","smi_cle"],
 		["anna_p3_lau","posa3","lau"],
 		["anna_p3_sur","posa3","sur"],
+		["anna_p3_fear","posa3","fear"],
 		["anna_p3_hm_cle","posa3","hm_cle"],
 		["anna_p3_hm","posa3","hm"],
 		["anna_p3_hate","posa3","hate"],
@@ -351,6 +354,7 @@ if(exportTo == "anna"){
 		["anna_p4_smi_cle","posa4","smi_cle"],
 		["anna_p4_lau","posa4","lau"],
 		["anna_p4_sur","posa4","sur"],
+		["anna_p4_fear","posa4","fear"],
 		["anna_p4_hm_cle","posa4","hm_cle"],
 		["anna_p4_hm","posa4","hm"],
 		["anna_p4_hate","posa4","hate"],
@@ -362,6 +366,7 @@ if(exportTo == "anna"){
 		["anna_p5_smi_cle","posa5","smi_cle"],
 		["anna_p5_lau","posa5","lau"],
 		["anna_p5_sur","posa5","sur"],
+		["anna_p5_fear","posa5","fear"],
 		["anna_p5_hm_cle","posa5","hm_cle"],
 		["anna_p5_hm","posa5","hm"],
 		["anna_p5_hate","posa5","hate"],
@@ -373,6 +378,7 @@ if(exportTo == "anna"){
 		["anna_p6_smi_cle","posa6","smi_cle"],
 		["anna_p6_lau","posa6","lau"],
 		["anna_p6_sur","posa6","sur"],
+		["anna_p6_fear","posa6","fear"],
 		["anna_p6_hm_cle","posa6","hm_cle"],
 		["anna_p6_hm","posa6","hm"],
 		["anna_p6_hate","posa6","hate"],
@@ -388,6 +394,7 @@ if(exportTo == "anna"){
 		["_anna_smi_cle","posa1","hairs1+body+hairs2+smi_cle"],
 		["_anna_lau","posa1","hairs1+body+hairs2+lau"],
 		["_anna_sur","posa1","hairs1+body+hairs2+sur"],
+		["_anna_fear","posa1","hairs1+body+hairs2+fear"],
 		["_anna_hate","posa1","hairs1+body+hairs2+hate"],
 		["_anna_drim","posa1","hairs1+body+hairs2+drim"],
 		["_anna_wtf","posa1","hairs1+body+hairs2+wtf"]
