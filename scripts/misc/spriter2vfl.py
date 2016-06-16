@@ -1,6 +1,6 @@
 #cd ~/kristallum/scripts/misc/
 #python ./spriter2vfl.py /Volumes/untitled/Dropbox/web/static-ldu/vn_storyline/art/anims/emots_anime/em.scml rage
-#python ./spriter2vfl.py c:\_WPLabs\PROJECTS_GAMES\Bitbucket-priv\Dropbox\web\static-ldu\vn_storyline\art\anims\emots_anime\em.scml rage
+#python ./spriter2vfl.py c:\_WPLabs\PROJECTS_GAMES\Bitbucket-priv\Dropbox\web\static-ldu\vn_storyline\art\anims\objects_motion\om.scml fly_in
 
 import argparse
 from xml.dom import minidom
@@ -73,6 +73,18 @@ for s in animslist:
                         r = r - 360
                     if r<-180:
                         r = r + 360
+                    if abs(a)<0.001:
+                        a = 0
+                    if abs(x)<0.001:
+                        x = 0
+                    if abs(y)<0.001:
+                        y = 0
+                    if abs(r)<0.001:
+                        r = 0
+                    if abs(sx)<0.001:
+                        sx = 0
+                    if abs(sy)<0.001:
+                        sy = 0
                     print("-- time: " + str(keytime) + ", x="+str(x) + ", y="+str(y) + ", r="+str(r) + ", a="+str(a))
                     if isFirstKeyfound == False:
                         isFirstKeyfound = True
