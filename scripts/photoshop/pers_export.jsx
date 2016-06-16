@@ -2,12 +2,12 @@
 //@include "libs/persutils.jsx"
 
 //var exportTo = "gena";
-var exportTo = "anna";
+//var exportTo = "anna";
 //var exportTo = "vera";
 //var exportTo = "belpoli";
 //var exportTo = "marina";
 //var exportTo = "kasatka";
-//var exportTo = "janna";
+var exportTo = "janna";
 //var exportTo = "sasha";
 //var exportTo = "artem";
 //var exportTo = "anton";
