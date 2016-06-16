@@ -1,6 +1,6 @@
 #cd ~/kristallum/scripts/misc/
 #python ./spriter2vfl.py /Volumes/untitled/Dropbox/web/static-ldu/vn_storyline/art/anims/emots_anime/em.scml rage
-#python ./spriter2vfl.py c:\_WPLabs\PROJECTS_GAMES\Bitbucket-priv\Dropbox\web\static-ldu\vn_storyline\art\anims\objects_motion\om.scml fly_in
+#python ./spriter2vfl.py c:\_WPLabs\PROJECTS_GAMES\Bitbucket-priv\Dropbox\web\static-ldu\vn_storyline\art\anims\objects_motion\om.scml kaboom_in
 
 import argparse
 from xml.dom import minidom
