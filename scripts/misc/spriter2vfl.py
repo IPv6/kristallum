@@ -59,16 +59,22 @@ for s in animslist:
                         lerp_c2 = float(k.getAttribute('c2'))
                     if len(o.getAttribute('x'))>0:
                         x = float(o.getAttribute('x'))
+                        prev_x = -9999.99
                     if len(o.getAttribute('y'))>0:
                         y = -1*float(o.getAttribute('y'))
+                        prev_y = -9999.99
                     if len(o.getAttribute('a'))>0:
                         a = float(o.getAttribute('a'))
+                        prev_a = -9999.99
                     if len(o.getAttribute('angle'))>0:
                         r = -1*float(o.getAttribute('angle'))
+                        prev_r = -9999.99
                     if len(o.getAttribute('scale_x'))>0:
                         sx = float(o.getAttribute('scale_x'))
+                        prev_sx = -9999.99
                     if len(o.getAttribute('scale_y'))>0:
                         sy = float(o.getAttribute('scale_y'))
+                        prev_sy = -9999.99
                     if r>180:
                         r = r - 360
                     if r<-180:
