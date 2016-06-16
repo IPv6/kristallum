@@ -1,5 +1,6 @@
 #cd ~/kristallum/scripts/misc/
-#python ./spriter2vfl.py /Volumes/untitled/Dropbox/web/static-ldu/vn_storyline/art/anims/objects_motion/om.scml fly_in
+#python ./spriter2vfl.py /Volumes/untitled/Dropbox/web/static-ldu/vn_storyline/art/anims/emots_anime/em.scml rage
+#python ./spriter2vfl.py c:\_WPLabs\PROJECTS_GAMES\Bitbucket-priv\Dropbox\web\static-ldu\vn_storyline\art\anims\objects_motion\om.scml kaboom_in
 
 import argparse
 from xml.dom import minidom
@@ -14,18 +15,27 @@ print "- animation: '" + args.animation + "'"
 xmldoc = minidom.parse(args.scml)
 outvfl = []
 animslist = xmldoc.getElementsByTagName('animation')
+isFirstKeyfound = False
 for s in animslist:
-    animname = s.attributes['name'].value
+    animname = s.getAttribute('name')
     if animname == args.animation:
         print("- found '"+animname+"'")
+        timelast = float(s.getAttribute('length'))
         timelines = s.getElementsByTagName('timeline')
         if len(timelines) > 0:
+            keytime = 0
             prev_r = -9999.99
             prev_x = -9999.99
             prev_y = -9999.99
             prev_a = -9999.99
             prev_sx = -9999.99
             prev_sy = -9999.99
+            first_r = -9999.99
+            first_x = -9999.99
+            first_y = -9999.99
+            first_a = -9999.99
+            first_sx = -9999.99
+            first_sy = -9999.99
             keys = timelines[0].getElementsByTagName('key')
             for k in keys:
                 keytime = 0
@@ -50,18 +60,40 @@ for s in animslist:
                     if len(o.getAttribute('x'))>0:
                         x = float(o.getAttribute('x'))
                     if len(o.getAttribute('y'))>0:
-                        y = float(o.getAttribute('y'))
+                        y = -1*float(o.getAttribute('y'))
                     if len(o.getAttribute('a'))>0:
                         a = float(o.getAttribute('a'))
                     if len(o.getAttribute('angle'))>0:
-                        r = float(o.getAttribute('angle'))
+                        r = -1*float(o.getAttribute('angle'))
                     if len(o.getAttribute('scale_x'))>0:
                         sx = float(o.getAttribute('scale_x'))
                     if len(o.getAttribute('scale_y'))>0:
                         sy = float(o.getAttribute('scale_y'))
                     if r>180:
                         r = r - 360
+                    if r<-180:
+                        r = r + 360
+                    if abs(a)<0.001:
+                        a = 0
+                    if abs(x)<0.001:
+                        x = 0
+                    if abs(y)<0.001:
+                        y = 0
+                    if abs(r)<0.001:
+                        r = 0
+                    if abs(sx)<0.001:
+                        sx = 0
+                    if abs(sy)<0.001:
+                        sy = 0
                     print("-- time: " + str(keytime) + ", x="+str(x) + ", y="+str(y) + ", r="+str(r) + ", a="+str(a))
+                    if isFirstKeyfound == False:
+                        isFirstKeyfound = True
+                        first_r = r
+                        first_x = x
+                        first_y = y
+                        first_a = a
+                        first_sx = sx
+                        first_sy = sy
                     time_blk = "t" + str(keytime/1000.0)
                     if(lerp is not None):
                         time_blk = time_blk + " " + lerp + "c1" + str(lerp_c1) + " " + lerp + "c2" + str(lerp_c2)
@@ -84,8 +116,18 @@ for s in animslist:
                     prev_a = a
                     prev_sx = sx
                     prev_sy = sy
+            if keytime < timelast:
+                outvfl.append("t" + str(timelast/1000.0))
+                outvfl.append("x" + str(first_x))
+                outvfl.append("y" + str(first_y))
+                outvfl.append("a" + str(first_a))
+                outvfl.append("r" + str(first_r))
+                outvfl.append("sx" + str(first_sx))
+                outvfl.append("sy" + str(first_sy))
+                outvfl.append("loop")
     else:
         print("- skipping '"+animname+"'")
-print("=== vfl for '" + args.animation + "'===")
-print(", ".join(outvfl))
-print("=== === === ===")
+if isFirstKeyfound:
+    print("=== vfl for '" + args.animation + "'===")
+    print(", ".join(outvfl))
+    print("=== === === ===")
