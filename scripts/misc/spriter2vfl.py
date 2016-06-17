@@ -50,13 +50,11 @@ for s in animslist:
                     a = 1.0
                     sx = 1.0
                     sy = 1.0
-                    lerp = None
-                    lerp_c1 = 0.0
-                    lerp_c2 = 0.0
+                    lerp1 = None
+                    lerp2 = None
                     if len(k.getAttribute('curve_type'))>0 and k.getAttribute('curve_type') == "cubic":
-                        lerp = "cubic_"
-                        lerp_c1 = float(k.getAttribute('c1'))
-                        lerp_c2 = float(k.getAttribute('c2'))
+                        lerp1 = "cubic_a"+(k.getAttribute('c1'))
+                        lerp2 = "cubic_b"+(k.getAttribute('c2'))
                     if len(o.getAttribute('x'))>0:
                         x = float(o.getAttribute('x'))
                         prev_x = -9999.99
@@ -101,21 +99,23 @@ for s in animslist:
                         first_sx = sx
                         first_sy = sy
                     time_blk = "t" + str(keytime/1000.0)
-                    if(lerp is not None):
-                        time_blk = time_blk + " " + lerp + "c1" + str(lerp_c1) + " " + lerp + "c2" + str(lerp_c2)
+                    if(lerp1 is not None):
+                        time_blk = time_blk + " " + lerp1
+                    if(lerp2 is not None):
+                        time_blk = time_blk + " " + lerp2
                     outvfl.append(time_blk)
-                    if x != prev_x:
-                        outvfl.append("x" + str(x))
-                    if y != prev_y:
-                        outvfl.append("y" + str(y))
-                    if a != prev_a:
-                        outvfl.append("a" + str(a))
-                    if r != prev_r:
-                        outvfl.append("r" + str(r))
-                    if sx != prev_sx:
-                        outvfl.append("sx" + str(sx))
-                    if sy != prev_sy:
-                        outvfl.append("sy" + str(sy))
+                    #if x != prev_x:
+                    outvfl.append("x" + str(x))
+                    #if y != prev_y:
+                    outvfl.append("y" + str(y))
+                    #if a != prev_a:
+                    outvfl.append("a" + str(a))
+                    #if r != prev_r:
+                    outvfl.append("r" + str(r))
+                    #if sx != prev_sx:
+                    outvfl.append("sx" + str(sx))
+                    #if sy != prev_sy:
+                    outvfl.append("sy" + str(sy))
                     prev_r = r
                     prev_x = x
                     prev_y = y
