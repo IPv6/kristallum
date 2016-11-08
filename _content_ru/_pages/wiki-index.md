@@ -12,7 +12,6 @@ permalink: /ru/pages/wiki-index/
 	* [Станция Омега]({% post_url 2016-1-08-ru-wiki-station-about %})
 	* [Производство]({% post_url 2016-1-08-ru-wiki-station-factories %})
 	* [Мастерская]({% post_url 2016-1-08-ru-wiki-station-research %})
-	* [Цветовой код]({% post_url 2016-1-08-ru-wiki-station-zvet-code %})
 	* [Хакерство]({% post_url 2016-1-08-ru-wiki-station-viruses %})
 	* [Почта]({% post_url 2016-1-08-ru-wiki-station-pochta %})
 * [Корпорации]({% post_url 2016-1-01-ru-wiki-business-about %})
