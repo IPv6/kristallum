@@ -14,6 +14,7 @@ permalink: /ru/pages/wiki-index/
 	* [Мастерская]({% post_url 2016-1-08-ru-wiki-station-research %})
 	* [Хакерство]({% post_url 2016-1-08-ru-wiki-station-viruses %})
 	* [Почта]({% post_url 2016-1-08-ru-wiki-station-pochta %})
+	* [ArtLel]({% post_url 2016-1-08-ru-wiki-station-artlel %})
 * [Корпорации]({% post_url 2016-1-01-ru-wiki-business-about %})
 	* [Корпорации]({% post_url 2016-1-01-ru-wiki-business-about %})
 	* [Артели]({% post_url 2016-1-01-ru-wiki-business-artel %})
