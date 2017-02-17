@@ -8,6 +8,7 @@ permalink: /ru/pages/wiki-index/
 	* [Предыстория]({% post_url 2016-1-20-ru-wiki-lor-introduction %})
 	* [Кристаллум]({% post_url 2016-1-20-ru-wiki-lor-kristallum %})
 	* [L-каналы]({% post_url 2016-1-20-ru-wiki-lor-l-channels %})
+	* [Колонии]({% post_url 2016-1-20-ru-wiki-lor-colonies %})
 * [Станция Омега]({% post_url 2016-1-08-ru-wiki-station-about %})
 	* [Станция Омега]({% post_url 2016-1-08-ru-wiki-station-about %})
 	* [Производство]({% post_url 2016-1-08-ru-wiki-station-factories %})
