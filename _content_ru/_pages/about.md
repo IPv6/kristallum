@@ -21,14 +21,20 @@ permalink: /ru/pages/about/
 Красивая визуальная новелла в жанре в жанре научно-развлекательного фентези с элементами online-игры и оригинальным способом подачи текста!
 
 ---
+<div id="post_frame_html" style="width:90%; display: flex; align-items: center; justify-content: center;">
+Скачать:
+<div style='display: inline-block;margin-left:10px;'><a href='http://kristallum.com/get/windows' target='_blank'><img src='https://gamerotor.com/images_ldu/_api/img/bt_lnk_pcdownl.png'></a></div>
+<div style='display: inline-block;margin-left:10px;'><a href='http://kristallum.com/get/googleplay' target='_blank'><img src='https://gamerotor.com/images_ldu/_api/img/bt_lnk_googlestore.png'></a></div>
+</div>
+<br>
 А еще можно заглянуть по этим ссылкам:
 
 * [http://anivisual.net/](http://anivisual.net/stuff/2-1-0-436)
 
-* [https://vk.com/](https://vk.com/app3739891)
+* [https://vk.com/](http://kristallum.com/get/online-vk)
 
-* [http://ok.ru/](http://ok.ru/game/kristallum)
+* [http://ok.ru/](http://kristallum.com/get/online-od)
 
-* [https://www.facebook.com/](https://apps.facebook.com/omegastation/)
+* [https://www.facebook.com/](http://kristallum.com/get/online-fb)
 
-* [http://www.kristallum.com/](http://www.kristallum.com/)
+* [http://www.kristallum.com/](http://kristallum.com/get/online)
