@@ -1340,9 +1340,9 @@ window.rqw_upduserpanel = function(div_selector, focus_widget, userinfo)
 	if(bmklevel != "1"){
 		divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='javascript:rqw_addbookmark();'><nobr>"+$._b("Add bookmark")+"</nobr></a></td>";
 	}
-	divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='http://hubs.kristallum.com/'><nobr>"+$._b("News")+"</nobr></a></td>";
-	divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='http://hubs.kristallum.com/ru/pages/about/'><nobr>"+$._b("About")+"</nobr></a></td>";
-	divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='http://hubs.kristallum.com/ru/pages/wiki-index/'><nobr>"+$._b("FAQ")+"</nobr></a></td>";
+	divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='http://kristallum.com/get/hub'><nobr>"+$._b("News")+"</nobr></a></td>";
+	divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='http://kristallum.com/get/about'><nobr>"+$._b("About")+"</nobr></a></td>";
+	divhtml += "<td align='left' width='1%' valign='top'><div style='padding-top:8px;padding-left:8px;' id='bmk_element'><a href='http://kristallum.com/get/lore'><nobr>"+$._b("FAQ")+"</nobr></a></td>";
 	if(userinfo != null && userinfo["u_nick"] != null){
 		rqw_addcacheduser(userinfo.uid,userinfo);
 		jq_payment_email = core_coalesce(userinfo.email);
