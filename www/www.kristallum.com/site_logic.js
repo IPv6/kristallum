@@ -736,9 +736,10 @@ window.jq_login = function(overloads) {
 				core_log("jq_login: user logged:"+json_response.auth);
 				$.Storage.set(window.CONST_JSSTORE_EMAIL,overloads.email);
 				$.Storage.set(window.CONST_JSSTORE_AUTH,json_response.auth);
-				if(window.login_innewtab != null && window.login_innewtab>0){
+				// To escape iframes
+				if(window.login_innewtab != null && window.login_innewtab > 0){
+					overloads.force_newtab = window.login_innewtab;
 					window.login_innewtab = null;
-					overloads.force_newtab = true;
 				}
 				jq_redirect2page(overloads);
 			},
@@ -928,9 +929,14 @@ window.jq_redirect2page = function(overloads,redir_kind,additional_pars) {
 				}
 			}
 		}
-		if(overloads.force_newtab == true){
+		if(overloads.force_newtab == 1){
+			core_navigate_url_via_form(target_url, null,'GET','_blank');
+			return true;
+		}
+		if(overloads.force_newtab == 2){
+			// escaping iframe by reloading parent
 			//window.open(target_url, '_newtab');
-			core_navigate_url_via_form(target_url,null,'GET','_blank');
+			core_navigate_url_via_form(target_url, null,'GET','_parent');
 			return true;
 		}
 		document.location.href = target_url;

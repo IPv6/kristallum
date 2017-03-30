@@ -81,6 +81,15 @@ function showLoginFormAdvn(){
 	showLoginForm();
 }
 
+function weAreInIframe() {
+	try {
+		return window.self !== window.top;
+	} catch (e) {
+		return true;
+	}
+	return false;
+}
+
 function showLoginForm(){
 	window.gr_enterdialog_bg_style = "";
 	window.gr_enterdialog_bg_parent = "#lgform";
@@ -97,6 +106,9 @@ function showLoginForm(){
 		return;
 	}
 	
+	if(weAreInIframe()){
+		window.login_innewtab = 2;
+	}
 	var regok = $.Storage.get(window.CONST_JSSTORE_REGOK);
 	jq_ui_popupLoginForm({mode: 4, target_widget: window.bootstrap_config['focus_widget']});
 	continue_url = $.url().param("c_url64");
