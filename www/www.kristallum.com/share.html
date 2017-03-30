@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ru" xmlns:og="http://opengraphprotocol.org/schema/"
-itemscope itemtype="http://schema.org/Article" 
-xmlns:fb="http://www.facebook.com/2008/fbml" 
+itemscope itemtype="http://schema.org/Article"
+xmlns:fb="http://www.facebook.com/2008/fbml"
 xmlns:fb="http://ogp.me/ns/fb#"><!-- Обявление стандарта. Не убирать! -->
 <head>
 <script type="text/javascript" src="//gamerotor.com/images_ldu/_api/libs/utils_core.js"></script>
@@ -11,11 +11,15 @@ xmlns:fb="http://ogp.me/ns/fb#"><!-- Обявление стандарта. Не
 <body>
 <div class="share42init"></div>
 <script>
-var target_url = "http://www.kristallum.com/";
-var od_game_url = "https://ok.ru/game/kristallum";
-var vk_game_url = "https://vk.com/app3739891";
-var gr_game_url = "http://www.kristallum.com";
-var vk_group_url = "http://vk.com/krajsveta";//"https://www.facebook.com/pages/Kristallum-Online-Community/570323146340252";
+
+* [https://vk.com/]()
+
+
+var target_url = "http://kristallum.com/get/online";
+var od_game_url = "http://kristallum.com/get/online-od";
+var vk_game_url = "http://kristallum.com/get/online-vk";
+var gr_game_url = "http://kristallum.com/get/online";
+var vk_group_url = "http://kristallum.com/get/group";
 </script>
 
 <script>
@@ -24,13 +28,13 @@ var share42updDOM = function(miniurl,fullurl,datatitle,datadesc,dataimg,datapath
 	u=encodeURIComponent(fullurl);
 	u2=encodeURIComponent(fullurl);
 	u3=encodeURIComponent(miniurl);
-	
+
 	datadesc=encodeURIComponent(datadesc);
 	dataimg=encodeURIComponent(dataimg);
-	
+
 	t=encodeURIComponent(datatitle);
 	t=t.replace('\'','%27');
-	
+
 	for(var i=0;i<d.length;i++){
 		if(d[i].className.indexOf('share42init')!=-1){
 			var s=new Array(
