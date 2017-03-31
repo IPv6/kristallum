@@ -28,7 +28,7 @@ permalink: /ru/pages/about/
 
 ---
 <div id="post_frame_html" style="width:90%; display: flex; align-items: center; justify-content: center;">
-Скачать:
+Скачать новеллу "На краю света":
 <div style='display: inline-block;margin-left:10px;'><a href='http://kristallum.com/get/windows' target='_blank'><img src='https://gamerotor.com/images_ldu/_api/img/bt_lnk_pcdownl.png'></a></div>
 <div style='display: inline-block;margin-left:10px;'><a href='http://kristallum.com/get/googleplay' target='_blank'><img src='https://gamerotor.com/images_ldu/_api/img/bt_lnk_googlestore.png'></a></div>
 </div>
