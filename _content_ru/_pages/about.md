@@ -23,7 +23,9 @@ permalink: /ru/pages/about/
 --- Предыстория
 
 С предысторией "На краю света" можно ознакомиться в моде "Epic Fail: за кадром"
+
 Это продолжение концовки Epic Fail, для знакомых с новеллой "Бесконечное Лето"
+
 Ссылка на мод: [Steam Workshop](http://kristallum.com/get/epicfail)
 
 ---
