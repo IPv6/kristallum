@@ -33,7 +33,7 @@ permalink: /ru/pages/about/
 <div style='display: inline-block;margin-left:10px;'><a href='http://kristallum.com/get/googleplay' target='_blank'><img src='https://gamerotor.com/images_ldu/_api/img/bt_lnk_googlestore.png'></a></div>
 </div>
 <br>
-А еще можно заглянуть по этим ссылкам:
+А еще можно заглянуть сюда:
 
 * [http://anivisual.net/](http://anivisual.net/stuff/2-1-0-436)
 
