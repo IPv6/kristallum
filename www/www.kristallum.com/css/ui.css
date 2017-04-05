@@ -23,7 +23,10 @@ img {
 	border-style: none;
 }
 
-.content-wrapper {
+.centered_inners {
+	display: flex; 
+	align-items: center; 
+	justify-content: space-around;
 }
 
 .page-topper {

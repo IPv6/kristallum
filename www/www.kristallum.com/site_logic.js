@@ -303,7 +303,7 @@ window.jq_prepare_ui = function() {
 			jq_lightbox_me_simplified_ids.push('#gr_enterdialog_bg');
 		}
 		var newdiv = $('<div id="gr_enterdialog_bg" style="background:url(/img/bg_login_popup2_ww250_hh250.png) no-repeat; width:250px; height:250px;  display:none;"'+window.gr_enterdialog_bg_style+'/>');
-		$(window.gr_enterdialog_bg_parent).append(newdiv);
+		$(window.gr_enterdialog_bg_parent).html(newdiv);
 		
 		var newdiv3 = $('<div id="gr_pleasewait" style="background:url(/img/bg_rega_block_ww250_hh80.png) no-repeat; position: absolute; width:250px; height:80px; left: 65%; top: 20%; z-index: '+(window.CONST_ZINDEX_LOGIN+20)+'; display:none;"><div style="padding:30px 40px 0px 40px;text-align:center;">'+$._b("Connecting to server")+'</div></div>');
 		$('body').append(newdiv3);
@@ -342,7 +342,7 @@ window.jq_ui_popupLoginForm = function(overloads) {
 		form_html += "<table cellspacing='0' cellpadding='0' border='0' class='ui_form' style='padding:20px 20px 20px 20px;'>";
 		form_html += "<form action='#' method='get' id='gr_form_login'>";
 		var socn_buttons = get_socialbuttons(true);
-		form_html += "<tr><td colspan='2' align='center' valign='top'><span style='vertical-align:top;'>"+$._b("Use social login")+":</span><br><br>"
+		form_html += "<tr><td colspan='2' align='center' valign='top'><span class='ui_button_label' style='vertical-align:top;'>"+$._b("Use social login")+":</span><br><br><br>"
 		form_html += socn_buttons+"</div></td></tr>";
 		//form_html += "<tr><td colspan='2' align='center' valign='top'>";
 		//form_html += "<a id='gr_form_switch' to_mode='"+window.CONST_MODE_REG+"'><img src='/img/bt_green_2_ww158_hh42.png' src2='/img/bt_green_2_ovl.png'/><span>"+$._b("REGISTER")+"</span></a>";
