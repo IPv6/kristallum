@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ru" xmlns:og="http://opengraphprotocol.org/schema/"
-itemscope itemtype="http://schema.org/Article" 
-xmlns:fb="http://www.facebook.com/2008/fbml" 
+itemscope itemtype="http://schema.org/Article"
+xmlns:fb="http://www.facebook.com/2008/fbml"
 xmlns:fb="http://ogp.me/ns/fb#"><!-- Обявление стандарта. Не убирать! -->
 <head>
 
@@ -105,7 +105,7 @@ function showLoginForm(){
 		jq_redirect2page(overloads);
 		return;
 	}
-	
+
 	if(weAreInIframe()){
 		window.login_innewtab = 2;
 	}
@@ -140,7 +140,7 @@ function on_js_init(){
 		jq_check_friendinvites(false);
 		jq_statHitPage("ui_rega");
 		window.js_inited++;
-		
+
 		var oldauth = $.Storage.get(window.CONST_JSSTORE_AUTH);
 		core_log(window.CONST_JSSTORE_AUTH+": "+oldauth);
 		if(core_len(oldauth)>0){
@@ -190,7 +190,7 @@ jq_bootstrap(on_js_init);
 	</div>
 	<div class='ui_button_label centered_inners' style="flex-direction:column; background: url(img/bg_login_popup2_ww250_hh250.png);width:250px;height:250px;">
 		<div style="padding:20px 40px 0px 40px;font-size:120%;">Добро пожаловать в 23-ий век!</div>
-		<div style="padding:10px;">Станция Омега всегда рада новым гостям!</div>
+		<div style="padding:10px 40px 0px 40px;">Станция Омега всегда рада новым гостям!</div>
 		<div style="padding:10px;font-size:80%;color:white;">Для входа на станцию требуется регистрация. Воспользуйтесь кнопками в блоке управления слева.</div>
 	</div>
 </div>
