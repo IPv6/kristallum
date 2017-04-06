@@ -8,7 +8,7 @@ permalink: /ru/pages/about/
 
 2217 год. Мирное будущее. Десятки планет и цивилизаций, живущих по своим правилам.
 
---- Предыстория
+--- Описание
 
 Главный герой - обычный студент по имени Гена, спешащий на родную планету после третьего года обучения в университете. Впереди его ждут пара месяцев каникул, безделья и развлечений. Или... нет?
 
@@ -20,14 +20,20 @@ permalink: /ru/pages/about/
 
 Красивая визуальная новелла в жанре в жанре научно-развлекательного фентези с элементами online-игры и оригинальным способом подачи текста!
 
+--- Предыстория
+
+С предысторией "На краю света" можно ознакомиться в моде "Epic Fail: за кадром". Это продолжение концовки Epic Fail, для знакомых с новеллой "Бесконечное Лето"
+
+Ссылка на мод: [Steam Workshop](http://kristallum.com/get/epicfail)
+
 ---
 <div id="post_frame_html" style="width:90%; display: flex; align-items: center; justify-content: center;">
-Скачать:
+Скачать новеллу "На краю света":
 <div style='display: inline-block;margin-left:10px;'><a href='http://kristallum.com/get/windows' target='_blank'><img src='https://gamerotor.com/images_ldu/_api/img/bt_lnk_pcdownl.png'></a></div>
 <div style='display: inline-block;margin-left:10px;'><a href='http://kristallum.com/get/googleplay' target='_blank'><img src='https://gamerotor.com/images_ldu/_api/img/bt_lnk_googlestore.png'></a></div>
 </div>
 <br>
-А еще можно заглянуть по этим ссылкам:
+А еще можно заглянуть сюда:
 
 * [http://anivisual.net/](http://anivisual.net/stuff/2-1-0-436)
 
