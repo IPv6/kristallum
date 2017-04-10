@@ -4,20 +4,50 @@ itemscope itemtype="http://schema.org/Article"
 xmlns:fb="http://www.facebook.com/2008/fbml"
 xmlns:fb="http://ogp.me/ns/fb#"><!-- Обявление стандарта. Не убирать! -->
 <head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="msapplication-tap-highlight" content="no">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <!--# include file="ssi_metas.html?$args" -->
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script type="text/javascript" src="https://yastatic.net/jquery/1.8.3/jquery.min.js"></script>
 <script type="text/javascript" src="http://static.gamerotor.com/scripts/sites/jquery/jquery.storage.js"></script>
 <script type="text/javascript" src="http://static.gamerotor.com/scripts/sites/jquery/jquery.json-2.2.min.js"></script>
 <script type="text/javascript" src="http://static.gamerotor.com/scripts/sites/jquery/jquery.purl.pp.js"></script>
 <script type="text/javascript" src="http://static.gamerotor.com/scripts/sites/head.load.min.js"></script>
 <script type="text/javascript" src="http://static.gamerotor.com/scripts/sites/site_bootstrap.js"></script>
-<script type="text/javascript" src="https://secure.xsolla.com/paybar/jswidget/paybar.js"></script>
-<link type="text/css" rel="stylesheet" href="/css/xsolla.css">
 
+<link rel="stylesheet" href="//money.yandex.ru/b/desktop/_common.css?v=73-dyLjiO4239bFkeu7w88LiedU">
+<style>
+body, html, div, span {
+	font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
+	font-size:14;
+	color:#244d4d;
+}
+
+.flexed {
+	display: flex;
+	flex-direction:row;
+	align-items: center;
+	justify-content: space-around;
+}
+
+.roundedDiv {
+	border: 1px solid black;
+	padding: 20px 20px 20px 20px;
+	border-radius: 10px;
+}
+
+.roundedDivSm {
+	border: 1px solid #aaa;
+	padding: 10px 10px 10px 10px;
+	margin: 5px 5px 5px 5px;
+	border-radius: 10px;
+}
+
+div {
+	margin-bottom: auto;
+}
+</style>
 <script>
-window.jq_payment_email = '';
-// iframe paystation?
 // ping for payment success
 var pingBalance_maxtry = 0;
 var pingBalance_timeout = 0;
@@ -85,29 +115,12 @@ window.jq_ui_ApiPayment = function(data)
 	pingBalance_payOpts = data;
 	pingBalance_payOpts.service = core_coalesce(pingBalance_payOpts.service,0);
 	var req_price = data.price*1.0;// virtual to rub = 1;
+	$("#payment_id").html(req_v1);
+	$("#total_sum").html(req_price);
 	$("#widget_paybar_content").show();
-	var xsolla_pb_req = {
-		element_id: 'widget_paybar_content',
-		type: 'lightbox',
-		project: $._conf("widget_urls")[focus_widget]["xsolla_id"],
-		v1: req_v1,
-		out: req_price,
-		email: jq_payment_email,
-		phone: '',
-		local: userLang,
-		template: { id: 'inline', icon_count: 7, other: true },
-		errorCallback: function(message, category) {
-			jq_ui_ApiPaymentCancel();
-			core_log('Payment error "' + message + '" at ' + category);
-		},
-	}
-	window.xsolla_req = xsolla_pb_req;
-	core_log("jq_ui_ApiPayment xsolla_req",window.xsolla_req);
-	XPBWidget.init(window.xsolla_req);
 
 	pingBalance_maxtry = 300;
 	// balance ping is done by client
-	//pingBalance_timeout = window.setInterval(jq_ui_ApiPaymentPingBalance, 7000);
 	core_log("jq_ui_ApiPayment balance ping #"+pingBalance_timeout);
 	var info_text = $._b("Payment option");
 	info_text = core_str_replace(info_text,"%(title)",data.title);
@@ -117,6 +130,12 @@ window.jq_ui_ApiPayment = function(data)
 jq_bootstrap(function(){
 	var apiconf = $.gr_getConf();
 	GamerotorServer.BootstrapApi(window.bootstrap_config['focus_widget'],apiconf);
+	var postaction = $.url().param("action");
+	if(postaction == "done"){
+		$("#widget_paybar_info").html("<h2>Success! You can close this window now.</h2>");
+		return;
+	}
+	
 	var user_id = $.url().param("user_id");
 	var service = $.url().param("service");
 	var price = $.url().param("price");
@@ -130,12 +149,48 @@ jq_bootstrap(function(){
 },".");
 </script>
 </head>
-<body style="background:url(img/bg_gamepage.jpg);background-repeat:no-repeat;background-position:center top;background-color: black;">
+<body style="background:url(img/bg_gamepage.jpg);background-repeat:repeat;background-position:center top;background-color: black;">
 <center>
-<div id="widget_paybar_info" style="width: 90%; padding: 20px 20px 20px 20px; margin: 20px 20px 20px 20px;">...</div>
-<div id="widget_paybar_content" style="display: none; width: 90%; padding: 20px 20px 20px 20px; margin: 20px 20px 20px 20px;"></div>
-
-<!-- a id="paycancel_bt" href="javascript:jq_ui_ApiPaymentCancel();" style="display: inline-block; width: 150px; height: 50px; background:url(/img/bt_green_1_ww150_hh50.png); background-repeat:no-repeat;background-position:center top; padding-top: 18px; text-decoration: none; font-weight: bold;">ЗАКРЫТЬ</a -->
+<div id="widget_paybar_info" style="background-color: #f9fddf; width: 90%; padding: 20px 20px 20px 20px; margin: 20px 20px 20px 20px;">...</div>
+<div class="flexed">
+	<!-- Yandex payment form --------------------------- -->
+	<div id="widget_paybar_content" style="display: none;">
+		<form class="roundedDiv" method="POST" target="_blank" action="https://money.yandex.ru/quickpay/confirm.xml">
+			<input type="hidden" name="receiver" value="410011104610427">
+			<input type="hidden" name="successURL" value="http://www.kristallum.com/inline_payment.html?action=done">
+			<input type="hidden" name="label" id="payment_id" value="">
+			<input type="hidden" name="quickpay-form" value="shop">
+			<input type="hidden" name="is-inner-form" value="true">
+			<input type="hidden" name="referer" value="">
+			<input type="hidden" name="targets" value="Бонусный пакет">
+			<input type="hidden" name="sum" value="10" maxlength="10">
+			
+			<label>Способ оплаты:</label>
+			<div class="roundedDivSm"><input class="radio-button__control" value="PC" checked="checked" name="paymentType" type="radio" id="ptPC">
+			<label for="ptPC"><img src="https://money.yandex.ru/b/_/qTOToHuhW55WKrD_UAZ0KUl6PiI.svg"></label>
+			</div>
+			<div class="roundedDivSm"><input class="radio-button__control" value="AC" name="paymentType" type="radio" id="ptAC">
+			<label for="ptAC"><img src="https://money.yandex.ru/b/_/FRYVMdQY0d--xOk1KmZTYRe4LAc.svg"></label>
+			</div>
+			<div class="roundedDivSm"><input class="radio-button__control" value="MC" name="paymentType" type="radio" id="ptMC">
+			<label for="ptMC"><img src="https://money.yandex.ru/b/_/IfxB8g1IzKVJ-ngXPHqBOmLMDvQ.svg"></label>
+			</div>
+			
+			<div class="roundedDivSm">
+			<label>Сумма:</label>
+			<br><label id="total_sum">...</label> <label>руб.</label>
+			</div>
+			
+			<br>
+			<button class="button2 button2_type_submit button2_size_m button2_theme_action i-bem button2_js_inited" data-bem="{&quot;button2&quot;:{&quot;_tabindex&quot;:&quot;0&quot;}}" type="submit" autocomplete="off" tabindex="0"><span class="button2__text">Оплатить</span></button>
+		</form>
+	</div>
+	<!-- --------------------------- -->
+	<div>
+		Игра недели:<br>
+		<a href="http://kristallum.com/get/gameofweek" target="_blank"><img src="http://kristallum.com/get/gameofweek_img"></a>
+	</div>
+</div>
 </center>
 </body>
 </html>
