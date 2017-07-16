@@ -1,24 +1,5 @@
 # Operators:
 # - Project mesh features into vertex color or UV-map (since vertext color limited to 255 gradations) for future use in material nodes
-
-
-#https://raw.githubusercontent.com/varkenvarken/blenderaddons/master/connectedvertexcolors%20.py
-#https://raw.githubusercontent.com/selfsame/vcol-compositor/master/bake_vertex_diffuse.py
-#https://blender.stackexchange.com/questions/30841/how-to-view-vertex-colors
-#https://github.com/zeffii/TubeTool
-
-#https://blender.stackexchange.com/questions/40974/how-to-delete-all-faces-with-distance-to-other-object
-#https://github.com/meta-androcto/blenderpython/blob/master/scripts/addons_extern/mesh_align_to_gpencil_view.py
-#https://blenderartists.org/forum/showthread.php?393477-Geodesics-on-Surfaces
-
-#https://blender.stackexchange.com/questions/882/how-to-find-image-coordinates-of-the-rendered-vertex
-#https://blender.stackexchange.com/questions/43335/how-do-i-get-knife-project-operator-to-use-view-settings-within-the-operator
-#https://blenderartists.org/forum/showthread.php?327216-How-to-access-the-view-3d-camera
-
-#https://docs.blender.org/api/blender_python_api_current/
-#https://docs.blender.org/api/blender_python_api_current/search.html?q=bmesh
-#https://docs.blender.org/api/blender_python_api_current/mathutils.geometry.html
-
 # TBD: Use normal-dispersion to get gradients. Much better than 3d-distance for mimicing geodesics
 
 import bpy
@@ -53,8 +34,53 @@ bl_info = {
 	"tracker_url": "",
 	"category": "Paint"}
 
-def do_painting(context, active_object, color_map, paint_list, glob_refpoint, vc_refmode):
+def do_painting(context, active_object, active_mesh, color_map, paint_list, glob_refpoint, vc_refmode):
 	print("do_painting, vertext count: ", len(paint_list))
+	if vc_refmode == "shape":
+		b_up = mathutils.Vector((0,1))
+		b_ri = mathutils.Vector((1,0))
+		# looking for external edges (dumb way, most left/right/up/down points)
+		extr_list = []
+		for vertex_data in paint_list:
+			srt_ddx1 = sorted(filter(lambda plt: plt[3][1] <= vertex_data[3][1],paint_list), key=lambda plt: (plt[3][0]-vertex_data[3][0]))
+			if(len(srt_ddx1)>0):
+				if (srt_ddx1[0]) not in extr_list:
+					extr_list.append(srt_ddx1[0])
+				if ((srt_ddx1[::-1])[0]) not in extr_list:
+					extr_list.append((srt_ddx1[::-1])[0])
+			srt_ddx2 = sorted(filter(lambda plt: plt[3][1] > vertex_data[3][1],paint_list), key=lambda plt: (plt[3][0]-vertex_data[3][0]))
+			if(len(srt_ddx2)>0):
+				if (srt_ddx2[0]) not in extr_list:
+					extr_list.append(srt_ddx2[0])
+				if ((srt_ddx2[::-1])[0]) not in extr_list:
+					extr_list.append((srt_ddx2[::-1])[0])
+			srt_ddy1 = sorted(filter(lambda plt: plt[3][0] <= vertex_data[3][0],paint_list), key=lambda plt: (plt[3][1]-vertex_data[3][1]))
+			if(len(srt_ddy1)>0):
+				if (srt_ddy1[0]) not in extr_list:
+					extr_list.append(srt_ddy1[0])
+				if ((srt_ddy1[::-1])[0]) not in extr_list:
+					extr_list.append((srt_ddy1[::-1])[0])
+			srt_ddy2 = sorted(filter(lambda plt: plt[3][0] > vertex_data[3][0],paint_list), key=lambda plt: (plt[3][1]-vertex_data[3][1]))
+			if(len(srt_ddy2)>0):
+				if (srt_ddy2[0]) not in extr_list:
+					extr_list.append(srt_ddy2[0])
+				if ((srt_ddy2[::-1])[0]) not in extr_list:
+					extr_list.append((srt_ddy2[::-1])[0])
+		srt_ddp = sorted(extr_list, key=lambda plt: (plt[3]-extr_list[0][3]).length, reverse=True)
+		maxdim = (srt_ddp[0][3]-extr_list[0][3]).length
+		for vertex_data in paint_list:
+			srt_dd = sorted(extr_list, key=lambda plt: (plt[3]-vertex_data[3]).length)
+			srt_xp = sorted(extr_list, key=lambda plt: (plt[3][0]-vertex_data[3][0])/(1.0+abs(b_ri.dot(plt[3]-vertex_data[3]))))
+			srt_yp = sorted(extr_list, key=lambda plt: (plt[3][1]-vertex_data[3][1])/(1.0+abs(b_up.dot(plt[3]-vertex_data[3]))))
+			min_x = srt_xp[0][3][0]
+			max_x = (srt_xp[::-1])[0][3][0]
+			min_y = srt_yp[0][3][1]
+			max_y = (srt_yp[::-1])[0][3][1]
+			vec2d = vertex_data[3]
+			xrel = (vec2d[0]-min_x)/(max_x-min_x)
+			yrel = (vec2d[1]-min_y)/(max_y-min_y)
+			drel = 2.0*(vertex_data[3]-srt_dd[0][3]).length/maxdim
+			color_map.data[vertex_data[0]].color = (xrel,yrel,drel)
 	if vc_refmode == "axis":
 		min_x = 9999
 		max_x = 0
@@ -63,7 +89,7 @@ def do_painting(context, active_object, color_map, paint_list, glob_refpoint, vc
 		min_nx = mathutils.Vector()
 		max_nx = mathutils.Vector()
 		for vertex_data in paint_list:
-			vec2d = location_to_region(vertex_data[1])
+			vec2d = vertex_data[3] #location_to_region(vertex_data[1])
 			if vec2d[0]<min_x:
 				min_x = vec2d[0]
 				min_nx = vertex_data[2]
@@ -75,7 +101,7 @@ def do_painting(context, active_object, color_map, paint_list, glob_refpoint, vc
 		#max_xy = max(max_x,max_y)
 		nn_rads = math.acos(min_nx.dot(max_nx))
 		for vertex_data in paint_list:
-			vec2d = location_to_region(vertex_data[1])
+			vec2d = vertex_data[3] #location_to_region(vertex_data[1])
 			xrel = (vec2d[0]-min_x)/(max_x-min_x)
 			yrel = (vec2d[1]-min_y)/(max_y-min_y)
 			#xrel = vec2d[0]/max_xy
@@ -94,7 +120,7 @@ def do_painting(context, active_object, color_map, paint_list, glob_refpoint, vc
 		minlen2d = 9999
 		for vertex_data in paint_list:
 			vec = vertex_data[1]-glob_refpoint
-			vec2d = location_to_region(vertex_data[1])-glob_refpoint2d
+			vec2d = vertex_data[3]-glob_refpoint2d
 			maxlen3d = max(maxlen3d,vec.length)
 			minlen3d = min(minlen3d,vec.length)
 			maxlen2d = max(maxlen2d,vec2d.length)
@@ -102,7 +128,7 @@ def do_painting(context, active_object, color_map, paint_list, glob_refpoint, vc
 		for vertex_data in paint_list:
 			vec3d = vertex_data[1]-glob_refpoint
 			reldist3d = (vec3d.length-minlen3d)/(maxlen3d-minlen3d)
-			vec2d = location_to_region(vertex_data[1])-glob_refpoint2d
+			vec2d = vertex_data[3]-glob_refpoint2d
 			reldist2d = (vec2d.length-minlen2d)/(maxlen2d-minlen2d)
 			color_map.data[vertex_data[0]].color = (reldist3d,reldist2d,vec3d.length*0.1)
 		return
@@ -120,11 +146,12 @@ def make_paint_list(active_object, active_mesh, faces):
 				l = active_mesh.loops[idx] # The loop entry this polygon point refers to
 				v = active_mesh.vertices[l.vertex_index] # The vertex data that loop entry refers to
 				co_world = active_object.matrix_world * v.co
+				co_world2d = location_to_region(co_world)
 				norml = mathutils.Vector((v.normal.x,v.normal.y,v.normal.z))
-				paint_list.append([i, co_world, norml])
+				paint_list.append([i, co_world, norml, co_world2d])
 			i += 1
 	return paint_list
-
+	
 def get_selected_facesIdx(active_mesh):
 	# find selected faces
 	bpy.ops.object.mode_set(mode='OBJECT')
@@ -151,7 +178,7 @@ def op_find_and_paint(context, operator, active_object, vc_refmode):
 		return
 
 	paint_list = make_paint_list(active_object, active_mesh, faces)
-	do_painting(context, active_object, color_map, paint_list, cursor, vc_refmode)
+	do_painting(context, active_object, active_mesh, color_map, paint_list, cursor, vc_refmode)
 
 def add_connected_bmverts(v,verts_list,selverts):
 	v.tag = True
@@ -205,9 +232,9 @@ class bakeCursorDistanceToVc(bpy.types.Operator):
 		context.scene.update()
 		return {'FINISHED'}
 
-class bakeCursor2dAxisToVc(bpy.types.Operator):
-	bl_idname = "object.bake_cursor_2daxis_to_vc"
-	bl_label = "bakeCursor2dAxisToVc"
+class bakeProj2dAxisToVc(bpy.types.Operator):
+	bl_idname = "object.bake_2daxis_to_vc"
+	bl_label = "bakeProj2dAxisToVc"
 	bl_options = {'REGISTER', 'UNDO'}
 
 	@classmethod
@@ -224,6 +251,29 @@ class bakeCursor2dAxisToVc(bpy.types.Operator):
 		if active_object is not None:
 			active_object.data.use_paint_mask = True
 		op_find_and_paint(context, self, active_object, "axis")
+		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+		context.scene.update()
+		return {'FINISHED'}
+
+class bakeShape2dAxisToVc(bpy.types.Operator):
+	bl_idname = "object.bake_2dshape_to_vc"
+	bl_label = "bakeShape2dAxisToVc"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll(self, context):
+		# Check if we have a mesh object active and are in vertex paint mode
+		p = (isinstance(context.scene.objects.active, bpy.types.Object) and
+			isinstance(context.scene.objects.active.data, bpy.types.Mesh))
+		return p
+
+	def execute(self, context):
+		print("execute ", self.bl_idname)
+		active_object = context.scene.objects.active
+		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+		if active_object is not None:
+			active_object.data.use_paint_mask = True
+		op_find_and_paint(context, self, active_object, "shape")
 		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
 		context.scene.update()
 		return {'FINISHED'}
@@ -255,7 +305,7 @@ class bakeMeshCentersToVc(bpy.types.Operator):
 			return {'FINISHED'}
 		bpy.ops.object.mode_set(mode='OBJECT')
 
-		if self.actionType == 2 or self.actionType == 3:
+		if self.actionType == 2 or self.actionType == 6 or self.actionType == 3 or self.actionType == 5:
 			bakemap_pref = bakeOpts.bake_uvbase
 			bakemap_x = bakemap_pref+"X"
 			uv_layer_bx = active_mesh.uv_textures.get(bakemap_x)
@@ -304,7 +354,7 @@ class bakeMeshCentersToVc(bpy.types.Operator):
 						rndc = (random(),random(),random())
 						for mv in meshlist:
 							vc_values[mv.index] = rndc
-					elif self.actionType == 2:
+					elif self.actionType == 2 or self.actionType == 6:
 						medianpoint = mathutils.Vector()
 						for mv in meshlist:
 							medianpoint = medianpoint+mv.co
@@ -319,8 +369,11 @@ class bakeMeshCentersToVc(bpy.types.Operator):
 						mediandivers = (median_maxx, median_maxy, median_maxz)
 						print ("Mesh median: ", medianpoint, mediandivers)
 						for mv in meshlist:
-							uv_values1[mv.index] = (medianpoint-mv.co, mediandivers)
-					elif self.actionType == 3:
+							if self.actionType == 2:
+								uv_values1[mv.index] = (medianpoint-mv.co, mediandivers)
+							else:
+								uv_values1[mv.index] = (medianpoint, mediandivers)
+					elif self.actionType == 3 or self.actionType == 5:
 						median_maxx = 0;
 						median_maxy = 0;
 						median_maxz = 0;
@@ -330,8 +383,10 @@ class bakeMeshCentersToVc(bpy.types.Operator):
 							median_maxz = max(median_maxz, abs(mv.co[2]-cursor[2]))
 						mediandivers = (median_maxx, median_maxy, median_maxz)
 						for mv in meshlist:
-							uv_values1[mv.index] = (cursor-mv.co, mediandivers)
-						print ("Mesh cursor: ", cursor, mediandivers)
+							if self.actionType == 3:
+								uv_values1[mv.index] = (cursor-mv.co, mediandivers)
+							else:
+								uv_values1[mv.index] = (cursor, mediandivers)
 					elif self.actionType == 4:
 						min_x = 9999
 						min_y = 9999
@@ -422,8 +477,9 @@ class BakeFeatures2VC_Panel(bpy.types.Panel):
 
 		col = layout.column()
 		col.label("Bake to VCol")
-		col.operator("object.bake_cursor_2daxis_to_vc", text="Bake 2d-Axis (View Proj, N)") # normalized
-		col.operator("object.bake_cursor_distance_to_vc", text="Bake 3D-cur distance (N)") # normalized
+		col.operator("object.bake_2daxis_to_vc", text="Bake Flat projection)") # normalized
+		col.operator("object.bake_2dshape_to_vc", text="Bake Shape projection") # normalized
+		col.operator("object.bake_cursor_distance_to_vc", text="Bake 3D-cursor distance") # normalized
 		col.operator("object.bake_mesh_centers_to_vc", text="Bake random color").actionType = 1
 		col.separator()
 
@@ -431,8 +487,10 @@ class BakeFeatures2VC_Panel(bpy.types.Panel):
 		col.label("Bake to UVMap")
 		col.prop(bakeOpts, "bake_uvbase")
 		col.operator("object.bake_mesh_centers_to_vc", text="Bake 2d-Axis (View Proj)").actionType = 4
-		col.operator("object.bake_mesh_centers_to_vc", text="Bake Cursor position (L)").actionType = 3
-		col.operator("object.bake_mesh_centers_to_vc", text="Bake Meshes centers (L)").actionType = 2
+		col.operator("object.bake_mesh_centers_to_vc", text="Bake offset: 3D Cursor").actionType = 3
+		col.operator("object.bake_mesh_centers_to_vc", text="Bake offset: Mesh-mids").actionType = 2
+		col.operator("object.bake_mesh_centers_to_vc", text="Bake local: 3D Cursor").actionType = 5
+		col.operator("object.bake_mesh_centers_to_vc", text="Bake local: Mesh-mids").actionType = 6
 
 def register():
 	print("BakeFeatures2VC_Panel registered")
@@ -445,3 +503,20 @@ def unregister():
 
 if __name__ == "__main__":
 	register()
+
+#https://raw.githubusercontent.com/varkenvarken/blenderaddons/master/connectedvertexcolors%20.py
+#https://raw.githubusercontent.com/selfsame/vcol-compositor/master/bake_vertex_diffuse.py
+#https://blender.stackexchange.com/questions/30841/how-to-view-vertex-colors
+#https://github.com/zeffii/TubeTool
+
+#https://blender.stackexchange.com/questions/40974/how-to-delete-all-faces-with-distance-to-other-object
+#https://github.com/meta-androcto/blenderpython/blob/master/scripts/addons_extern/mesh_align_to_gpencil_view.py
+#https://blenderartists.org/forum/showthread.php?393477-Geodesics-on-Surfaces
+
+#https://blender.stackexchange.com/questions/882/how-to-find-image-coordinates-of-the-rendered-vertex
+#https://blender.stackexchange.com/questions/43335/how-do-i-get-knife-project-operator-to-use-view-settings-within-the-operator
+#https://blenderartists.org/forum/showthread.php?327216-How-to-access-the-view-3d-camera
+
+#https://docs.blender.org/api/blender_python_api_current/
+#https://docs.blender.org/api/blender_python_api_current/search.html?q=bmesh
+#https://docs.blender.org/api/blender_python_api_current/mathutils.geometry.html

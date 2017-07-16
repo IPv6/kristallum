@@ -3,8 +3,11 @@
 # - Select all visible vertices/verts
 # - Deselect visible verts or invisible verts
 
-# https://blenderartists.org/forum/showthread.php?354113-Addon-Cut-Faces-Deselect-Boundary
-# https://blender.stackexchange.com/questions/77607/how-to-get-the-3d-coordinates-of-the-visible-vertices-in-a-rendered-image-in-ble
+# region_to_loop -> outer boundaries
+# bpy_extras.mesh_utils.edge_loops_from_edges(mesh, edges=None)
+# https://blenderartists.org/forum/showthread.php?354113-Addon-Cut-Faces-Deselect-Boundary calc_outer_face
+# https://blender.stackexchange.com/questions/27878/finding-the-lists-of-connected-indices-associated-with-disjoint-mesh-elements
+
 
 import bpy
 import bmesh
@@ -83,6 +86,61 @@ def get_selected_vertsIdx(active_mesh):
 	selectedVertsIdx = [e.index for e in active_mesh.vertices if e.select]
 	return selectedVertsIdx
 
+
+def calc_outer_face(face, selFacesIdx, keep_caps=True):
+	assert face.tag
+	def radial_loops(loop):
+		next = loop.link_loop_radial_next
+		while next != loop:
+			result, next = next, next.link_loop_radial_next
+			yield result
+	result = []
+	face.tag = False
+	selected = []
+	to_select = []
+	for loop in face.loops:
+		self_selected = False
+		# Iterate over selected adjacent faces
+		for radial_loop in filter(lambda l: l.face.index in selFacesIdx, radial_loops(loop)):
+			# Tag the edge if no other face done so already
+			if not loop.edge.tag:
+				loop.edge.tag = True
+				self_selected = True
+			adjacent_face = radial_loop.face
+			# Only walk adjacent face if current face tagged the edge
+			if adjacent_face.tag and self_selected:
+				result += calc_outer_face(adjacent_face, keep_caps)
+		if loop.edge.tag:
+			(selected, to_select)[self_selected].append(loop)
+
+	for loop in to_select:
+		result.append(loop.edge)
+		selected.append(loop)
+	# Select opposite edge in quads
+	if keep_caps and len(selected) == 1 and len(face.verts) == 4:
+		result.append(selected[0].link_loop_next.link_loop_next.edge)
+	return result
+
+def get_edge_rings(bm, selFacesIdx, keep_caps=True):
+	def tag_face(face):
+		if face.index in selFacesIdx:
+			face.tag = True
+			for edge in face.edges: edge.tag = False
+		return face.index in selFacesIdx
+	# fetch selected faces while setting up tags
+	selected_faces = [ f for f in bm.faces if tag_face(f) ]
+	edges = []
+	try:
+		# generate a list of edges to select:
+		# traversing only tagged faces, since calc_outer_face can walk and untag islands
+		for face in filter(lambda f: f.tag, selected_faces): edges += calc_outer_face(face, keep_caps)
+	finally:
+		# housekeeping: clear tags
+		for face in selected_faces:
+			face.tag = False
+			for edge in face.edges: edge.tag = False
+	return edges
+	
 def visibilitySelect(active_object, active_mesh, context, actionSelectType):
 	selverts = get_selected_vertsIdx(active_mesh)
 	bpy.ops.object.mode_set( mode = 'EDIT' )
