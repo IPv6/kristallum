@@ -1,10 +1,15 @@
+# Extracts layers from Multi-layered EXR into set of PNG files
+# With proper half/float and Linear->sRGB conversion
+# Using oiiotool from OpenImageIO suite, without python bindings
+# Windows binary (with OCIO support) can be found here: http://www.nico-rehberg.de/tools.html
+# On windows needs proper config.ocio (can be found inside Blender installation folder)
+
 import re
 import os
 import sys
 import subprocess
 
 isWin = False
-# Windows binary (with OCIO support) can be found here: http://www.nico-rehberg.de/tools.html
 if isWin:
 	oiioexe = "f:\__GameResources\zzz_TOOLS\openimageio\oiiotool.exe"
 	ocioconf = "c:\Program Files\Blender Foundation\Blender\2.78\datafiles\colormanagement\config.ocio"
