@@ -13,6 +13,9 @@ if len(sys.argv) < 2:
 
 exrfile = sys.argv[1]
 print 'EXR to parse:', exrfile
+if not os.path.exists(exrfile):
+	print 'Invalid path to exr file, quitting'
+	sys.exit(0)
 exrlayers = []
 
 oiio_env = os.environ.copy()
@@ -28,17 +31,24 @@ ps = Popen(oiiocall, stdin = subprocess.PIPE, stdout = subprocess.PIPE, env=oiio
 exrinfo = stdout.splitlines()
 for exrinfoline in exrinfo:
 	if exrinfoline.find("channel list:") >= 0:
-		exrlayers = [x.strip() for x in exrinfoline.split(',')]
-		exrlayers = filter(lambda plt: "channel list:" not in plt,exrlayers)
-		break
+		headr_content = exrinfoline.split(':')
+		if len(headr_content) >= 2:
+			exrlayers = [x.strip() for x in headr_content[1].split(',')]
+			break
 print 'Layers found:', exrlayers
+if len(exrlayers) == 0:
+	print 'No layers found, quitting'
+	sys.exit(0)
 
+exrname = os.path.basename(exrfile)
+exrname = os.path.splitext(exrname)[0]
 def flush_stack(stk):
 	if len(stk) == 0:
 		return
 	outname = stk[0].rsplit('.', 1)[0]
 	outname = outname.replace(".","_")
 	outname = outname.replace("+","_")
+	outname = exrname+"_"+outname
 	print "Extracting: ", outname
 	oiiocall = []
 	oiiocall.append(oiioexe)
