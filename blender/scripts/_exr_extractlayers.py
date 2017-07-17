@@ -18,18 +18,18 @@ else:
 	ocioconf = ""
 
 if len(sys.argv) < 2:
-	print 'Need path to exr file, quitting'
+	print 'Need path to EXR, quitting'
 	sys.exit(0)
 
 print 'Oiiotool path:', oiioexe
 if not os.path.exists(oiioexe):
-	print 'Invalid path to oiioexe, quitting'
+	print 'Invalid path to oiiotool, quitting'
 	sys.exit(0)
 
 exrfile = sys.argv[1]
 print 'EXR to parse:', exrfile
 if not os.path.exists(exrfile):
-	print 'Invalid path to exr file, quitting'
+	print 'Invalid path to EXR, quitting'
 	sys.exit(0)
 exrlayers = []
 
