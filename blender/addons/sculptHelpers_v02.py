@@ -1,13 +1,9 @@
 # Operators:
 # - Cut long edges / Subdivide big faces into smaller one
-# - Select all visible vertices/verts
-# - Deselect visible verts or invisible verts
-
-# region_to_loop -> outer boundaries
-# bpy_extras.mesh_utils.edge_loops_from_edges(mesh, edges=None)
-# https://blenderartists.org/forum/showthread.php?354113-Addon-Cut-Faces-Deselect-Boundary calc_outer_face
-# https://blender.stackexchange.com/questions/27878/finding-the-lists-of-connected-indices-associated-with-disjoint-mesh-elements
-
+# - Select all visible vertices
+# - Deselect visible/invisible verts
+# - Flatten inner vertices (of selected region) on the virtually-visible convex-hull of region boundaries
+# - Bridge edges of selected mesh regions based on min distance between vertices
 
 import bpy
 import bmesh
