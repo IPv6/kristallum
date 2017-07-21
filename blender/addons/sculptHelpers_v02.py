@@ -44,7 +44,7 @@ bl_info = {
 	"tracker_url" : "",
 	"category"	: "Add Mesh"
 	}
-	
+
 def camera_position(matrix):
 	""" From 4x4 matrix, calculate camera location """
 	t = (matrix[0][3], matrix[1][3], matrix[2][3])
@@ -73,74 +73,35 @@ def camera_pos(region_3d):
 	#rotation = region_3d.view_rotation
 	camera_pos = camera_position(matrix)
 	return camera_pos
-	
+
 def get_selected_edgesIdx(active_mesh):
 	# find selected faces
 	bpy.ops.object.mode_set(mode='OBJECT')
 	selectedEdgesIdx = [e.index for e in active_mesh.edges if e.select]
 	return selectedEdgesIdx
-	
+
 def get_selected_vertsIdx(active_mesh):
 	# find selected faces
 	bpy.ops.object.mode_set(mode='OBJECT')
 	selectedVertsIdx = [e.index for e in active_mesh.vertices if e.select]
 	return selectedVertsIdx
 
+def add_connected_bmverts(v,verts_list,selvertsIdx):
+	v.tag = True
+	if (selvertsIdx is not None) and (v.index not in selvertsIdx):
+		return
+	if v not in verts_list:
+		verts_list.append(v)
+	for edge in v.link_edges:
+		ov = edge.other_vert(v)
+		if (ov is not None) and not ov.tag:
+			ov.tag = True
+			if (selvertsIdx is not None) and (ov.index not in selvertsIdx):
+				return
+			if ov not in verts_list:
+				verts_list.append(ov)
+			add_connected_bmverts(ov,verts_list,selvertsIdx)
 
-def calc_outer_face(face, selFacesIdx, keep_caps=True):
-	assert face.tag
-	def radial_loops(loop):
-		next = loop.link_loop_radial_next
-		while next != loop:
-			result, next = next, next.link_loop_radial_next
-			yield result
-	result = []
-	face.tag = False
-	selected = []
-	to_select = []
-	for loop in face.loops:
-		self_selected = False
-		# Iterate over selected adjacent faces
-		for radial_loop in filter(lambda l: l.face.index in selFacesIdx, radial_loops(loop)):
-			# Tag the edge if no other face done so already
-			if not loop.edge.tag:
-				loop.edge.tag = True
-				self_selected = True
-			adjacent_face = radial_loop.face
-			# Only walk adjacent face if current face tagged the edge
-			if adjacent_face.tag and self_selected:
-				result += calc_outer_face(adjacent_face, keep_caps)
-		if loop.edge.tag:
-			(selected, to_select)[self_selected].append(loop)
-
-	for loop in to_select:
-		result.append(loop.edge)
-		selected.append(loop)
-	# Select opposite edge in quads
-	if keep_caps and len(selected) == 1 and len(face.verts) == 4:
-		result.append(selected[0].link_loop_next.link_loop_next.edge)
-	return result
-
-def get_edge_rings(bm, selFacesIdx, keep_caps=True):
-	def tag_face(face):
-		if face.index in selFacesIdx:
-			face.tag = True
-			for edge in face.edges: edge.tag = False
-		return face.index in selFacesIdx
-	# fetch selected faces while setting up tags
-	selected_faces = [ f for f in bm.faces if tag_face(f) ]
-	edges = []
-	try:
-		# generate a list of edges to select:
-		# traversing only tagged faces, since calc_outer_face can walk and untag islands
-		for face in filter(lambda f: f.tag, selected_faces): edges += calc_outer_face(face, keep_caps)
-	finally:
-		# housekeeping: clear tags
-		for face in selected_faces:
-			face.tag = False
-			for edge in face.edges: edge.tag = False
-	return edges
-	
 def visibilitySelect(active_object, active_mesh, context, actionSelectType):
 	selverts = get_selected_vertsIdx(active_mesh)
 	bpy.ops.object.mode_set( mode = 'EDIT' )
@@ -223,10 +184,16 @@ def cutLongEdges(active_mesh, seledgesIdx, context, opt_edgelen ):
 	# bpy.context.scene.update()
 
 class MESH_subdiv_long_edges( bpy.types.Operator ):
-	"""Tooltip"""
 	bl_idname = "mesh.subdiv_long_edges"
 	bl_label = "Subdiv Long Edges"
 	bl_options = {'REGISTER', 'UNDO'}
+	opt_edgelen = bpy.props.FloatProperty(
+		name		= "Edge Length",
+		description = "Max len for subdiv/Min len for dissolve",
+		default	 = 0.5,
+		min		 = 0.001,
+		max		 = 999
+		)
 
 	@classmethod
 	def poll( cls, context ):
@@ -234,18 +201,17 @@ class MESH_subdiv_long_edges( bpy.types.Operator ):
 				context.object.type == 'MESH' )
 
 	def execute( self, context ):
-		wplScultSets = context.scene.wplScultSets
+		#wplScultSets = context.scene.wplScultSets  #wplScultSets.opt_edgelen
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
 		seledgesIdx = get_selected_edgesIdx(active_mesh)
 		if len(seledgesIdx) == 0:
 			self.report({'ERROR'}, "No faces selected, select some faces first")
 			return {'FINISHED'}
-		cutLongEdges(active_mesh, seledgesIdx, context, wplScultSets.opt_edgelen )
+		cutLongEdges(active_mesh, seledgesIdx, context, self.opt_edgelen )
 		return {'FINISHED'}
-		
+
 class MESH_vert_selvisible( bpy.types.Operator ):
-	"""Tooltip"""
 	bl_idname = "mesh.vert_selvisible"
 	bl_label = "Select visible verts"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -256,14 +222,12 @@ class MESH_vert_selvisible( bpy.types.Operator ):
 				context.object.type == 'MESH' )
 
 	def execute( self, context ):
-		wplScultSets = context.scene.wplScultSets
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
 		visibilitySelect(active_object, active_mesh, context, 0 )
 		return {'FINISHED'}
 
 class vert_deselvisible( bpy.types.Operator ):
-	"""Tooltip"""
 	bl_idname = "mesh.vert_deselunvisible"
 	bl_label = "Deselect invisible verts"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -274,14 +238,12 @@ class vert_deselvisible( bpy.types.Operator ):
 				context.object.type == 'MESH' )
 
 	def execute( self, context ):
-		wplScultSets = context.scene.wplScultSets
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
 		visibilitySelect(active_object, active_mesh, context, 1 )
 		return {'FINISHED'}
-		
+
 class vert_deselunvisible( bpy.types.Operator ):
-	"""Tooltip"""
 	bl_idname = "mesh.vert_deselvisible"
 	bl_label = "Deselect visible verts"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -292,20 +254,166 @@ class vert_deselunvisible( bpy.types.Operator ):
 				context.object.type == 'MESH' )
 
 	def execute( self, context ):
-		wplScultSets = context.scene.wplScultSets
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
 		visibilitySelect(active_object, active_mesh, context, 2 )
 		return {'FINISHED'}
 
-class WPLSculptSettings(PropertyGroup):
-	opt_edgelen = bpy.props.FloatProperty(
-		name		= "Edge Length",
-		description = "Max len for subdiv/Min len for dissolve",
-		default	 = 0.5,
-		min		 = 0.001,
-		max		 = 999
+class mesh_proj_flatten( bpy.types.Operator ):
+	bl_idname = "mesh.proj_flatten"
+	bl_label = "Flatten toward camera"
+	bl_options = {'REGISTER', 'UNDO'}
+	opt_flatnFac = bpy.props.FloatProperty(
+		name		= "Flatness",
+		description = "Flatness applied",
+		default	 = 1.0,
+		min		 = -100,
+		max		 = 100
 		)
+
+	@classmethod
+	def poll( cls, context ):
+		return ( context.object is not None  and
+				context.object.type == 'MESH' )
+
+	def execute( self, context ):
+		active_object = context.scene.objects.active
+		active_mesh = active_object.data
+		cameraOrigin = camera_pos(bpy.context.space_data.region_3d)
+		selvertsAll = get_selected_vertsIdx(active_mesh)
+		bpy.ops.object.mode_set( mode = 'EDIT' )
+		bpy.ops.mesh.region_to_loop()
+		selvertsBnd = get_selected_vertsIdx(active_mesh)
+		selvertsInner = list(filter(lambda plt: plt not in selvertsBnd, selvertsAll))
+		if len(selvertsInner) == 0:
+			self.report({'ERROR'}, "No inner vertices found")
+			#print("All: ",selvertsAll," outer:", selvertsBnd)
+			return {'CANCELLED'}
+		bm2 = bmesh.new()
+		chull_verts = [ active_object.matrix_world * active_mesh.vertices[vIdx].co for vIdx in selvertsBnd ]
+		for v in chull_verts:
+			bm2.verts.new(v)
+		bmesh.ops.convex_hull(bm2, input=bm2.verts)
+
+		# hack from https://blender.stackexchange.com/questions/9073/how-to-check-if-two-meshes-intersect-in-python
+		scene = bpy.context.scene
+		me_tmp = bpy.data.meshes.new(name="~temp~")
+		bm2.to_mesh(me_tmp)
+		bm2.free()
+		obj_tmp = bpy.data.objects.new(name=me_tmp.name, object_data=me_tmp)
+		scene.objects.link(obj_tmp)
+		scene.update()
+		# tracing to new geometry
+		matrix_world_inv = active_object.matrix_world.inverted()
+		inner_verts = [ (vIdx,active_object.matrix_world * active_mesh.vertices[vIdx].co) for vIdx in selvertsInner ]
+		for w_v in inner_verts:
+			#print("w_v",w_v," cameraOrigin",cameraOrigin)
+			direction = w_v[1] - cameraOrigin
+			direction.normalize()
+			result, location, normal, faceIndex, object, matrix = scene.ray_cast( cameraOrigin, direction )
+			# projecting each vertex to nearest
+			if result:
+				# lerping position
+				vco_shift = location - w_v[1]
+				vco = w_v[1]+vco_shift*self.opt_flatnFac
+				active_mesh.vertices[w_v[0]].co = matrix_world_inv * vco
+
+		scene.objects.unlink(obj_tmp)
+		bpy.data.objects.remove(obj_tmp)
+		bpy.data.meshes.remove(me_tmp)
+		scene.update()
+
+		bpy.ops.object.mode_set( mode = 'EDIT' )
+		return {'FINISHED'}
+
+class mesh_bridge_mesh_islands( bpy.types.Operator ):
+	# Operator get all selected faces, extracts bounds and then make faces BETWEEN mesh-selection islands, basing on distance between vertices
+	bl_idname = "mesh.bridge_mesh_islands"
+	bl_label = "Bridge edges of selected islands"
+	bl_options = {'REGISTER', 'UNDO'}
+	opt_flatnFac = bpy.props.FloatProperty(
+		name		= "Minimal distance",
+		description = "Distance to merge",
+		default	 = 0.3,
+		min		 = 0,
+		max		 = 100
+		)
+
+	@classmethod
+	def poll( cls, context ):
+		return ( context.object is not None  and
+				context.object.type == 'MESH' )
+
+	def execute( self, context ):
+		active_object = context.scene.objects.active
+		active_mesh = active_object.data
+		selvertsAll = get_selected_vertsIdx(active_mesh)
+		bpy.ops.object.mode_set( mode = 'EDIT' )
+		bpy.ops.mesh.region_to_loop()
+		selvertsBnd = get_selected_vertsIdx(active_mesh)
+		seledgesBnd = get_selected_edgesIdx(active_mesh)
+		if len(seledgesBnd) == 0:
+			self.report({'ERROR'}, "No bounds found")
+			#print("All: ",selvertsAll," outer:", selvertsBnd)
+			return {'CANCELLED'}
+		bpy.ops.object.mode_set( mode = 'EDIT' )
+		bm = bmesh.from_edit_mesh(active_mesh)
+		bm.verts.ensure_lookup_table()
+		bm.faces.ensure_lookup_table()
+		bm.verts.index_update()
+		islandVerts = {}
+		islandNum = 1
+		for v in bm.verts:
+			if v.tag == False:
+				meshlist = []
+				add_connected_bmverts(v,meshlist,selvertsAll)
+				for vv in meshlist:
+					islandVerts[vv.index] = islandNum
+				islandNum = islandNum+1
+		if islandNum < 3:
+			self.report({'ERROR'}, "No islands found, need at least 2 islands")
+			#print("All: ",selvertsAll," outer:", selvertsBnd)
+			return {'CANCELLED'}
+		#nearest vertices for each boundary vertice
+		for v in bm.verts:
+			v.tag = False
+		islandVertsUsed = {}
+		for isl1 in range(1,islandNum):
+			for isl2 in range(1,islandNum):
+				if isl1 != isl2:
+					hull_edges = []
+					for bndIdx1 in selvertsBnd:
+						if islandVerts[bndIdx1] == isl1 and bndIdx1 not in islandVertsUsed:
+							bndV1 = bm.verts[bndIdx1]
+							bndNearest = None
+							bndNearestDist = 99999
+							for bndIdx2 in selvertsBnd:
+								if islandVerts[bndIdx2] == isl2:#!!! and bndIdx2 not in islandVertsUsed:
+									bndV2 = bm.verts[bndIdx2]
+									dst = (bndV2.co-bndV1.co).length
+									if dst < self.opt_flatnFac and dst < bndNearestDist:
+										bndNearestDist = dst
+										bndNearest = bndV2
+							if bndNearest is not None:
+								# selecting edges
+								islandVertsUsed[bndIdx1]=bndIdx2
+								islandVertsUsed[bndIdx2]=bndIdx1
+								verts2join = []
+								verts2join.append(bndV1)
+								verts2join.append(bndNearest)
+								crtres = bmesh.ops.contextual_create(bm, geom=verts2join)
+								hull_edges.extend(crtres["edges"])
+								hull_edges.extend(bndV1.link_edges)
+								hull_edges.extend(bndNearest.link_edges)
+					hull_edges_pack = list(set(hull_edges))
+					if len(hull_edges_pack)>2:
+						bmesh.ops.holes_fill(bm, edges=hull_edges_pack,sides=4)
+						#bmesh.ops.edgeloop_fill(bm, edges=hull_edges)
+						#bmesh.ops.bridge_loops(bm, edges=hull_edges)
+						#bmesh.ops.contextual_create(bm, geom=(edg1,edg2))
+		bmesh.update_edit_mesh(active_mesh)
+		bm.free()
+		return {'FINISHED'}
 
 class WPLSculptFeatures_Panel(bpy.types.Panel):
 	bl_label = "Sculpt Helpers"
@@ -318,28 +426,35 @@ class WPLSculptFeatures_Panel(bpy.types.Panel):
 
 	def draw(self, context):
 		layout = self.layout
-		wplScultSets = context.scene.wplScultSets
+		#wplScultSets = context.scene.wplScultSets
 
 		# display the properties
 		col = layout.column()
 		col.label("Smart subdiv")
-		col.prop(wplScultSets, "opt_edgelen")
+		#col.prop(wplScultSets, "opt_edgelen")
 		col.operator("mesh.subdiv_long_edges", text="Cut Long Edges")
+		col.operator("mesh.bridge_mesh_islands", text="Bridge islands")
 		col.separator()
-		
+
 		col.operator("mesh.vert_selvisible", text="Select visible")
 		col.operator("mesh.vert_deselvisible", text="Deselect visible")
 		col.operator("mesh.vert_deselunvisible", text="Deselect invisible")
 
+		col.separator()
+		col.operator("mesh.proj_flatten", text="Projected flatten")
+
+
+#class WPLSculptSettings(PropertyGroup):
+#	opt_edgelen = bpy.props.FloatProperty(...
 
 def register():
 	print("WPLSculptFeatures_Panel registered")
 	bpy.utils.register_module(__name__)
-	bpy.types.Scene.wplScultSets = PointerProperty(type=WPLSculptSettings)
+	#bpy.types.Scene.wplScultSets = PointerProperty(type=WPLSculptSettings)
 
 def unregister():
 	bpy.utils.unregister_module(__name__)
-	del bpy.types.Scene.wplScultSets
+	#del bpy.types.Scene.wplScultSets
 
 if __name__ == "__main__":
 	register()
