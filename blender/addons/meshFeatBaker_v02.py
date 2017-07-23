@@ -27,12 +27,12 @@ bl_info = {
 	"author": "IPv6",
 	"version": (0, 0, 1),
 	"blender": (2, 78, 0),
-	"location": "View3D > Paint > Bake mesh features into VC",
-	"description": "Bake mesh features of selected faces into active vertext color layer.",
+	"location": "View3D > T-panel > WPL",
+	"description": "Bake mesh features into vertext colors/UVMaps.",
 	"warning": "",
 	"wiki_url": "",
 	"tracker_url": "",
-	"category": "Paint"}
+	"category": ""}
 
 def do_painting(context, active_object, active_mesh, color_map, paint_list, glob_refpoint, vc_refmode):
 	print("do_painting, vertext count: ", len(paint_list))
@@ -437,11 +437,11 @@ class bakeMeshCentersToVc(bpy.types.Operator):
 		bm.free()
 		context.scene.update()
 		print("Vertices baked:", ok_count)
-		bpy.ops.object.mode_set(mode='EDIT')
+		#bpy.ops.object.mode_set(mode='EDIT')
 		return {'FINISHED'}
 
 
-class BakeSettings(PropertyGroup):
+class WPLBakeSettings(PropertyGroup):
 	bake_uvbase = StringProperty(
 		name="UVMap prefix",
 		description="Bake into set of UVMaps",
@@ -458,10 +458,11 @@ class BakeSettings(PropertyGroup):
 #		default = 0.1
 #		)
 
-class BakeFeatures2VC_Panel(bpy.types.Panel):
+class WPLBakeMeshFeatures_Panel(bpy.types.Panel):
 	bl_label = "Bake Mesh Features"
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'TOOLS'
+	bl_category = 'WPL'
 
 	def draw_header(self, context):
 		layout = self.layout
@@ -489,9 +490,9 @@ class BakeFeatures2VC_Panel(bpy.types.Panel):
 		col.operator("object.bake_mesh_centers_to_vc", text="Bake local: Mesh-mids").actionType = 6
 
 def register():
-	print("BakeFeatures2VC_Panel registered")
+	print("WPLBakeMeshFeatures_Panel registered")
 	bpy.utils.register_module(__name__)
-	bpy.types.Scene.bakeOpts = PointerProperty(type=BakeSettings)
+	bpy.types.Scene.bakeOpts = PointerProperty(type=WPLBakeSettings)
 
 def unregister():
 	bpy.utils.unregister_module(__name__)

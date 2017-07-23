@@ -1,7 +1,6 @@
 # Operators:
 # - Cut long edges / Subdivide big faces into smaller one
-# - Select all visible vertices
-# - Deselect visible/invisible verts
+# - Select all visible vertices/Deselect visible/invisible verts. Can give "strange" results in local mode, since raytrace using WHOLE scene ALWAYS!
 # - Flatten inner vertices (of selected region) on the virtually-visible convex-hull of region boundaries
 # - Bridge edges of selected mesh regions based on min distance between vertices
 
@@ -30,15 +29,15 @@ from bpy.types import (Panel,
 
 bl_info = {
 	"name": "WPL Mesh Helpers",
-	"author": "pi",
+	"author": "IPv6",
 	"version": (1, 0),
 	"blender": (2, 78, 0),
-	"location": "View3D > T-panel > Misc",
+	"location": "View3D > T-panel > WPL",
 	"description" : "",
 	"warning"	 : "",
 	"wiki_url"	: "",
 	"tracker_url" : "",
-	"category"	: "Add Mesh"
+	"category"	: ""
 	}
 
 def camera_position(matrix):
@@ -117,7 +116,7 @@ def visibilitySelect(active_object, active_mesh, context, actionSelectType):
 			direction.normalize()
 			result, location, normal, faceIndex, object, matrix = scene.ray_cast( cameraOrigin, direction )
 			#print ("result",result," faceIndex",faceIndex," vert",vert, " verts", bm.faces[faceIndex].verts)
-			if result:
+			if result and object.name == active_object.name:
 				facevrt = [ e.index for e in bm.faces[faceIndex].verts]
 				#print ("vert.index",vert.index," facevrt",facevrt)
 				if vert.index in facevrt:
@@ -412,9 +411,10 @@ class mesh_bridge_mesh_islands( bpy.types.Operator ):
 		return {'FINISHED'}
 
 class WPLSculptFeatures_Panel(bpy.types.Panel):
-	bl_label = "Sculpt Helpers"
+	bl_label = "Mesh Helpers"
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'TOOLS'
+	bl_category = 'WPL'
 
 	def draw_header(self, context):
 		layout = self.layout
