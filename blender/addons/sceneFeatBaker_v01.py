@@ -1,5 +1,7 @@
 # Baking scene object into OSL script for later use in material nodes
 
+# Used resources:
+# https://blender.stackexchange.com/questions/27491/python-vertex-normal-according-to-world
 import bpy
 import bmesh
 import math
@@ -37,7 +39,6 @@ bl_info = {
 	}
 
 class wplscene_bake2osl( bpy.types.Operator ):
-	# Operator get all selected faces, extracts bounds and then make faces BETWEEN mesh-selection islands, basing on distance between vertices
 	bl_idname = "mesh.wplscene_bake2osl"
 	bl_label = "Bake scene into OSL script"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -53,10 +54,10 @@ class wplscene_bake2osl( bpy.types.Operator ):
 		if len(bakeOpts.oslScriptName) < 3:
 			self.report({'ERROR'}, "Invalid script name")
 			return {'CANCELLED'}
-		
+
 		objs2dump = [obj for obj in bpy.data.objects if len(bakeOpts.objNameSubstr) == 0 or obj.name.find(bakeOpts.objNameSubstr) >= 0]
 		print("objs2dump",objs2dump)
-		
+
 		objsData = []
 		for obj in objs2dump:
 			item = {}
@@ -78,7 +79,7 @@ class wplscene_bake2osl( bpy.types.Operator ):
 			item["bbmin"] = "point("+repr(min(item[0] for item in bbc))+","+repr(min(item[1] for item in bbc))+","+repr(min(item[2] for item in bbc))+")"
 			item["bbmax"] = "point("+repr(max(item[0] for item in bbc))+","+repr(max(item[1] for item in bbc))+","+repr(max(item[2] for item in bbc))+")"
 			objsData.append(item)
-		
+
 		textblock = bpy.data.texts.get(bakeOpts.oslScriptName)
 		if not textblock:
 			textblock = bpy.data.texts.new(bakeOpts.oslScriptName)
@@ -175,7 +176,7 @@ class WPLScene2OslSettings(PropertyGroup):
 		description = "Part of name, other objects will not be baked",
 		default	 = "_osl"
 		)
-	
+
 class WPLScene2Osl_Panel(bpy.types.Panel):
 	bl_label = "Scene 2 Osl"
 	bl_space_type = 'VIEW_3D'
@@ -190,7 +191,7 @@ class WPLScene2Osl_Panel(bpy.types.Panel):
 	def draw(self, context):
 		layout = self.layout
 		bakeOpts = context.scene.wplScene2OslSettings
-		
+
 		# display the properties
 		col = layout.column()
 		col.prop(bakeOpts, "oslScriptName")
@@ -208,5 +209,3 @@ def unregister():
 
 if __name__ == "__main__":
 	register()
-
-# https://blender.stackexchange.com/questions/27491/python-vertex-normal-according-to-world
