@@ -79,6 +79,7 @@ class wplscene_bake2osl( bpy.types.Operator ):
 			item["bbmin"] = "point("+repr(min(item[0] for item in bbc))+","+repr(min(item[1] for item in bbc))+","+repr(min(item[2] for item in bbc))+")"
 			item["bbmax"] = "point("+repr(max(item[0] for item in bbc))+","+repr(max(item[1] for item in bbc))+","+repr(max(item[2] for item in bbc))+")"
 			objsData.append(item)
+		objsData = sorted(objsData, key=lambda k: k['name'])
 
 		textblock = bpy.data.texts.get(bakeOpts.oslScriptName)
 		if not textblock:
@@ -93,7 +94,7 @@ class wplscene_bake2osl( bpy.types.Operator ):
 		osl_content.append(" float maxDistance = 0,")
 		osl_content.append(" string by_name_equality = \"\",")
 		osl_content.append(" string by_near_startswith = \"\",")
-		osl_content.append(" output float isFound = 0,")
+		osl_content.append(" output float objectNum = 0,")
 		osl_content.append(" output point g_Location = point(0,0,0),")
 		osl_content.append(" output point normalX = point(0,0,0),")
 		osl_content.append(" output point normalY = point(0,0,0),")
@@ -118,7 +119,7 @@ class wplscene_bake2osl( bpy.types.Operator ):
 		osl_content.append("    if(maxDistance>0 && length(P-sceneLocas[i])>maxDistance){")
 		osl_content.append("     continue;")
 		osl_content.append("    }")
-		osl_content.append("    isFound = 1;")
+		osl_content.append("    objectNum = i+1;")
 		osl_content.append("    g_Location = sceneLocas[i];")
 		osl_content.append("    scale = sceneScales[i];")
 		osl_content.append("    normalX = sceneNormalX[i];")
@@ -148,7 +149,7 @@ class wplscene_bake2osl( bpy.types.Operator ):
 		osl_content.append("  }")
 		osl_content.append("  if(iNearesIdx >= 0){")
 		osl_content.append("   int i = iNearesIdx;")
-		osl_content.append("   isFound = 1;")
+		osl_content.append("   objectNum = i+1;")
 		osl_content.append("   g_Location = sceneLocas[i];")
 		osl_content.append("   scale = sceneScales[i];")
 		osl_content.append("   normalX = sceneNormalX[i];")
