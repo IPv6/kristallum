@@ -9,7 +9,7 @@ import os
 import sys
 import subprocess
 
-isWin = False
+isWin = True
 if isWin:
 	oiioexe = "f:\__GameResources\zzz_TOOLS\openimageio\oiiotool.exe"
 	ocioconf = "c:\Program Files\Blender Foundation\Blender\2.78\datafiles\colormanagement\config.ocio"
@@ -83,9 +83,13 @@ curr_format = "half"
 curr_chstack = []
 for layername in exrlayers:
 	name_type_pair = layername.split(' ')
-	if len(name_type_pair) >= 1:
+	#print "Analyzing: ", layername, ", format:", ",".join(name_type_pair)
+	if len(name_type_pair) > 0:
 		layerName = name_type_pair[0]
-		layerFrmt = name_type_pair[1]
+		if len(name_type_pair) > 1:
+			layerFrmt = name_type_pair[1]
+		else:
+			layerFrmt = "(half)"
 		if layerName.find(".R") >= 0:
 			# flushing previous layer
 			flush_stack(curr_chstack, curr_format)

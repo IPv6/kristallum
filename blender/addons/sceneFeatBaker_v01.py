@@ -1,5 +1,7 @@
 # Baking scene object into OSL script for later use in material nodes
 
+# Used resources:
+# https://blender.stackexchange.com/questions/27491/python-vertex-normal-according-to-world
 import bpy
 import bmesh
 import math
@@ -37,7 +39,6 @@ bl_info = {
 	}
 
 class wplscene_bake2osl( bpy.types.Operator ):
-	# Operator get all selected faces, extracts bounds and then make faces BETWEEN mesh-selection islands, basing on distance between vertices
 	bl_idname = "mesh.wplscene_bake2osl"
 	bl_label = "Bake scene into OSL script"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -47,16 +48,14 @@ class wplscene_bake2osl( bpy.types.Operator ):
 		return True
 
 	def execute( self, context ):
-		active_object = context.scene.objects.active
-		active_mesh = active_object.data
 		bakeOpts = context.scene.wplScene2OslSettings
 		if len(bakeOpts.oslScriptName) < 3:
 			self.report({'ERROR'}, "Invalid script name")
 			return {'CANCELLED'}
-		
+
 		objs2dump = [obj for obj in bpy.data.objects if len(bakeOpts.objNameSubstr) == 0 or obj.name.find(bakeOpts.objNameSubstr) >= 0]
 		print("objs2dump",objs2dump)
-		
+
 		objsData = []
 		for obj in objs2dump:
 			item = {}
@@ -78,7 +77,8 @@ class wplscene_bake2osl( bpy.types.Operator ):
 			item["bbmin"] = "point("+repr(min(item[0] for item in bbc))+","+repr(min(item[1] for item in bbc))+","+repr(min(item[2] for item in bbc))+")"
 			item["bbmax"] = "point("+repr(max(item[0] for item in bbc))+","+repr(max(item[1] for item in bbc))+","+repr(max(item[2] for item in bbc))+")"
 			objsData.append(item)
-		
+		objsData = sorted(objsData, key=lambda k: k['name'])
+
 		textblock = bpy.data.texts.get(bakeOpts.oslScriptName)
 		if not textblock:
 			textblock = bpy.data.texts.new(bakeOpts.oslScriptName)
@@ -92,7 +92,7 @@ class wplscene_bake2osl( bpy.types.Operator ):
 		osl_content.append(" float maxDistance = 0,")
 		osl_content.append(" string by_name_equality = \"\",")
 		osl_content.append(" string by_near_startswith = \"\",")
-		osl_content.append(" output float isFound = 0,")
+		osl_content.append(" output float objectNum = 0,")
 		osl_content.append(" output point g_Location = point(0,0,0),")
 		osl_content.append(" output point normalX = point(0,0,0),")
 		osl_content.append(" output point normalY = point(0,0,0),")
@@ -117,7 +117,7 @@ class wplscene_bake2osl( bpy.types.Operator ):
 		osl_content.append("    if(maxDistance>0 && length(P-sceneLocas[i])>maxDistance){")
 		osl_content.append("     continue;")
 		osl_content.append("    }")
-		osl_content.append("    isFound = 1;")
+		osl_content.append("    objectNum = i+1;")
 		osl_content.append("    g_Location = sceneLocas[i];")
 		osl_content.append("    scale = sceneScales[i];")
 		osl_content.append("    normalX = sceneNormalX[i];")
@@ -147,7 +147,7 @@ class wplscene_bake2osl( bpy.types.Operator ):
 		osl_content.append("  }")
 		osl_content.append("  if(iNearesIdx >= 0){")
 		osl_content.append("   int i = iNearesIdx;")
-		osl_content.append("   isFound = 1;")
+		osl_content.append("   objectNum = i+1;")
 		osl_content.append("   g_Location = sceneLocas[i];")
 		osl_content.append("   scale = sceneScales[i];")
 		osl_content.append("   normalX = sceneNormalX[i];")
@@ -164,6 +164,101 @@ class wplscene_bake2osl( bpy.types.Operator ):
 
 		self.report({'INFO'}, "Scene baked successfully")
 		return {'FINISHED'}
+		
+class wplscene_wplscene_swtstate( bpy.types.Operator ):
+	bl_idname = "mesh.wplscene_swtstate"
+	bl_label = "Switch scene state"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll( cls, context ):
+		return True
+
+	def updateObjShapekeys( self, context, obj ):
+		try:
+			if (obj.data is None) or (obj.data.shape_keys is None) or (obj.data.shape_keys.key_blocks is None):
+				return
+		except:
+			return
+		bakeOpts = context.scene.wplScene2OslSettings
+		keys = obj.data.shape_keys.key_blocks.keys()
+		active_idx = 0
+		for kk in keys:
+			if kk.find(bakeOpts.scnStateCommon) >= 0:
+				if kk.find(bakeOpts.scnStateId) >= 0:
+					shape_key = obj.data.shape_keys.key_blocks[kk]
+					obj.active_shape_key_index = keys.index(kk)
+					active_idx = obj.active_shape_key_index
+					shape_key.value = 1
+				else:
+					shape_key = obj.data.shape_keys.key_blocks[kk]
+					obj.active_shape_key_index = keys.index(kk)
+					shape_key.value = 0
+		obj.active_shape_key_index = active_idx
+		obj.data.update()
+
+	def updateObjPose( self, context, obj ):
+		# https://blenderartists.org/forum/showthread.php?254069-Activate-A-Pose-Library-Entry-via-Python-Code
+		def isKeyOnFrame(passedFcurve, passedFrame):
+			result = False
+			for k in passedFcurve.keyframe_points:
+				if int(k.co.x) == int(passedFrame):
+					result = True
+					break
+			return result
+		try:
+			if (obj.pose is None) or (obj.pose_library is None) or (obj.pose_library.pose_markers is None):
+				return
+		except:
+			return
+		bakeOpts = context.scene.wplScene2OslSettings
+		pl = obj.pose_library
+		p = obj.pose
+		keys = obj.pose_library.pose_markers.keys()
+		for kk in keys:
+			if kk.find(bakeOpts.scnStateCommon) >= 0:
+				if kk.find(bakeOpts.scnStateId) >= 0:
+					pm = pl.pose_markers[kk]
+					frame = pm.frame
+					action = bpy.data.actions[pl.name]
+					for agrp in action.groups:
+						# check if group has any keyframes.
+						for fc in agrp.channels:
+							r = isKeyOnFrame(fc,frame)
+							if r == True:
+								tmpValue = fc.evaluate(frame)
+								i = p.bones.find(agrp.name)
+								if i != -1:
+									pb = p.bones[i]
+									# Determine where to assign this value based upon the data_path.
+									if fc.data_path.find("location") != -1:
+										pb.location[fc.array_index] = tmpValue
+									if fc.data_path.find("rotation_quaternion") != -1:
+										pb.rotation_quaternion[fc.array_index] = tmpValue
+									if fc.data_path.find("scale") != -1:
+										pb.scale[fc.array_index] = tmpValue
+
+	def execute( self, context ):
+		bakeOpts = context.scene.wplScene2OslSettings
+		if len(bakeOpts.scnStateCommon) < 1:
+			self.report({'ERROR'}, "Invalid common name")
+			return {'CANCELLED'}
+
+		objs2check = [obj for obj in bpy.data.objects]
+		for obj in objs2check:
+			if obj.name.find(bakeOpts.scnStateCommon) >= 0:
+				if obj.name.find(bakeOpts.scnStateId) >= 0:
+					obj.hide = False
+					obj.hide_render = False
+				else:
+					obj.hide = True
+					obj.hide_render = True
+		for obj in objs2check:
+			self.updateObjPose(context, obj)
+			self.updateObjShapekeys(context, obj)
+		
+		self.report({'INFO'}, "Scene state switched")
+		return {'FINISHED'}
 
 class WPLScene2OslSettings(PropertyGroup):
 	oslScriptName = bpy.props.StringProperty(
@@ -175,7 +270,18 @@ class WPLScene2OslSettings(PropertyGroup):
 		description = "Part of name, other objects will not be baked",
 		default	 = "_osl"
 		)
-	
+		
+	scnStateCommon = bpy.props.StringProperty(
+		name		= "Prefix of state",
+		description = "Objname/Shapekeys common namepart",
+		default	 = "##"
+		)
+	scnStateId = bpy.props.StringProperty(
+		name		= "ID of state",
+		description = "Objname/Shapekeys state namepart",
+		default	 = "0"
+		)
+
 class WPLScene2Osl_Panel(bpy.types.Panel):
 	bl_label = "Scene 2 Osl"
 	bl_space_type = 'VIEW_3D'
@@ -190,12 +296,18 @@ class WPLScene2Osl_Panel(bpy.types.Panel):
 	def draw(self, context):
 		layout = self.layout
 		bakeOpts = context.scene.wplScene2OslSettings
-		
+
 		# display the properties
 		col = layout.column()
 		col.prop(bakeOpts, "oslScriptName")
 		col.prop(bakeOpts, "objNameSubstr")
 		col.operator("mesh.wplscene_bake2osl", text="Bake scene -> OSL")
+		
+		col.separator()
+		row = col.row()
+		row.prop(bakeOpts, "scnStateCommon")
+		row.prop(bakeOpts, "scnStateId")
+		col.operator("mesh.wplscene_swtstate", text="Switch scene state")
 
 def register():
 	print("WPLScene2Osl_Panel registered")
@@ -208,5 +320,3 @@ def unregister():
 
 if __name__ == "__main__":
 	register()
-
-# https://blender.stackexchange.com/questions/27491/python-vertex-normal-according-to-world

@@ -2,6 +2,16 @@
 # - Project mesh features into vertex color or UV-map (since vertext color limited to 255 gradations) for future use in material nodes
 # TBD: Use normal-dispersion to get gradients. Much better than 3d-distance for mimicing geodesics
 
+# Used resources:
+#https://raw.githubusercontent.com/varkenvarken/blenderaddons/master/connectedvertexcolors%20.py
+#https://blender.stackexchange.com/questions/882/how-to-find-image-coordinates-of-the-rendered-vertex
+#https://blender.stackexchange.com/questions/43335/how-do-i-get-knife-project-operator-to-use-view-settings-within-the-operator
+#https://blenderartists.org/forum/showthread.php?327216-How-to-access-the-view-3d-camera
+
+# Interesting:
+#https://github.com/meta-androcto/blenderpython/blob/master/scripts/addons_extern/mesh_align_to_gpencil_view.py
+#https://github.com/zeffii/TubeTool
+
 import bpy
 import bmesh
 import math
@@ -112,26 +122,26 @@ def do_painting(context, active_object, active_mesh, color_map, paint_list, glob
 			else:
 				nrel = 0
 			color_map.data[vertex_data[0]].color = (xrel,yrel,nrel)
-	if vc_refmode == "dist":
-		glob_refpoint2d = location_to_region(glob_refpoint)
-		maxlen3d = 0
-		minlen3d = 9999
-		maxlen2d = 0
-		minlen2d = 9999
-		for vertex_data in paint_list:
-			vec = vertex_data[1]-glob_refpoint
-			vec2d = vertex_data[3]-glob_refpoint2d
-			maxlen3d = max(maxlen3d,vec.length)
-			minlen3d = min(minlen3d,vec.length)
-			maxlen2d = max(maxlen2d,vec2d.length)
-			minlen2d = min(minlen2d,vec2d.length)
-		for vertex_data in paint_list:
-			vec3d = vertex_data[1]-glob_refpoint
-			reldist3d = (vec3d.length-minlen3d)/(maxlen3d-minlen3d)
-			vec2d = vertex_data[3]-glob_refpoint2d
-			reldist2d = (vec2d.length-minlen2d)/(maxlen2d-minlen2d)
-			color_map.data[vertex_data[0]].color = (reldist3d,reldist2d,vec3d.length*0.1)
-		return
+	# if vc_refmode == "dist":
+		# glob_refpoint2d = location_to_region(glob_refpoint)
+		# maxlen3d = 0
+		# minlen3d = 9999
+		# maxlen2d = 0
+		# minlen2d = 9999
+		# for vertex_data in paint_list:
+			# vec = vertex_data[1]-glob_refpoint
+			# vec2d = vertex_data[3]-glob_refpoint2d
+			# maxlen3d = max(maxlen3d,vec.length)
+			# minlen3d = min(minlen3d,vec.length)
+			# maxlen2d = max(maxlen2d,vec2d.length)
+			# minlen2d = min(minlen2d,vec2d.length)
+		# for vertex_data in paint_list:
+			# vec3d = vertex_data[1]-glob_refpoint
+			# reldist3d = (vec3d.length-minlen3d)/(maxlen3d-minlen3d)
+			# vec2d = vertex_data[3]-glob_refpoint2d
+			# reldist2d = (vec2d.length-minlen2d)/(maxlen2d-minlen2d)
+			# color_map.data[vertex_data[0]].color = (reldist3d,reldist2d,vec3d.length*0.1)
+		# return
 	return
 
 def make_paint_list(active_object, active_mesh, faces):
@@ -210,26 +220,26 @@ def get_active_context_cursor(context):
 	cursor = (space if space and space.type == 'VIEW_3D' else scene).cursor_location
 	return cursor
 
-class bakeCursorDistanceToVc(bpy.types.Operator):
-	bl_idname = "object.bake_cursor_distance_to_vc"
-	bl_label = "bakeCursorDistanceToVc"
-	bl_options = {'REGISTER', 'UNDO'}
+#class bakeCursorDistanceToVc(bpy.types.Operator):
+	# bl_idname = "object.bake_cursor_distance_to_vc"
+	# bl_label = "bakeCursorDistanceToVc"
+	# bl_options = {'REGISTER', 'UNDO'}
 
-	@classmethod
-	def poll(self, context):
-		# Check if we have a mesh object active and are in vertex paint mode
-		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Mesh))
-		return p
+	# @classmethod
+	# def poll(self, context):
+		# #Check if we have a mesh object active and are in vertex paint mode
+		# p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Mesh))
+		# return p
 
-	def execute(self, context):
-		print("execute ", self.bl_idname)
-		active_object = context.scene.objects.active
-		if active_object is not None:
-			active_object.data.use_paint_mask = True
-		op_find_and_paint(context, self, active_object, "dist")
-		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
-		context.scene.update()
-		return {'FINISHED'}
+	# def execute(self, context):
+		# print("execute ", self.bl_idname)
+		# active_object = context.scene.objects.active
+		# if active_object is not None:
+			# active_object.data.use_paint_mask = True
+		# op_find_and_paint(context, self, active_object, "dist")
+		# bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+		# context.scene.update()
+		# return {'FINISHED'}
 
 class bakeProj2dAxisToVc(bpy.types.Operator):
 	bl_idname = "object.bake_2daxis_to_vc"
@@ -476,7 +486,7 @@ class WPLBakeMeshFeatures_Panel(bpy.types.Panel):
 		col.label("Bake to VCol")
 		col.operator("object.bake_2daxis_to_vc", text="Bake Flat projection)") # normalized
 		col.operator("object.bake_2dshape_to_vc", text="Bake Shape projection") # normalized
-		col.operator("object.bake_cursor_distance_to_vc", text="Bake 3D-cursor distance") # normalized
+		#col.operator("object.bake_cursor_distance_to_vc", text="Bake 3D-cursor distance") # normalized
 		col.operator("object.bake_mesh_centers_to_vc", text="Bake random color").actionType = 1
 		col.separator()
 
@@ -500,20 +510,3 @@ def unregister():
 
 if __name__ == "__main__":
 	register()
-
-#https://raw.githubusercontent.com/varkenvarken/blenderaddons/master/connectedvertexcolors%20.py
-#https://raw.githubusercontent.com/selfsame/vcol-compositor/master/bake_vertex_diffuse.py
-#https://blender.stackexchange.com/questions/30841/how-to-view-vertex-colors
-#https://github.com/zeffii/TubeTool
-
-#https://blender.stackexchange.com/questions/40974/how-to-delete-all-faces-with-distance-to-other-object
-#https://github.com/meta-androcto/blenderpython/blob/master/scripts/addons_extern/mesh_align_to_gpencil_view.py
-#https://blenderartists.org/forum/showthread.php?393477-Geodesics-on-Surfaces
-
-#https://blender.stackexchange.com/questions/882/how-to-find-image-coordinates-of-the-rendered-vertex
-#https://blender.stackexchange.com/questions/43335/how-do-i-get-knife-project-operator-to-use-view-settings-within-the-operator
-#https://blenderartists.org/forum/showthread.php?327216-How-to-access-the-view-3d-camera
-
-#https://docs.blender.org/api/blender_python_api_current/
-#https://docs.blender.org/api/blender_python_api_current/search.html?q=bmesh
-#https://docs.blender.org/api/blender_python_api_current/mathutils.geometry.html

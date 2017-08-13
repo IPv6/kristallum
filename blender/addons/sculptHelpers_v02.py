@@ -4,6 +4,9 @@
 # - Flatten inner vertices (of selected region) on the virtually-visible convex-hull of region boundaries
 # - Bridge edges of selected mesh regions based on min distance between vertices
 
+# Inetresting:
+# - UV-flattening https://github.com/the3dadvantage/BlenderSurfaceFollow/blob/master/UVShape.py
+
 import bpy
 import bmesh
 import math
@@ -254,6 +257,36 @@ class vert_deselunvisible( bpy.types.Operator ):
 		visibilitySelect(active_object, active_mesh, context, 2 )
 		return {'FINISHED'}
 
+class mesh_refill_select( bpy.types.Operator ):
+	bl_idname = "mesh.refill_select"
+	bl_label = "Refill selection"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll( cls, context ):
+		return ( context.object is not None  and
+				context.object.type == 'MESH' )
+
+	def execute( self, context ):
+		active_object = context.scene.objects.active
+		active_mesh = active_object.data
+		selvertsAll = get_selected_vertsIdx(active_mesh)
+		bpy.ops.object.mode_set( mode = 'EDIT' )
+		bpy.ops.mesh.region_to_loop()
+		selvertsBnd = get_selected_vertsIdx(active_mesh)
+		selvertsInner = list(filter(lambda plt: plt not in selvertsBnd, selvertsAll))
+		if len(selvertsInner) == 0:
+			self.report({'ERROR'}, "No inner vertices found")
+			#print("All: ",selvertsAll," outer:", selvertsBnd)
+			return {'CANCELLED'}
+		bpy.ops.object.mode_set( mode = 'EDIT' )
+		bm = bmesh.from_edit_mesh(active_mesh)
+		verts_select = [f for f in bm.verts if f.index in selvertsInner]
+		bmesh.ops.delete(bm, geom=verts_select, context=1)
+		bmesh.update_edit_mesh(active_mesh)
+		bpy.ops.mesh.fill()
+		return {'FINISHED'}
+		
 class mesh_proj_flatten( bpy.types.Operator ):
 	bl_idname = "mesh.proj_flatten"
 	bl_label = "Flatten toward camera"
@@ -320,6 +353,7 @@ class mesh_proj_flatten( bpy.types.Operator ):
 
 		bpy.ops.object.mode_set( mode = 'EDIT' )
 		return {'FINISHED'}
+
 
 class mesh_bridge_mesh_islands( bpy.types.Operator ):
 	# Operator get all selected faces, extracts bounds and then make faces BETWEEN mesh-selection islands, basing on distance between vertices
@@ -410,6 +444,85 @@ class mesh_bridge_mesh_islands( bpy.types.Operator ):
 		bm.free()
 		return {'FINISHED'}
 
+class mesh_uv_flatten( bpy.types.Operator ):
+	bl_idname = "mesh.uv_flatten"
+	bl_label = "Flatten toward active UVMap"
+	bl_options = {'REGISTER', 'UNDO'}
+	opt_flatnFac = bpy.props.FloatProperty(
+		name		= "Flatness",
+		description = "Flatness applied",
+		default	 = 1.0,
+		min		 = -100,
+		max		 = 100
+		)
+
+	@classmethod
+	def poll( cls, context ):
+		return ( context.object is not None  and
+				context.object.type == 'MESH' )
+
+	def execute( self, context ):
+		active_object = context.scene.objects.active
+		active_mesh = active_object.data
+		active_uvmap = active_mesh.uv_textures.active
+		selvertsAll = get_selected_vertsIdx(active_mesh)
+		if len(selvertsAll) == 0:
+			self.report({'ERROR'}, "No inner vertices found")
+			#print("All: ",selvertsAll," outer:", selvertsBnd)
+			return {'CANCELLED'}
+		if active_uvmap is None:
+			self.report({'ERROR'}, "No active UVMap found, unwrap mesh first")
+			#print("All: ",selvertsAll," outer:", selvertsBnd)
+			return {'CANCELLED'}
+
+		bpy.ops.object.mode_set( mode = 'EDIT' )
+		bm = bmesh.from_edit_mesh(active_mesh)
+		bm.verts.ensure_lookup_table()
+		bm.faces.ensure_lookup_table()
+		bm.verts.index_update()
+		uv_layer = bm.loops.layers.uv.verify()
+		bm.faces.layers.tex.verify()  # currently blender needs both layers.
+		# sorting vertex list on Z coord
+		selvertsAll = sorted(selvertsAll, key=lambda plt: (-active_mesh.vertices[plt].co[2]))
+		anchor_vertIdx = selvertsAll[0]
+		anchor_p1 = mathutils.Vector((1,0,0))
+		anchor_p2 = mathutils.Vector((0,1,0))
+		for elem in reversed(bm.select_history):
+			if isinstance(elem, bmesh.types.BMFace):
+				anchor_vertIdx = elem.verts[0].index
+				facen = elem.normal
+				if facen.dot(mathutils.Vector((0,0,1))) > 0.99:
+					anchor_p1 = facen.cross(mathutils.Vector((1,0,0)))
+				else:
+					anchor_p1 = facen.cross(mathutils.Vector((0,0,1)))
+				anchor_p2 = facen.cross(anchor_p1)
+				tmp = anchor_p2
+				anchor_p2 = anchor_p1
+				anchor_p1 = -tmp
+				break
+			if isinstance(elem, bmesh.types.BMVert):
+				anchor_vertIdx = elem.index
+				break
+		first_co = active_mesh.vertices[anchor_vertIdx].co
+		first_uv = mathutils.Vector((0,0))
+		#searching for first_co_uv
+		for face in bm.faces:
+			for loop in face.loops:
+				vert = loop.vert
+				if vert.index == anchor_vertIdx:
+					first_uv = loop[uv_layer].uv
+		for face in bm.faces:
+			for loop in face.loops:
+				vert = loop.vert
+				if (vert.index in selvertsAll):
+					rel_uv = loop[uv_layer].uv - first_uv
+					new_co = first_co+anchor_p1*rel_uv[0]+anchor_p2*rel_uv[1]
+					vert.co = vert.co.lerp(new_co,self.opt_flatnFac)
+					selvertsAll.remove(vert.index) #to avoid double-effect when vert in several loops
+		#bm.to_mesh(active_mesh)
+		bmesh.update_edit_mesh(active_mesh)
+		return {'FINISHED'}
+
 class WPLSculptFeatures_Panel(bpy.types.Panel):
 	bl_label = "Mesh Helpers"
 	bl_space_type = 'VIEW_3D'
@@ -428,6 +541,7 @@ class WPLSculptFeatures_Panel(bpy.types.Panel):
 		col = layout.column()
 		col.label("Smart subdiv")
 		#col.prop(wplScultSets, "opt_edgelen")
+		col.operator("mesh.refill_select", text="ReFill selected")
 		col.operator("mesh.subdiv_long_edges", text="Cut Long Edges")
 		col.operator("mesh.bridge_mesh_islands", text="Bridge islands")
 		col.separator()
@@ -438,6 +552,7 @@ class WPLSculptFeatures_Panel(bpy.types.Panel):
 
 		col.separator()
 		col.operator("mesh.proj_flatten", text="Projected flatten")
+		col.operator("mesh.uv_flatten", text="UVMap flatten")
 
 
 #class WPLSculptSettings(PropertyGroup):
