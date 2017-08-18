@@ -43,6 +43,32 @@ bl_info = {
 	"category"	: ""
 	}
 
+def force_visible_object(obj):
+	if obj:
+		if obj.hide == True:
+			obj.hide = False
+		for n in range(len(obj.layers)):
+			obj.layers[n] = False
+		current_layer_index = bpy.context.scene.active_layer
+		obj.layers[current_layer_index] = True
+
+def select_and_change_mode(obj,obj_mode,hidden=False):
+	if obj:
+		obj.select = True
+		bpy.context.scene.objects.active = obj
+		force_visible_object(obj)
+		try:
+			m = bpy.context.mode
+			if bpy.context.mode!='OBJECT':
+				bpy.ops.object.mode_set(mode='OBJECT')
+			bpy.context.scene.update()
+			bpy.ops.object.mode_set(mode=obj_mode)
+			#print("Mode switched to ", obj_mode)
+		except:
+			pass
+		obj.hide = hidden
+	return m
+
 def camera_position(matrix):
 	""" From 4x4 matrix, calculate camera location """
 	t = (matrix[0][3], matrix[1][3], matrix[2][3])
@@ -100,7 +126,7 @@ def add_connected_bmverts(v,verts_list,selvertsIdx):
 				verts_list.append(ov)
 			add_connected_bmverts(ov,verts_list,selvertsIdx)
 
-def visibilitySelect(active_object, active_mesh, context, actionSelectType):
+def visibilitySelect(active_object, active_mesh, context, actionSelectType, fuzz):
 	selverts = get_selected_vertsIdx(active_mesh)
 	bpy.ops.object.mode_set( mode = 'EDIT' )
 	bpy.ops.mesh.select_all(action = 'DESELECT')
@@ -111,19 +137,22 @@ def visibilitySelect(active_object, active_mesh, context, actionSelectType):
 	bm.verts.index_update()
 	cameraOrigin = camera_pos(bpy.context.space_data.region_3d)
 	affectedVerts = []
+	fuzzlist = [(0,0,0),(fuzz,0,0),(-fuzz,0,0),(0,fuzz,0),(0,-fuzz,0),(0,0,fuzz),(0,0,-fuzz)]
 	for face in bm.faces:
 		for vert in face.verts:
-			# Cast a ray from the "camera" position
-			co_world = active_object.matrix_world * vert.co
-			direction = co_world - cameraOrigin;
-			direction.normalize()
-			result, location, normal, faceIndex, object, matrix = scene.ray_cast( cameraOrigin, direction )
-			#print ("result",result," faceIndex",faceIndex," vert",vert, " verts", bm.faces[faceIndex].verts)
-			if result and object.name == active_object.name:
-				facevrt = [ e.index for e in bm.faces[faceIndex].verts]
-				#print ("vert.index",vert.index," facevrt",facevrt)
-				if vert.index in facevrt:
-					affectedVerts.append(vert.index)
+			for fuzzpic in fuzzlist:
+				if vert.index not in affectedVerts:
+					# Cast a ray from the "camera" position
+					co_world = active_object.matrix_world * vert.co + mathutils.Vector(fuzzpic)
+					direction = co_world - cameraOrigin;
+					direction.normalize()
+					result, location, normal, faceIndex, object, matrix = scene.ray_cast( cameraOrigin, direction )
+					#print ("result",result," faceIndex",faceIndex," vert",vert, " verts", bm.faces[faceIndex].verts)
+					if result and object.name == active_object.name:
+						facevrt = [ e.index for e in bm.faces[faceIndex].verts]
+						#print ("vert.index",vert.index," facevrt",facevrt)
+						if vert.index in facevrt:
+							affectedVerts.append(vert.index)
 	#bmesh.update_edit_mesh( active_mesh )
 	bpy.ops.object.mode_set(mode='OBJECT')
 	if actionSelectType == 0:
@@ -181,8 +210,8 @@ def cutLongEdges(active_mesh, seledgesIdx, context, opt_edgelen ):
 	bmesh.update_edit_mesh( active_mesh )
 	# bpy.context.scene.update()
 
-class MESH_subdiv_long_edges( bpy.types.Operator ):
-	bl_idname = "mesh.subdiv_long_edges"
+class WPL_subdiv_long_edges( bpy.types.Operator ):
+	bl_idname = "mesh.wplsubdiv_long_edges"
 	bl_label = "Subdiv Long Edges"
 	bl_options = {'REGISTER', 'UNDO'}
 	opt_edgelen = bpy.props.FloatProperty(
@@ -209,11 +238,14 @@ class MESH_subdiv_long_edges( bpy.types.Operator ):
 		cutLongEdges(active_mesh, seledgesIdx, context, self.opt_edgelen )
 		return {'FINISHED'}
 
-class MESH_vert_selvisible( bpy.types.Operator ):
-	bl_idname = "mesh.vert_selvisible"
+class WPL_selvisible( bpy.types.Operator ):
+	bl_idname = "mesh.wplvert_selvisible"
 	bl_label = "Select visible verts"
 	bl_options = {'REGISTER', 'UNDO'}
-
+	opt_rayFuzz = bpy.props.FloatProperty(
+		name		= "Fuzziness",
+		default	 = 0.05
+	)
 	@classmethod
 	def poll( cls, context ):
 		return ( context.object is not None  and
@@ -222,14 +254,17 @@ class MESH_vert_selvisible( bpy.types.Operator ):
 	def execute( self, context ):
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
-		visibilitySelect(active_object, active_mesh, context, 0 )
+		visibilitySelect(active_object, active_mesh, context, 0, self.opt_rayFuzz )
 		return {'FINISHED'}
 
-class vert_deselvisible( bpy.types.Operator ):
-	bl_idname = "mesh.vert_deselunvisible"
+class WPL_deselvisible( bpy.types.Operator ):
+	bl_idname = "mesh.wplvert_deselunvisible"
 	bl_label = "Deselect invisible verts"
 	bl_options = {'REGISTER', 'UNDO'}
-
+	opt_rayFuzz = bpy.props.FloatProperty(
+		name		= "Fuzziness",
+		default	 = 0.05
+	)
 	@classmethod
 	def poll( cls, context ):
 		return ( context.object is not None  and
@@ -238,14 +273,17 @@ class vert_deselvisible( bpy.types.Operator ):
 	def execute( self, context ):
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
-		visibilitySelect(active_object, active_mesh, context, 1 )
+		visibilitySelect(active_object, active_mesh, context, 1, self.opt_rayFuzz )
 		return {'FINISHED'}
 
-class vert_deselunvisible( bpy.types.Operator ):
-	bl_idname = "mesh.vert_deselvisible"
+class WPL_deselunvisible( bpy.types.Operator ):
+	bl_idname = "mesh.wplvert_deselvisible"
 	bl_label = "Deselect visible verts"
 	bl_options = {'REGISTER', 'UNDO'}
-
+	opt_rayFuzz = bpy.props.FloatProperty(
+		name		= "Fuzziness",
+		default	 = 0.05
+	)
 	@classmethod
 	def poll( cls, context ):
 		return ( context.object is not None  and
@@ -254,11 +292,11 @@ class vert_deselunvisible( bpy.types.Operator ):
 	def execute( self, context ):
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
-		visibilitySelect(active_object, active_mesh, context, 2 )
+		visibilitySelect(active_object, active_mesh, context, 2, self.opt_rayFuzz )
 		return {'FINISHED'}
 
-class mesh_refill_select( bpy.types.Operator ):
-	bl_idname = "mesh.refill_select"
+class WPL_refill_select( bpy.types.Operator ):
+	bl_idname = "mesh.wplrefill_select"
 	bl_label = "Refill selection"
 	bl_options = {'REGISTER', 'UNDO'}
 
@@ -286,9 +324,9 @@ class mesh_refill_select( bpy.types.Operator ):
 		bmesh.update_edit_mesh(active_mesh)
 		bpy.ops.mesh.fill()
 		return {'FINISHED'}
-		
-class mesh_proj_flatten( bpy.types.Operator ):
-	bl_idname = "mesh.proj_flatten"
+
+class WPL_proj_flatten( bpy.types.Operator ):
+	bl_idname = "mesh.wplproj_flatten"
 	bl_label = "Flatten toward camera"
 	bl_options = {'REGISTER', 'UNDO'}
 	opt_flatnFac = bpy.props.FloatProperty(
@@ -355,9 +393,9 @@ class mesh_proj_flatten( bpy.types.Operator ):
 		return {'FINISHED'}
 
 
-class mesh_bridge_mesh_islands( bpy.types.Operator ):
+class WPL_bridge_mesh_islands( bpy.types.Operator ):
 	# Operator get all selected faces, extracts bounds and then make faces BETWEEN mesh-selection islands, basing on distance between vertices
-	bl_idname = "mesh.bridge_mesh_islands"
+	bl_idname = "mesh.wplbridge_mesh_islands"
 	bl_label = "Bridge edges of selected islands"
 	bl_options = {'REGISTER', 'UNDO'}
 	opt_flatnFac = bpy.props.FloatProperty(
@@ -444,8 +482,8 @@ class mesh_bridge_mesh_islands( bpy.types.Operator ):
 		bm.free()
 		return {'FINISHED'}
 
-class mesh_uv_flatten( bpy.types.Operator ):
-	bl_idname = "mesh.uv_flatten"
+class WPL_uv_flatten( bpy.types.Operator ):
+	bl_idname = "mesh.wpluv_flatten"
 	bl_label = "Flatten toward active UVMap"
 	bl_options = {'REGISTER', 'UNDO'}
 	opt_flatnFac = bpy.props.FloatProperty(
@@ -523,8 +561,59 @@ class mesh_uv_flatten( bpy.types.Operator ):
 		bmesh.update_edit_mesh(active_mesh)
 		return {'FINISHED'}
 
+class WPL_weig_edt( bpy.types.Operator ):
+	bl_idname = "mesh.wplweig_edt"
+	bl_label = "Change weight value in vertex group on surrent selection"
+	bl_options = {'REGISTER', 'UNDO'}
+	opt_stepadd = bpy.props.FloatProperty(
+		name		= "Value",
+		default	 	= 0.33
+		)
+	opt_stepmul = bpy.props.FloatProperty(
+		name		= "Multiplier",
+		default	 	= 1.0
+		)
+
+	@classmethod
+	def poll( cls, context ):
+		return ( context.object is not None  and
+				context.object.type == 'MESH' )
+
+	def execute( self, context ):
+		oldmode = bpy.context.active_object.mode
+		active_object = context.scene.objects.active
+		active_mesh = active_object.data
+		selvertsAll = get_selected_vertsIdx(active_mesh)
+		if len(selvertsAll) == 0:
+			self.report({'ERROR'}, "No selected vertices found")
+			return {'CANCELLED'}
+		select_and_change_mode(active_object,"OBJECT")
+		vg = active_object.vertex_groups.active #obj.vertex_groups.new("group name")
+		if vg is None:
+			self.report({'ERROR'}, "No active vertex group found")
+			return {'CANCELLED'}
+		for idx in selvertsAll:
+			wmod = 'REPLACE'
+			try:
+				oldval = vg.weight(idx)
+			except Exception as e:
+				wmod = 'ADD'
+				oldval = 0
+			newval = oldval
+			if self.opt_stepmul == 0.0:
+				newval = self.opt_stepadd
+			else:
+				newval = oldval+self.opt_stepmul*self.opt_stepadd
+			vg.add([idx], newval, wmod)
+		if oldmode != 'EDIT':
+			select_and_change_mode(active_object,"EDIT")
+		select_and_change_mode(active_object,oldmode)
+		#bpy.context.scene.objects.active = bpy.context.scene.objects.active
+		bpy.context.scene.update()
+		return {'FINISHED'}
+
 class WPLSculptFeatures_Panel(bpy.types.Panel):
-	bl_label = "Mesh Helpers"
+	bl_label = "mesh.wplHelpers"
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'TOOLS'
 	bl_category = 'WPL'
@@ -539,24 +628,36 @@ class WPLSculptFeatures_Panel(bpy.types.Panel):
 
 		# display the properties
 		col = layout.column()
-		col.label("Smart subdiv")
-		#col.prop(wplScultSets, "opt_edgelen")
-		col.operator("mesh.refill_select", text="ReFill selected")
-		col.operator("mesh.subdiv_long_edges", text="Cut Long Edges")
-		col.operator("mesh.bridge_mesh_islands", text="Bridge islands")
-		col.separator()
-
-		col.operator("mesh.vert_selvisible", text="Select visible")
-		col.operator("mesh.vert_deselvisible", text="Deselect visible")
-		col.operator("mesh.vert_deselunvisible", text="Deselect invisible")
+		col.label("Subdividers")
+		col.operator("mesh.wplrefill_select", text="ReFill selected")
+		col.operator("mesh.wplsubdiv_long_edges", text="Cut Long Edges")
+		col.operator("mesh.wplbridge_mesh_islands", text="Bridge islands")
 
 		col.separator()
-		col.operator("mesh.proj_flatten", text="Projected flatten")
-		col.operator("mesh.uv_flatten", text="UVMap flatten")
+		col.label("Selection control")
+		col.operator("mesh.wplvert_selvisible", text="Select visible")
+		col.operator("mesh.wplvert_deselvisible", text="Deselect visible")
+		col.operator("mesh.wplvert_deselunvisible", text="Deselect invisible")
 
+		col.separator()
+		col.label("Flattening")
+		col.operator("mesh.wplproj_flatten", text="Projected flatten")
+		col.operator("mesh.wpluv_flatten", text="UVMap flatten")
+
+		col.separator()
+		col.label("Weight control")
+		#col.prop(wplScultSets, "weig_stp")
+		row1 = col.row()
+		row1.operator("mesh.wplweig_edt", text="+").opt_stepmul = 1.0
+		row1.operator("mesh.wplweig_edt", text="-").opt_stepmul = -1.0
+		row1.operator("mesh.wplweig_edt", text="=").opt_stepmul = 0.0
 
 #class WPLSculptSettings(PropertyGroup):
-#	opt_edgelen = bpy.props.FloatProperty(...
+#	weig_stp = FloatProperty(
+#		name = "Weight value",
+#		description = "Value to add/substruct",
+#		default = 1.0
+#	)
 
 def register():
 	print("WPLSculptFeatures_Panel registered")

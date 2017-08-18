@@ -129,10 +129,6 @@ def unselect_all():
 		obj.select = False
 
 def force_visible_object(obj):
-	"""
-	Blender requires the armature is visible in order
-	to handle it.
-	"""
 	if obj:
 		if obj.hide == True:
 			obj.hide = False
@@ -157,6 +153,7 @@ def select_and_change_mode(obj,obj_mode,hidden=False):
 		except:
 			pass
 		obj.hide = hidden
+	return m
 
 def remove_copy_constr(target_armat):
 	for b in target_armat.pose.bones:

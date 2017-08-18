@@ -39,7 +39,7 @@ bl_info = {
 	}
 
 class wplscene_bake2osl( bpy.types.Operator ):
-	bl_idname = "mesh.wplscene_bake2osl"
+	bl_idname = "object.wplscene_bake2osl"
 	bl_label = "Bake scene into OSL script"
 	bl_options = {'REGISTER', 'UNDO'}
 
@@ -114,19 +114,19 @@ class wplscene_bake2osl( bpy.types.Operator ):
 		osl_content.append(" if(strlen(by_name_equality)>0){")
 		osl_content.append("  for(int i=0;i<DUMPLEN;i++){")
 		osl_content.append("   if(sceneNames[i] == by_name_equality){")
-		osl_content.append("    if(maxDistance>0 && length(P-sceneLocas[i])>maxDistance){")
-		osl_content.append("     continue;")
-		osl_content.append("    }")
-		osl_content.append("    objectNum = i+1;")
-		osl_content.append("    g_Location = sceneLocas[i];")
-		osl_content.append("    scale = sceneScales[i];")
-		osl_content.append("    normalX = sceneNormalX[i];")
-		osl_content.append("    normalY = sceneNormalY[i];")
-		osl_content.append("    normalZ = sceneNormalZ[i];")
-		osl_content.append("    dimensions = sceneDimens[i];")
-		osl_content.append("    g_boundsMax = sceneBbmax[i];")
-		osl_content.append("    g_boundsMin = sceneBbmin[i];")
-		osl_content.append("    return;")
+		osl_content.append("	if(maxDistance>0 && length(P-sceneLocas[i])>maxDistance){")
+		osl_content.append("	 continue;")
+		osl_content.append("	}")
+		osl_content.append("	objectNum = i+1;")
+		osl_content.append("	g_Location = sceneLocas[i];")
+		osl_content.append("	scale = sceneScales[i];")
+		osl_content.append("	normalX = sceneNormalX[i];")
+		osl_content.append("	normalY = sceneNormalY[i];")
+		osl_content.append("	normalZ = sceneNormalZ[i];")
+		osl_content.append("	dimensions = sceneDimens[i];")
+		osl_content.append("	g_boundsMax = sceneBbmax[i];")
+		osl_content.append("	g_boundsMin = sceneBbmin[i];")
+		osl_content.append("	return;")
 		osl_content.append("   }")
 		osl_content.append("  }")
 		osl_content.append(" }")
@@ -135,14 +135,14 @@ class wplscene_bake2osl( bpy.types.Operator ):
 		osl_content.append("  float iNearesDist = 99999.0;")
 		osl_content.append("  for(int i=0;i<DUMPLEN;i++){")
 		osl_content.append("   if(startswith(sceneNames[i],by_near_startswith)>0){")
-		osl_content.append("    float dist = length(P-sceneLocas[i]);")
-		osl_content.append("    if(maxDistance>0 && length(P-sceneLocas[i])>maxDistance){")
-		osl_content.append("     continue;")
-		osl_content.append("    }")
-		osl_content.append("    if(dist<iNearesDist){")
-		osl_content.append("     iNearesDist = dist;")
-		osl_content.append("     iNearesIdx = i;")
-		osl_content.append("    }")
+		osl_content.append("	float dist = length(P-sceneLocas[i]);")
+		osl_content.append("	if(maxDistance>0 && length(P-sceneLocas[i])>maxDistance){")
+		osl_content.append("	 continue;")
+		osl_content.append("	}")
+		osl_content.append("	if(dist<iNearesDist){")
+		osl_content.append("	 iNearesDist = dist;")
+		osl_content.append("	 iNearesIdx = i;")
+		osl_content.append("	}")
 		osl_content.append("   }")
 		osl_content.append("  }")
 		osl_content.append("  if(iNearesIdx >= 0){")
@@ -164,9 +164,75 @@ class wplscene_bake2osl( bpy.types.Operator ):
 
 		self.report({'INFO'}, "Scene baked successfully")
 		return {'FINISHED'}
-		
-class wplscene_wplscene_swtstate( bpy.types.Operator ):
-	bl_idname = "mesh.wplscene_swtstate"
+
+
+class wplscene_dedupmats( bpy.types.Operator ):
+	bl_idname = "object.wplscene_dedupmats"
+	bl_label = "Replace Material-dupes with originals"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll( cls, context ):
+		return True
+
+	def execute( self, context ):
+		mats = bpy.data.materials
+		for obj in bpy.data.objects:
+			for slt in obj.material_slots:
+				part = slt.name.rpartition('.')
+				if part[2].isnumeric() and part[0] in mats:
+					print("  Replace '%s' with '%s'" % (slt.name, part[0]))
+					slt.material = mats.get(part[0])
+
+		self.report({'INFO'}, "Materials deduped")
+		return {'FINISHED'}
+
+class wplscene_dedupnods( bpy.types.Operator ):
+	bl_idname = "object.wplscene_dedupnods"
+	bl_label = "Replace NodeGroup-dupes with originals"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll( cls, context ):
+		return True
+
+	def eliminate(self, node):
+		node_groups = bpy.data.node_groups
+
+		# Get the node group name as 3-tuple (base, separator, extension)
+		(base, sep, ext) = node.node_tree.name.rpartition('.')
+
+		# Replace the numeric duplicate
+		if ext.isnumeric():
+			if base in node_groups:
+				print("  Replace '%s' with '%s'" % (node.node_tree.name, base))
+				node.node_tree.use_fake_user = False
+				node.node_tree = node_groups.get(base)
+
+	def execute( self, context ):
+		#--- Search for duplicates in actual node groups
+		node_groups = bpy.data.node_groups
+
+		for group in node_groups:
+			for node in group.nodes:
+				if node.type == 'GROUP':
+					self.eliminate(node)
+
+		#--- Search for duplicates in materials
+		mats = list(bpy.data.materials)
+		worlds = list(bpy.data.worlds)
+
+		for mat in mats + worlds:
+			if mat.use_nodes:
+				for node in mat.node_tree.nodes:
+					if node.type == 'GROUP':
+						self.eliminate(node)
+
+		self.report({'INFO'}, "NodeGroups deduped")
+		return {'FINISHED'}
+
+class wplscene_swtstate( bpy.types.Operator ):
+	bl_idname = "object.wplscene_swtstate"
 	bl_label = "Switch scene state"
 	bl_options = {'REGISTER', 'UNDO'}
 
@@ -256,7 +322,7 @@ class wplscene_wplscene_swtstate( bpy.types.Operator ):
 		for obj in objs2check:
 			self.updateObjPose(context, obj)
 			self.updateObjShapekeys(context, obj)
-		
+
 		self.report({'INFO'}, "Scene state switched")
 		return {'FINISHED'}
 
@@ -270,7 +336,7 @@ class WPLScene2OslSettings(PropertyGroup):
 		description = "Part of name, other objects will not be baked",
 		default	 = "_osl"
 		)
-		
+
 	scnStateCommon = bpy.props.StringProperty(
 		name		= "Prefix of state",
 		description = "Objname/Shapekeys common namepart",
@@ -301,13 +367,17 @@ class WPLScene2Osl_Panel(bpy.types.Panel):
 		col = layout.column()
 		col.prop(bakeOpts, "oslScriptName")
 		col.prop(bakeOpts, "objNameSubstr")
-		col.operator("mesh.wplscene_bake2osl", text="Bake scene -> OSL")
-		
+		col.operator("object.wplscene_bake2osl", text="Bake scene -> OSL")
+
 		col.separator()
 		row = col.row()
 		row.prop(bakeOpts, "scnStateCommon")
 		row.prop(bakeOpts, "scnStateId")
-		col.operator("mesh.wplscene_swtstate", text="Switch scene state")
+		col.operator("object.wplscene_swtstate", text="Switch scene state")
+
+		col.separator()
+		col.operator("object.wplscene_dedupnods", text="Dedupe NodeGroups")
+		col.operator("object.wplscene_dedupmats", text="Dedupe Materials")
 
 def register():
 	print("WPLScene2Osl_Panel registered")

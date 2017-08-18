@@ -221,7 +221,7 @@ def get_active_context_cursor(context):
 	return cursor
 
 #class bakeCursorDistanceToVc(bpy.types.Operator):
-	# bl_idname = "object.bake_cursor_distance_to_vc"
+	# bl_idname = "object.wplbake_cursor_distance_to_vc"
 	# bl_label = "bakeCursorDistanceToVc"
 	# bl_options = {'REGISTER', 'UNDO'}
 
@@ -241,9 +241,9 @@ def get_active_context_cursor(context):
 		# context.scene.update()
 		# return {'FINISHED'}
 
-class bakeProj2dAxisToVc(bpy.types.Operator):
-	bl_idname = "object.bake_2daxis_to_vc"
-	bl_label = "bakeProj2dAxisToVc"
+class WPLbakeProj2dAxisToVc(bpy.types.Operator):
+	bl_idname = "object.wplbake_2daxis_to_vc"
+	bl_label = "WPLbakeProj2dAxisToVc"
 	bl_options = {'REGISTER', 'UNDO'}
 
 	@classmethod
@@ -263,9 +263,9 @@ class bakeProj2dAxisToVc(bpy.types.Operator):
 		context.scene.update()
 		return {'FINISHED'}
 
-class bakeShape2dAxisToVc(bpy.types.Operator):
-	bl_idname = "object.bake_2dshape_to_vc"
-	bl_label = "bakeShape2dAxisToVc"
+class WPLbakeShape2dAxisToVc(bpy.types.Operator):
+	bl_idname = "object.wplbake_2dshape_to_vc"
+	bl_label = "WPLbakeShape2dAxisToVc"
 	bl_options = {'REGISTER', 'UNDO'}
 
 	@classmethod
@@ -285,9 +285,9 @@ class bakeShape2dAxisToVc(bpy.types.Operator):
 		context.scene.update()
 		return {'FINISHED'}
 
-class bakeMeshCentersToVc(bpy.types.Operator):
-	bl_idname = "object.bake_mesh_centers_to_vc"
-	bl_label = "bakeMeshCentersToVc"
+class WPLbakeMeshCentersToVc(bpy.types.Operator):
+	bl_idname = "object.wplbake_mesh_centers_to_vc"
+	bl_label = "WPLbakeMeshCentersToVc"
 	bl_options = {'REGISTER', 'UNDO'}
 	actionType = bpy.props.IntProperty()
 
@@ -484,20 +484,20 @@ class WPLBakeMeshFeatures_Panel(bpy.types.Panel):
 
 		col = layout.column()
 		col.label("Bake to VCol")
-		col.operator("object.bake_2daxis_to_vc", text="Bake Flat projection)") # normalized
-		col.operator("object.bake_2dshape_to_vc", text="Bake Shape projection") # normalized
-		#col.operator("object.bake_cursor_distance_to_vc", text="Bake 3D-cursor distance") # normalized
-		col.operator("object.bake_mesh_centers_to_vc", text="Bake random color").actionType = 1
+		col.operator("object.wplbake_2daxis_to_vc", text="Bake Flat projection)") # normalized
+		col.operator("object.wplbake_2dshape_to_vc", text="Bake Shape projection") # normalized
+		#col.operator("object.wplbake_cursor_distance_to_vc", text="Bake 3D-cursor distance") # normalized
+		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake random color").actionType = 1
 		col.separator()
 
 		# display the properties
 		col.label("Bake to UVMap")
 		col.prop(bakeOpts, "bake_uvbase")
-		col.operator("object.bake_mesh_centers_to_vc", text="Bake 2d-Axis (View Proj)").actionType = 4
-		col.operator("object.bake_mesh_centers_to_vc", text="Bake offset: 3D Cursor").actionType = 3
-		col.operator("object.bake_mesh_centers_to_vc", text="Bake offset: Mesh-mids").actionType = 2
-		col.operator("object.bake_mesh_centers_to_vc", text="Bake local: 3D Cursor").actionType = 5
-		col.operator("object.bake_mesh_centers_to_vc", text="Bake local: Mesh-mids").actionType = 6
+		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake 2d-Axis (View Proj)").actionType = 4
+		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake offset: 3D Cursor").actionType = 3
+		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake offset: Mesh-mids").actionType = 2
+		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake local: 3D Cursor").actionType = 5
+		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake local: Mesh-mids").actionType = 6
 
 def register():
 	print("WPLBakeMeshFeatures_Panel registered")
