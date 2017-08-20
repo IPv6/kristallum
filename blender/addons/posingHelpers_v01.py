@@ -1,12 +1,13 @@
-# Creating Manuel Bastioni pose files from DAZ rigs (BVH), V8 is most ok
-# TODO: rebase quaternion from donor roll to target Roll
-# TODO: readjust from different rest poses
+# Align Manuel Bastioni pose to DAZ-based pose (BVH)
+# V8 is ok except hands (fingers ignored)
 
 import bpy
 import bmesh
 import math
 import mathutils
-import json
+from mathutils import Vector
+import numpy as np
+#import json
 
 from random import random, seed
 from bpy_extras import view3d_utils
@@ -19,6 +20,7 @@ from bpy.props import (StringProperty,
 						FloatVectorProperty,
 						EnumProperty,
 						PointerProperty,
+						BoolVectorProperty
 						)
 from bpy.types import (Panel,
 						Operator,
@@ -39,41 +41,8 @@ bl_info = {
 	"category"	: ""
 	}
 
-boneMapV3 = [
-	["pelvis", "pelvis"],
-	["spine01", "abdomen"],
-	["spine02", "abdomen2"],
-	["spine03", "chest"],
-	["neck", "neck"],
-	["head", "head"],
-
-	# hands
-	["clavicle_L", "lCollar"], ["clavicle_R", "rCollar"],
-	["upperarm_L", "lShldr"], ["upperarm_R", "rShldr"],
-	["lowerarm_L", "lForeArm"], ["lowerarm_R", "rForeArm"],
-	["hand_L", "lHand"], ["hand_R", "rHand"],
-
-	["thumb01_L", "lThumb1"], ["thumb02_L", "lThumb2"], ["thumb03_L", "lThumb3"],
-	["index00_L", "lCarpal1"], ["index01_L", "lIndex1"], ["index02_L", "lIndex2"], ["index03_L", "lIndex3"],
-	["middle00_L", "lCarpal1"], ["middle01_L", "lMid1"], ["middle02_L", "lMid2"], ["middle03_L", "lMid3"],
-	["ling00_L", "lCarpal2"], ["ling01_L", "lRing1"], ["ling02_L", "lRing2"], ["ling03_L", "lRing3"],
-	["pinky00_L", "lCarpal2"], ["pinky01_L", "lPinky1"], ["pinky02_L", "lPinky2"], ["pinky03_L", "lPinky3"],
-
-	["thumb01_R", "rThumb1"], ["thumb02_R", "rThumb2"], ["thumb03_R", "rThumb3"],
-	["index00_R", "rCarpal1"], ["index01_R", "rIndex1"], ["index02_R", "rIndex2"], ["index03_R", "rIndex3"],
-	["middle00_R", "rCarpal2"], ["middle01_R", "rMid1"], ["middle02_R", "rMid2"], ["middle03_R", "rMid3"],
-	["ring00_R", "rCarpal3"], ["ring01_R", "rRing1"], ["ring02_R", "rRing2"], ["ring03_R", "rRing3"],
-	["pinky00_R", "rCarpal4"], ["pinky01_R", "rPinky1"], ["pinky02_R", "rPinky2"], ["pinky03_R", "rPinky3"],
-
-	# legs
-	["thigh_L", "lThigh"],["thigh_R", "rThigh"],
-	["calf_L", "lShin"],["calf_R", "rShin"],
-	["foot_L", "lFoot"], ["foot_R", "rFoot"],
-	["toes_L", "lSmallToe2"], ["toes_R", "rSmallToe2"]
-]
-
 boneMapV8 = [
-	["pelvis", "pelvis"],
+	#["pelvis", "pelvis"],
 	["spine01", "abdomenLower"],
 	["spine02", "abdomenUpper"],
 	["spine03", "chestLower"],
@@ -83,37 +52,51 @@ boneMapV8 = [
 	# hands
 	["clavicle_L", "lCollar"], ["clavicle_R", "rCollar"],
 	["upperarm_L", "lShldrBend"], ["upperarm_R", "rShldrBend"],
-	#["upperarm_twist_L", "lShldrTwist"], ["upperarm_twist_R", "rShldrTwist"],
 	["lowerarm_L", "lForearmBend"], ["lowerarm_R", "rForearmBend"],
-	#["lowerarm_twist_L", "lForearmTwist"], ["lowerarm_twist_R", "rForearmTwist"],
-	["hand_L", "lHand"], ["hand_R", "rHand"],
 
-	["thumb01_L", "lThumb1"], ["thumb02_L", "lThumb2"], ["thumb03_L", "lThumb3"],
-	["index00_L", "lCarpal1"], ["index01_L", "lIndex1"], ["index02_L", "lIndex2"], ["index03_L", "lIndex3"],
-	["middle00_L", "lCarpal2"], ["middle01_L", "lMid1"], ["middle02_L", "lMid2"], ["middle03_L", "lMid3"],
-	["ling00_L", "lCarpal3"], ["ling01_L", "lRing1"], ["ling02_L", "lRing2"], ["ling03_L", "lRing3"],
-	["pinky00_L", "lCarpal4"], ["pinky01_L", "lPinky1"], ["pinky02_L", "lPinky2"], ["pinky03_L", "lPinky3"],
-
-	["thumb01_R", "rThumb1"], ["thumb02_R", "rThumb2"], ["thumb03_R", "rThumb3"],
-	["index00_R", "rCarpal1"], ["index01_R", "rIndex1"], ["index02_R", "rIndex2"], ["index03_R", "rIndex3"],
-	["middle00_R", "rCarpal2"], ["middle01_R", "rMid1"], ["middle02_R", "rMid2"], ["middle03_R", "rMid3"],
-	["ring00_R", "rCarpal3"], ["ring01_R", "rRing1"], ["ring02_R", "rRing2"], ["ring03_R", "rRing3"],
-	["pinky00_R", "rCarpal4"], ["pinky01_R", "rPinky1"], ["pinky02_R", "rPinky2"], ["pinky03_R", "rPinky3"],
+	# palms
+	["hand_L", "lHand", "BRUT"], ["hand_R", "rHand", "BRUT"],
+	#["thumb01_L", "lThumb1", "BRUT"], ["thumb02_L", "lThumb2", "BRUT"], 
+	#["index00_L", "lCarpal1", "000"],
+	#["middle00_L", "lCarpal2", "000"], 
+	#["ring00_L", "lCarpal3", "000"], 
+	#["pinky00_L", "lCarpal4", "000"], 
+	#["index01_L", "lIndex1", "ZYX"], ["index02_L", "lIndex2", "ZYX"], 
+	#["middle01_L", "lMid1", "ZYX"], ["middle02_L", "lMid2", "ZYX"], 
+	#["ring01_L", "lRing1", "ZYX"], ["ring02_L", "lRing2", "ZYX"], 
+	#["pinky01_L", "lPinky1", "ZYX"], ["pinky02_L", "lPinky2", "ZYX"], 
+	#["thumb01_R", "rThumb1", "BRUT"], ["thumb02_R", "rThumb2", "BRUT"], 
+	#["index00_R", "rCarpal1", "000"],
+	#["middle00_R", "rCarpal2", "000"],
+	#["ring00_R", "rCarpal3", "000"],
+	#["pinky00_R", "rCarpal4", "000"],
+	#["index01_R", "rIndex1", "ZYX"], ["index02_R", "rIndex2", "ZYX"], 
+	#["middle01_R", "rMid1", "ZYX"], ["middle02_R", "rMid2", "ZYX"], 
+	#["ring01_R", "rRing1", "ZYX"], ["ring02_R", "rRing2", "ZYX"], 
+	#["pinky01_R", "rPinky1", "ZYX"], ["pinky02_R", "rPinky2", "ZYX"], 
+	#["thumb03_L", "lThumb3", "BRUT"],
+	#["index03_L", "lIndex3", "BRUT"],
+	#["middle03_L", "lMid3", "BRUT"],
+	#["ring03_L", "lRing3", "BRUT"],
+	#["pinky03_L", "lPinky3", "BRUT"],
+	#["thumb03_R", "rThumb3", "BRUT"],
+	#["index03_R", "rIndex3", "BRUT"],
+	#["middle03_R", "rMid3", "BRUT"],
+	#["ring03_R", "rRing3", "BRUT"],
+	#["pinky03_R", "rPinky3", "BRUT"],
 
 	# legs
 	["thigh_L", "lThighBend"],["thigh_R", "rThighBend"],
-	#["thigh_twist_L", "lThighTwist"],["thigh_twist_R", "rThighTwist"],
 	["calf_L", "lShin"],["calf_R", "rShin"],
-	#["calf_twist_L", "lShin"],["calf_twist_R", "rShin"],
-	["foot_L", "lMetatarsals"], ["foot_R", "rMetatarsals"],
-	["toes_L", "lSmallToe2"], ["toes_R", "rSmallToe2"]
+	["foot_L", "lMetatarsals", "BRUT"], ["foot_R", "rMetatarsals", "BRUT"],
+	["toes_L", "lSmallToe2", "BRUT"], ["toes_R", "rSmallToe2", "BRUT"]
 ]
 
 def getBMStepsForArmt(donor_armt):
 	bonenames = donor_armt.pose.bones.keys()
-	if "chest" in bonenames:
-		print("getBMStepsForArmt: V3 armature detected")
-		return boneMapV3
+	#if "chest" in bonenames:
+	#	print("getBMStepsForArmt: V3 armature detected")
+	#	return boneMapV3
 	if "abdomenUpper" in bonenames:
 		print("getBMStepsForArmt: V8 armature detected")
 		return boneMapV8
@@ -155,28 +138,30 @@ def select_and_change_mode(obj,obj_mode,hidden=False):
 		obj.hide = hidden
 	return m
 
-def remove_copy_constr(target_armat):
+def remove_copy_constr(target_armat, transf_mod = 'COPY_TRANSFORMS'):
+	constr_name = "wpltt_"+transf_mod
 	for b in target_armat.pose.bones:
 		if len(b.constraints) > 0:
 			for cstr in b.constraints:
-				if "wpltt" in cstr.name:
+				if constr_name == cstr.name:
 					b.constraints.remove(cstr)
 
-def add_copy_constr(target_armat, donor_armat, bone_to_rotate, bone_from_rotate, transf_mod = 'COPY_TRANSFORMS', transf_space="WORLD"):
+def add_copy_constr(target_armat, donor_armat, bone_to_rotate, bone_from_rotate, transf_mod = 'COPY_TRANSFORMS', transf_space_own="WORLD", transf_space_targ=None):
+	constr_name = "wpltt_"+transf_mod
 	for b in target_armat.pose.bones:
 		if (bone_to_rotate is None) or (b.name == bone_to_rotate):
-			if "wpltt" not in b.constraints:
-				#cstr = b.constraints.new('COPY_ROTATION')
-				#cstr = b.constraints.new('COPY_TRANSFORMS')
+			if constr_name not in b.constraints:
 				cstr = b.constraints.new(transf_mod)
 				cstr.target = donor_armat
 				if bone_from_rotate is None:
 					cstr.subtarget =  b.name
 				else:
 					cstr.subtarget =  bone_from_rotate
-				cstr.target_space = transf_space
-				cstr.owner_space = transf_space
-				cstr.name = "wpltt"
+				if transf_space_targ is None:
+					transf_space_targ = transf_space_own
+				cstr.target_space = transf_space_targ
+				cstr.owner_space = transf_space_own
+				cstr.name = constr_name
 
 def getActiveQuaternionRotation(armat, boneName):
 	# returns visual rotation of this bone, relative to rest pose, as a quaternion
@@ -208,12 +193,12 @@ class wplposing_unrollclon( bpy.types.Operator ):
 		return p
 
 	def execute( self, context ):
-		bakeOpts = context.scene.wplPosingSettings
+		wpposeOpts = context.scene.wplPosingSettings
 		finalRoll = 0
 		scene = context.scene
 		targt_arm = context.active_object
 		if targt_arm is None or not isinstance(targt_arm.data, bpy.types.Armature):
-			operator.report({'ERROR'}, "No Armature selected, select armature first")
+			self.report({'ERROR'}, "No Armature selected, select armature first")
 			return {'CANCELLED'}
 		force_visible_object(targt_arm)
 
@@ -233,7 +218,7 @@ class wplposing_unrollclon( bpy.types.Operator ):
 		# Apply Visual Transform to Pose
 		bpy.ops.pose.select_all(action='SELECT')
 		bpy.ops.pose.visual_transform_apply()
-		remove_copy_constr(cloned_arm)
+		remove_copy_constr(cloned_arm, 'COPY_ROTATION')
 
 		# getting corrected values back
 		matrix_data = {}
@@ -273,13 +258,13 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 		return p
 
 	def execute( self, context ):
-		bakeOpts = context.scene.wplPosingSettings
+		wpposeOpts = context.scene.wplPosingSettings
 		scene = context.scene
 		donor_obj = context.active_object
 		if donor_obj is None or not isinstance(donor_obj.data, bpy.types.Armature):
 			operator.report({'ERROR'}, "No Armature selected, select armature first")
 			return {'CANCELLED'}
-		targt_arm = get_object_by_name(bakeOpts.mbArmatName)
+		targt_arm = get_object_by_name(wpposeOpts.mbArmatName)
 		if targt_arm is None:
 			operator.report({'ERROR'}, "No MB-Armature found")
 			return {'CANCELLED'}
@@ -287,67 +272,158 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 		force_visible_object(targt_arm)
 		#select_and_change_mode(targt_arm,"OBJECT")
 
-		bone_rolls_donor = {}
-		bone_rolls_targt = {}
+		targt_editbone_snap = {}
 		matrix_data = {}
-		bones_names_donor = donor_obj.pose.bones.keys()
-		bones_names_targ = targt_arm.pose.bones.keys()
 		bones_mapping_steps = getBMStepsForArmt(donor_obj)
 		if bones_mapping_steps is None:
-			operator.report({'ERROR'}, "No Arm-Mapping found")
+			self.report({'ERROR'}, "No Arm-Mapping found")
 			return {'CANCELLED'}
-
-		# getting Roll values from original armature
-		select_and_change_mode(donor_obj,"EDIT")
-		#print("Donor bones",bones_names_donor)
-		for bnn in bones_names_donor:
-			donor_bn = donor_obj.data.edit_bones.get(bnn)
-			if donor_bn is not None:
-				bone_rolls_donor[bnn] = donor_bn.roll
-				#print("Donor roll",bnn,donor_bn.roll)
-		#print("bone_rolls_donor",bone_rolls_donor)
-
-		# getting Roll values from target armature
+		
+		bones_ok = 0
+		bones_err = 0
+		donor2targ_map = {}
+		targ2donor_map = {}
+		bones_names_donor = donor_obj.pose.bones.keys()
+		bones_names_targ = targt_arm.pose.bones.keys()
+		for step in bones_mapping_steps:
+			targt_bn_name = step[0]
+			donor_bn_name = step[1]
+			donor2targ_map[donor_bn_name] = targt_bn_name
+			targ2donor_map[targt_bn_name] = donor_bn_name
+		#getting Roll values from target armature
 		select_and_change_mode(targt_arm,"OBJECT")
 		bpy.ops.object.editmode_toggle()
 		select_and_change_mode(targt_arm,"EDIT")
-		#print("Target bones",bones_names_targ)
 		for bnn in bones_names_targ:
 			targ_bn = targt_arm.data.edit_bones.get(bnn)
 			if targ_bn is not None:
-				bone_rolls_targt[bnn] = targ_bn.roll
-				#print("Target roll",bnn,targ_bn.roll)
-		#print("bone_rolls_targt",bone_rolls_targt)
-		bones_ok = 0
-		bones_err = 0
+				targt_editbone_snap[bnn] = [targ_bn.roll, Vector(targ_bn.head), Vector(targ_bn.tail)]
+		#do the transfer
+		cloned_arm = donor_obj.copy()
+		cloned_arm.data = cloned_arm.data.copy()
+		scene.objects.link(cloned_arm)
+		select_and_change_mode(cloned_arm,"OBJECT")
+		add_copy_constr(cloned_arm,donor_obj, None, None, 'COPY_TRANSFORMS', 'WORLD')
+		add_copy_constr(cloned_arm,donor_obj, None, None, 'COPY_ROTATION', 'WORLD')
+		bpy.ops.object.editmode_toggle()
+		select_and_change_mode(cloned_arm,"EDIT")
+		cl_bns = cloned_arm.data.edit_bones.keys()
+		for cl_bname in cl_bns:
+			cl_vn = cloned_arm.data.edit_bones.get(cl_bname)
+			if cl_bname not in donor2targ_map:
+				# unused bone. deleting to make Blender recalc hierarchy
+				bones_err = bones_err+1
+				cloned_arm.data.edit_bones.remove(cl_vn)
+			else:
+				targbname = donor2targ_map[cl_bname]
+				targsnap = targt_editbone_snap[targbname]
+				cl_vn.roll = targsnap[0]
+
+		# Applying contraints to clone to get REAL tranforms with constrains in local space
+		select_and_change_mode(cloned_arm,"POSE")
+		# Apply Visual Transform to Pose
+		bpy.ops.pose.select_all(action='SELECT')
+		bpy.ops.pose.visual_transform_apply()
+		remove_copy_constr(cloned_arm, 'COPY_TRANSFORMS')
+		remove_copy_constr(cloned_arm, 'COPY_ROTATION')
+		
+		bpy.context.scene.update()
+		select_and_change_mode(targt_arm,"POSE")
+		
+		# preparing some walklists
+		tx = 0
+		ty = 0
+		tz = 0
+		brut_vec1 = []
+		for tx in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*0.1):
+			for tz in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*0.1):
+				brut_vec1.append(Vector((tx,ty,tx)))
+		brut_vec2 = []
+		for tx in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*0.1):
+			for ty in np.arange(-math.pi*0.2,math.pi*0.2,math.pi*0.1):
+				for tz in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*0.1):
+					brut_vec2.append(Vector((tx,ty,tx)))
 		for step in bones_mapping_steps:
 			donor_bn_name = step[1]
 			targt_bn_name = step[0]
-			if donor_obj.pose.bones.get(donor_bn_name):
+			meth = None
+			submeth = None
+			if len(step) > 2:
+				meth = step[2]
+			if len(step) > 3:
+				submeth = step[3]
+			brut_op = False
+			if submeth is not None and submeth.find("OP") >= 0:
+				brut_op = True
+			walklist = brut_vec1
+			if submeth is not None and submeth.find("Y1") >= 0:
+				walklist = brut_vec2
+			targt_bnn = targt_arm.pose.bones.get(targt_bn_name)
+			cloned_bnn = cloned_arm.pose.bones.get(donor_bn_name)
+			if cloned_arm is not None and targt_bnn is not None:
 				bones_ok = bones_ok+1
-				bone = donor_obj.pose.bones[donor_bn_name]
-				#print("Reading bone",donor_bn_name,bone)
-				bone.rotation_mode = 'QUATERNION'
-				bone_quat = mathutils.Quaternion(bone.rotation_quaternion)
-				if donor_bn_name in bone_rolls_donor:
-					targ_bn = targt_arm.data.edit_bones.get(targt_bn_name)
-					if targ_bn is not None:
-						roll_donor = bone_rolls_donor[donor_bn_name]
-						targ_bn.roll = roll_donor
-				matrix_data[targt_bn_name] = [bone_quat[0], bone_quat[1], bone_quat[2], bone_quat[3]]
-			else:
-				bones_err = bones_err+1
+				if meth == "BRUT":
+					clone_dir = (cloned_bnn.tail-cloned_bnn.head)
+					if brut_op and cloned_bnn.parent:
+						clone_dir = (cloned_bnn.tail-cloned_bnn.parent.tail)
+					clone_dir.normalize()
+					min_dot = -999
+					min_val = Vector((0,0,0))
+					tx = 0
+					ty = 0
+					tz = 0
+					targt_bnn.rotation_mode = "ZYX"
+					targt_bnn.rotation_euler = Vector((tx,ty,tz))
+					bpy.context.scene.update()
+					for this_v in walklist:
+						targt_bnn.rotation_euler = this_v
+						bpy.context.scene.update()
+						this_dir = (targt_bnn.tail-targt_bnn.head)
+						if brut_op and targt_bnn.parent:
+							this_dir = (targt_bnn.tail-targt_bnn.parent.tail)
+						this_dir.normalize()
+						this_dot = this_dir.dot(clone_dir)
+						if this_dot > min_dot:
+							print(meth,": ",targt_bnn.name, this_v, this_dot) #this_dir,clone_dir,
+							min_dot = this_dot
+							min_val = this_v
+					targt_bnn.rotation_euler = min_val
+				elif meth == "000":
+					targt_bnn.rotation_mode = "ZYX"
+					targt_bnn.rotation_euler = Vector((0,0,0))
+				elif meth == "CONST":
+					add_copy_constr(targt_arm, cloned_arm, targt_bn_name, donor_bn_name, 'COPY_ROTATION', 'WORLD')
+				elif meth == "CONTS_L":
+					add_copy_constr(targt_arm, cloned_arm, targt_bn_name, donor_bn_name, 'COPY_ROTATION', 'LOCAL')
+				elif (meth == 'QUAT') or (meth is None):
+					cloned_bnn.rotation_mode = 'QUATERNION'
+					targt_bnn.rotation_mode = 'QUATERNION'
+					targt_bnn.rotation_quaternion = cloned_bnn.rotation_quaternion
+				elif (meth == 'AXIS'):
+					cloned_bnn.rotation_mode = 'AXIS_ANGLE'
+					targt_bnn.rotation_mode = 'AXIS_ANGLE'
+					targt_bnn.rotation_axis_angle = cloned_bnn.rotation_axis_angle
+				else:
+					cloned_bnn.rotation_mode = meth
+					targt_bnn.rotation_mode = meth
+					targt_bnn.rotation_euler = cloned_bnn.rotation_euler
 
-		# applying rotation_quaternion to target armature
+		# Applying contraints to get REAL tranforms
 		select_and_change_mode(targt_arm,"POSE")
-		for bnn in bones_names_targ:
-			if bnn in matrix_data:
-				bone = targt_arm.pose.bones.get(bnn)
-				bone.rotation_mode = 'QUATERNION'
-				bone.rotation_quaternion = mathutils.Quaternion(matrix_data[bnn])
+		bpy.ops.pose.select_all(action='SELECT')
+		bpy.ops.pose.visual_transform_apply()
+		remove_copy_constr(targt_arm, 'COPY_TRANSFORMS')
+		remove_copy_constr(targt_arm, 'COPY_ROTATION')
+		#scene.objects.unlink(cloned_arm)
+		#bpy.data.objects.remove(cloned_arm)
 		select_and_change_mode(targt_arm,"OBJECT")
+
 		self.report({'INFO'}, "Pose transferred, bones="+str(bones_ok)+", skipped="+str(bones_err))
 		return {'FINISHED'}
+
+#############################################################################
+#############################################################################
+#############################################################################
 
 class wplPosingSettings(PropertyGroup):
 	mbArmatName = StringProperty(
@@ -356,7 +432,7 @@ class wplPosingSettings(PropertyGroup):
 		default="human_skeleton")
 
 class WPLPosingSt_Panel(bpy.types.Panel):
-	bl_label = "DAZ armature -> MB skeleton"
+	bl_label = "MB skeleton helpers"
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'TOOLS'
 	bl_context = "objectmode"
@@ -369,14 +445,18 @@ class WPLPosingSt_Panel(bpy.types.Panel):
 	def draw(self, context):
 		layout = self.layout
 		scene = context.scene
-		bakeOpts = context.scene.wplPosingSettings
+		wpposeOpts = context.scene.wplPosingSettings
 
 		# display the properties
 		col = layout.column()
-		col.prop_search(bakeOpts, "mbArmatName", scene, "objects")
-		col.operator("mesh.wplposing_arm2mbp", text="DAZ -> MB")
-		col.separator()
-		col.operator("mesh.wplposing_unrollclon", text="Reset Armature Roll")
+		col.prop_search(wpposeOpts, "mbArmatName", scene, "objects")
+		col.operator("mesh.wplposing_arm2mbp", text="Project DAZ -> MB")
+		#col.separator()
+		#col.operator("mesh.wplposing_unrollclon", text="Reset Arm-Rolls")
+
+#############################################################################
+#############################################################################
+#############################################################################
 
 def register():
 	print("WPLPosingSt_Panel registered")
