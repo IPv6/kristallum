@@ -239,7 +239,7 @@ def applyAngls(self,context):
 			newX = refVal[0]+wpposeOpts.mbh_foldAngle*defSpd[0]
 			newY = refVal[1]+wpposeOpts.mbh_twistAngle*defSpd[1]
 			newZ = refVal[2]+wpposeOpts.mbh_tiltAngle*defSpd[2]
-			mixBone(context, boneName, Vector((0,0,0)), Vector((newX,newY,newZ)), False, True)
+			mixBone(context, boneName, Vector((0,0,0)), Vector((newX,newY,newZ)), False, wpposeOpts.mbh_applyLimits)
 	bpy.context.scene.update()
 	return None
 
@@ -273,7 +273,7 @@ def deflAngls(self,context):
 		if propProp is not None:
 			isEnabled = propProp[boneProp[1]]
 		if isEnabled > 0:
-			mixBone(context, boneName, Vector((0,0,0)), Vector((defVal[0],defVal[1],defVal[2])), True, True)
+			mixBone(context, boneName, Vector((0,0,0)), Vector((defVal[0],defVal[1],defVal[2])), True, False)
 	bpy.context.scene.update()
 	return None
 #############################################################################
@@ -404,6 +404,9 @@ class wplPoseMBSettings(PropertyGroup):
 		default = 0,
 		update=applyAngls
 	)
+	mbh_applyLimits = BoolProperty(
+		default = True
+	)
 
 #############################################################################
 #############################################################################
@@ -507,6 +510,8 @@ class WPLPosingMBArm_Panel(bpy.types.Panel):
 		row_mbh_pinky_R = box_ftt7.row()
 		row_mbh_pinky_R.prop(wpposeOpts, "mbh_pinky_R", text="=:-:-")
 		col.operator("mesh.wplposing_mbbn2zero", text="Reset to default")
+		col.separator()
+		col.prop(wpposeOpts, "mbh_applyLimits", text="Auto-Apply bone limits")
 
 #############################################################################
 #############################################################################
