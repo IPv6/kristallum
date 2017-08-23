@@ -5,6 +5,7 @@ import bpy
 import bmesh
 import math
 import mathutils
+from math import radians
 from mathutils import Vector
 import numpy as np
 #import json
@@ -41,55 +42,47 @@ bl_info = {
 	"category"	: ""
 	}
 
+boneBrutDeepness = 0.05
 boneMapV8 = [
-	#["pelvis", "pelvis"],
-	["spine01", "abdomenLower"],
-	["spine02", "abdomenUpper"],
-	["spine03", "chestLower"],
-	["neck", "neckLower"],
-	["head", "head"],
+	["pelvis", "pelvis", "000", (radians(25),radians(0),radians(-10))],
+	["spine01", "abdomenLower", "ZYX"],
+	["spine02", "abdomenUpper", "ZYX"],
+	["spine03", "chestUpper", "ZYX"],
+	["neck", "neckLower", "ZYX"],
+	["head", "head", "ZYX"],
 
 	# hands
-	["clavicle_L", "lCollar"], ["clavicle_R", "rCollar"],
-	["upperarm_L", "lShldrBend"], ["upperarm_R", "rShldrBend"],
-	["lowerarm_L", "lForearmBend"], ["lowerarm_R", "rForearmBend"],
+	["clavicle_L", "lCollar", "BRUT_ZX"], ["clavicle_R", "rCollar", "BRUT_ZX"],
+	["upperarm_L", "lShldrBend", "BRUT_ZYX"], ["upperarm_R", "rShldrBend", "BRUT_ZYX",],
+	["lowerarm_L", "lForearmBend", "BRUT_ZYX"], ["lowerarm_R", "rForearmBend", "BRUT_ZYX"],
+	["hand_L", "lHand", "BRUT_ZX"], ["hand_R", "rHand", "BRUT_ZX"],
 
 	# palms
-	["hand_L", "lHand", "BRUT"], ["hand_R", "rHand", "BRUT"],
-	#["thumb01_L", "lThumb1", "BRUT"], ["thumb02_L", "lThumb2", "BRUT"], 
-	#["index00_L", "lCarpal1", "000"],
-	#["middle00_L", "lCarpal2", "000"], 
-	#["ring00_L", "lCarpal3", "000"], 
-	#["pinky00_L", "lCarpal4", "000"], 
-	#["index01_L", "lIndex1", "ZYX"], ["index02_L", "lIndex2", "ZYX"], 
-	#["middle01_L", "lMid1", "ZYX"], ["middle02_L", "lMid2", "ZYX"], 
-	#["ring01_L", "lRing1", "ZYX"], ["ring02_L", "lRing2", "ZYX"], 
-	#["pinky01_L", "lPinky1", "ZYX"], ["pinky02_L", "lPinky2", "ZYX"], 
-	#["thumb01_R", "rThumb1", "BRUT"], ["thumb02_R", "rThumb2", "BRUT"], 
-	#["index00_R", "rCarpal1", "000"],
-	#["middle00_R", "rCarpal2", "000"],
-	#["ring00_R", "rCarpal3", "000"],
-	#["pinky00_R", "rCarpal4", "000"],
-	#["index01_R", "rIndex1", "ZYX"], ["index02_R", "rIndex2", "ZYX"], 
-	#["middle01_R", "rMid1", "ZYX"], ["middle02_R", "rMid2", "ZYX"], 
-	#["ring01_R", "rRing1", "ZYX"], ["ring02_R", "rRing2", "ZYX"], 
-	#["pinky01_R", "rPinky1", "ZYX"], ["pinky02_R", "rPinky2", "ZYX"], 
-	#["thumb03_L", "lThumb3", "BRUT"],
-	#["index03_L", "lIndex3", "BRUT"],
-	#["middle03_L", "lMid3", "BRUT"],
-	#["ring03_L", "lRing3", "BRUT"],
-	#["pinky03_L", "lPinky3", "BRUT"],
-	#["thumb03_R", "rThumb3", "BRUT"],
-	#["index03_R", "rIndex3", "BRUT"],
-	#["middle03_R", "rMid3", "BRUT"],
-	#["ring03_R", "rRing3", "BRUT"],
-	#["pinky03_R", "rPinky3", "BRUT"],
+	["thumb01_L", "lThumb1", "BRUT_ZX"], ["thumb02_L", "lThumb2", "BRUT_X"], ["thumb03_L", "lThumb3", "000"],
+	["index00_L", "lCarpal1", "000"],
+	["middle00_L", "lCarpal2", "000"],
+	["ring00_L", "lCarpal3", "000"],
+	["pinky00_L", "lCarpal4", "000"],
+	["index01_L", "lIndex1", "BRUT_X"], ["index02_L", "lIndex2", "BRUT_X"], ["index03_L", "lIndex3", "000"],
+	["middle01_L", "lMid1", "BRUT_X"], ["middle02_L", "lMid2", "BRUT_X"], ["middle03_L", "lMid3", "000"],
+	["ring01_L", "lRing1", "BRUT_X"], ["ring02_L", "lRing2", "BRUT_X"], ["ring03_L", "lRing3", "000"],
+	["pinky01_L", "lPinky1", "BRUT_X"], ["pinky02_L", "lPinky2", "BRUT_X"], ["pinky03_L", "lPinky3", "000"],
+
+	["thumb01_R", "rThumb1", "BRUT_ZX"], ["thumb02_R", "rThumb2", "BRUT_X"], ["thumb03_R", "rThumb3", "000"],
+	["index00_R", "rCarpal1", "000"],
+	["middle00_R", "rCarpal2", "000"],
+	["ring00_R", "rCarpal3", "000"],
+	["pinky00_R", "rCarpal4", "000"],
+	["index01_R", "rIndex1", "BRUT_X"], ["index02_R", "rIndex2", "BRUT_X"], ["index03_R", "rIndex3", "000"],
+	["middle01_R", "rMid1", "BRUT_X"], ["middle02_R", "rMid2", "BRUT_X"], ["middle03_R", "rMid3", "000"],
+	["ring01_R", "rRing1", "BRUT_X"], ["ring02_R", "rRing2", "BRUT_X"], ["ring03_R", "rRing3", "000"],
+	["pinky01_R", "rPinky1", "BRUT_X"], ["pinky02_R", "rPinky2", "BRUT_X"], ["pinky03_R", "rPinky3", "000"],
 
 	# legs
-	["thigh_L", "lThighBend"],["thigh_R", "rThighBend"],
-	["calf_L", "lShin"],["calf_R", "rShin"],
-	["foot_L", "lMetatarsals", "BRUT"], ["foot_R", "rMetatarsals", "BRUT"],
-	["toes_L", "lSmallToe2", "BRUT"], ["toes_R", "rSmallToe2", "BRUT"]
+	["thigh_L", "lThighBend", "-BRUT_ZX"],["thigh_R", "rThighBend", "-BRUT_ZX"],
+	["calf_L", "lShin", "BRUT_ZX"],["calf_R", "rShin", "BRUT_ZX"],
+	["foot_L", "lMetatarsals", "BRUT_ZX"], ["foot_R", "rMetatarsals", "BRUT_ZX"],
+	["toes_L", "lSmallToe2", "BRUT_X"], ["toes_R", "rSmallToe2", "BRUT_X"]
 ]
 
 def getBMStepsForArmt(donor_armt):
@@ -164,6 +157,7 @@ def add_copy_constr(target_armat, donor_armat, bone_to_rotate, bone_from_rotate,
 				cstr.name = constr_name
 
 def getActiveQuaternionRotation(armat, boneName):
+	# another: https://blender.stackexchange.com/questions/44637/how-can-i-manually-calculate-bpy-types-posebone-matrix-using-blenders-python-ap
 	# returns visual rotation of this bone, relative to rest pose, as a quaternion
 	# after channels and constraints are applied
 	armatureName = armat.name #find_armature().name
@@ -257,6 +251,17 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Armature))
 		return p
 
+	def miniminizerValue(self, vec, axis):
+		axis.normalize()
+		weiquat = vec.rotation_difference(axis)
+		#axis2 = axis.cross(Vector((0,0,1)))
+		#axis3 = axis.cross(axis2)
+		#mat = mathutils.Matrix.Identity(3)
+		#mat.col[0] = axis3
+		#mat.col[1] = axis2
+		#mat.col[2] = axis
+		#vec = vec*mat
+		return weiquat
 	def execute( self, context ):
 		wpposeOpts = context.scene.wplPosingSettings
 		scene = context.scene
@@ -278,7 +283,7 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 		if bones_mapping_steps is None:
 			self.report({'ERROR'}, "No Arm-Mapping found")
 			return {'CANCELLED'}
-		
+
 		bones_ok = 0
 		bones_err = 0
 		donor2targ_map = {}
@@ -326,48 +331,59 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 		bpy.ops.pose.visual_transform_apply()
 		remove_copy_constr(cloned_arm, 'COPY_TRANSFORMS')
 		remove_copy_constr(cloned_arm, 'COPY_ROTATION')
-		
+
 		bpy.context.scene.update()
 		select_and_change_mode(targt_arm,"POSE")
-		
+
 		# preparing some walklists
 		tx = 0
 		ty = 0
 		tz = 0
-		brut_vec1 = []
-		for tx in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*0.1):
-			for tz in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*0.1):
-				brut_vec1.append(Vector((tx,ty,tx)))
-		brut_vec2 = []
-		for tx in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*0.1):
-			for ty in np.arange(-math.pi*0.2,math.pi*0.2,math.pi*0.1):
-				for tz in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*0.1):
-					brut_vec2.append(Vector((tx,ty,tx)))
+		brut_vecX = []
+		brut_vecZX = []
+		brut_vecZYX = []
+		for tx in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*boneBrutDeepness):
+			brut_vecX.append(Vector((tx,0,0)))
+			for tz in np.arange(-math.pi*0.2,math.pi*0.2,math.pi*boneBrutDeepness):
+				brut_vecZX.append(Vector((tx,0,tz)))
+				for ty in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*boneBrutDeepness):
+					brut_vecZYX.append(Vector((tx,ty,tz)))
 		for step in bones_mapping_steps:
 			donor_bn_name = step[1]
 			targt_bn_name = step[0]
 			meth = None
-			submeth = None
 			if len(step) > 2:
 				meth = step[2]
-			if len(step) > 3:
-				submeth = step[3]
-			brut_op = False
-			if submeth is not None and submeth.find("OP") >= 0:
-				brut_op = True
-			walklist = brut_vec1
-			if submeth is not None and submeth.find("Y1") >= 0:
-				walklist = brut_vec2
 			targt_bnn = targt_arm.pose.bones.get(targt_bn_name)
 			cloned_bnn = cloned_arm.pose.bones.get(donor_bn_name)
 			if cloned_arm is not None and targt_bnn is not None:
 				bones_ok = bones_ok+1
+				walklist = brut_vecZX
+				clone_prel = 1.0
+				if meth == "BRUT_X":
+					walklist = brut_vecX
+					meth = "BRUT"
+				if meth == "BRUT_ZX":
+					walklist = brut_vecZX
+					meth = "BRUT"
+				if meth == "-BRUT_ZX":
+					clone_prel = -1
+					walklist = brut_vecZX
+					meth = "BRUT"
+				if meth == "BRUT_ZYX":
+					walklist = brut_vecZYX
+					meth = "BRUT"
+				if meth == "-BRUT_ZYX":
+					clone_prel = -1
+					walklist = brut_vecZYX
+					meth = "BRUT"
 				if meth == "BRUT":
-					clone_dir = (cloned_bnn.tail-cloned_bnn.head)
-					if brut_op and cloned_bnn.parent:
-						clone_dir = (cloned_bnn.tail-cloned_bnn.parent.tail)
-					clone_dir.normalize()
-					min_dot = -999
+					#clone_mnm = cloned_bnn.tail
+					clone_prn = Vector((0,0,1))
+					if cloned_bnn.parent:
+						clone_prn = clone_prel*(cloned_bnn.parent.tail-cloned_bnn.parent.head)
+					clone_mnm = self.miniminizerValue((cloned_bnn.tail-cloned_bnn.head), clone_prn)
+					min_mnm = 999
 					min_val = Vector((0,0,0))
 					tx = 0
 					ty = 0
@@ -378,19 +394,23 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 					for this_v in walklist:
 						targt_bnn.rotation_euler = this_v
 						bpy.context.scene.update()
-						this_dir = (targt_bnn.tail-targt_bnn.head)
-						if brut_op and targt_bnn.parent:
-							this_dir = (targt_bnn.tail-targt_bnn.parent.tail)
-						this_dir.normalize()
-						this_dot = this_dir.dot(clone_dir)
-						if this_dot > min_dot:
-							print(meth,": ",targt_bnn.name, this_v, this_dot) #this_dir,clone_dir,
-							min_dot = this_dot
+						this_prn = Vector((0,0,1))
+						if targt_bnn.parent:
+							this_prn = (targt_bnn.parent.tail-targt_bnn.parent.head)
+						this_mnm = self.miniminizerValue((targt_bnn.tail-targt_bnn.head),this_prn)
+						actual_mnm = (Vector(this_mnm)-Vector(clone_mnm)).length
+						if actual_mnm < min_mnm:
+							min_mnm = actual_mnm
 							min_val = this_v
 					targt_bnn.rotation_euler = min_val
+				elif meth == "Z0X":
+					targt_bnn.rotation_mode = "ZYX"
+					targt_bnn.rotation_euler = Vector((cloned_bnn.rotation_euler[0],0,cloned_bnn.rotation_euler[2]))
 				elif meth == "000":
 					targt_bnn.rotation_mode = "ZYX"
 					targt_bnn.rotation_euler = Vector((0,0,0))
+					if len(step) > 3:
+						targt_bnn.rotation_euler = Vector(step[3])
 				elif meth == "CONST":
 					add_copy_constr(targt_arm, cloned_arm, targt_bn_name, donor_bn_name, 'COPY_ROTATION', 'WORLD')
 				elif meth == "CONTS_L":
@@ -407,6 +427,7 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 					cloned_bnn.rotation_mode = meth
 					targt_bnn.rotation_mode = meth
 					targt_bnn.rotation_euler = cloned_bnn.rotation_euler
+				print(meth,": done for ",targt_bnn.name)
 
 		# Applying contraints to get REAL tranforms
 		select_and_change_mode(targt_arm,"POSE")
@@ -450,7 +471,7 @@ class WPLPosingSt_Panel(bpy.types.Panel):
 		# display the properties
 		col = layout.column()
 		col.prop_search(wpposeOpts, "mbArmatName", scene, "objects")
-		col.operator("mesh.wplposing_arm2mbp", text="Project DAZ -> MB")
+		col.operator("mesh.wplposing_arm2mbp", text="Brutforce DAZ -> MB")
 		#col.separator()
 		#col.operator("mesh.wplposing_unrollclon", text="Reset Arm-Rolls")
 
