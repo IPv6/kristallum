@@ -233,18 +233,21 @@ def applyAngls(self,context):
 		defSpd = MBArmatureBones_v02[boneName]["spd"]
 		defVal = MBArmatureBones_v02[boneName]["def"]
 		boneProp = MBArmatureBones_v02[boneName]["prop"]
-		propProp = wpposeOpts.get(boneProp[0])
-		isEnabled = 0
-		if propProp is not None:
-			isEnabled = propProp[boneProp[1]]
-		if isEnabled > 0:
-			refVal = defVal
-			if "rest" in MBArmatureBones_v02[boneName]:
-				refVal = MBArmatureBones_v02[boneName]["rest"]
-			newX = refVal[0]+wpposeOpts.mbh_foldAngle*defSpd[0]
-			newY = refVal[1]+wpposeOpts.mbh_twistAngle*defSpd[1]
-			newZ = refVal[2]+wpposeOpts.mbh_tiltAngle*defSpd[2]
-			mixBone(context, boneName, Vector((0,0,0)), Vector((newX,newY,newZ)), False, wpposeOpts.mbh_applyLimits)
+		if boneProp is not None:
+			propProp = wpposeOpts.get(boneProp[0])
+			isEnabled = 0
+			if propProp is not None:
+				isEnabled = propProp[boneProp[1]]
+			if isEnabled > 0:
+				refVal = defVal
+				if "rest" in MBArmatureBones_v02[boneName]:
+					refVal = MBArmatureBones_v02[boneName]["rest"]
+				newX = refVal[0]+wpposeOpts.mbh_foldAngle*defSpd[0]
+				newY = refVal[1]+wpposeOpts.mbh_twistAngle*defSpd[1]
+				newZ = refVal[2]+wpposeOpts.mbh_tiltAngle*defSpd[2]
+				rotVec = Vector((newX,newY,newZ))
+				#print("Applying", rotVec, "to", boneName)
+				mixBone(context, boneName, Vector((0,0,0)), rotVec, False, wpposeOpts.mbh_applyLimits)
 	bpy.context.scene.update()
 	return None
 
@@ -273,12 +276,13 @@ def deflAngls(self,context):
 	for boneName in MBArmatureBones_v02:
 		defVal = MBArmatureBones_v02[boneName]["def"]
 		boneProp = MBArmatureBones_v02[boneName]["prop"]
-		propProp = wpposeOpts.get(boneProp[0])
-		isEnabled = 0
-		if propProp is not None:
-			isEnabled = propProp[boneProp[1]]
-		if isEnabled > 0:
-			mixBone(context, boneName, Vector((0,0,0)), Vector((defVal[0],defVal[1],defVal[2])), True, False)
+		if boneProp is not None:
+			propProp = wpposeOpts.get(boneProp[0])
+			isEnabled = 0
+			if propProp is not None:
+				isEnabled = propProp[boneProp[1]]
+			if isEnabled > 0:
+				mixBone(context, boneName, Vector((0,0,0)), Vector((defVal[0],defVal[1],defVal[2])), True, False)
 	bpy.context.scene.update()
 	return None
 

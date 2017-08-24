@@ -54,8 +54,8 @@ boneMapV8 = [
 	# hands
 	["clavicle_L", "lCollar", "BRUT_ABS"], ["clavicle_R", "rCollar", "BRUT_ABS"],
 	["upperarm_L", "lShldrBend", "BRUT_ABS"], ["upperarm_R", "rShldrBend", "BRUT_ABS",],
-	["lowerarm_L", "lForearmBend", "BRUT_ORI"], ["lowerarm_R", "rForearmBend", "BRUT_ORI"],
-	["hand_L", "lHand", "BRUT_ORI"], ["hand_R", "rHand", "BRUT_ORI"],
+	["lowerarm_L", "lForearmBend", "BRUT_ABS"], ["lowerarm_R", "rForearmBend", "BRUT_ABS"],
+	["hand_L", "lHand", "BRUT_ORI", "lShldrBend"], ["hand_R", "rHand", "BRUT_ORI", "rShldrBend"],
 
 	# palms
 	["thumb01_L", "lThumb1", "BRUT_ORI"], ["thumb02_L", "lThumb2", "BRUT_ORI"], ["thumb03_L", "lThumb3", "000"],
@@ -63,25 +63,25 @@ boneMapV8 = [
 	["middle00_L", "lCarpal2", "000"],
 	["ring00_L", "lCarpal3", "000"],
 	["pinky00_L", "lCarpal4", "000"],
-	["index01_L", "lIndex1", "BRUT_ORI"], ["index02_L", "lIndex2", "BRUT_ORI"], ["index03_L", "lIndex3", "000"],
-	["middle01_L", "lMid1", "BRUT_ORI"], ["middle02_L", "lMid2", "BRUT_ORI"], ["middle03_L", "lMid3", "000"],
-	["ring01_L", "lRing1", "BRUT_ORI"], ["ring02_L", "lRing2", "BRUT_ORI"], ["ring03_L", "lRing3", "000"],
-	["pinky01_L", "lPinky1", "BRUT_ORI"], ["pinky02_L", "lPinky2", "BRUT_ORI"], ["pinky03_L", "lPinky3", "000"],
+	["index01_L", "lIndex1", "BRUT_ORI", "lHand"], ["index02_L", "lIndex2", "BRUT_ORI"], ["index03_L", "lIndex3", "000"],
+	["middle01_L", "lMid1", "BRUT_ORI", "lHand"], ["middle02_L", "lMid2", "BRUT_ORI"], ["middle03_L", "lMid3", "000"],
+	["ring01_L", "lRing1", "BRUT_ORI", "lHand"], ["ring02_L", "lRing2", "BRUT_ORI"], ["ring03_L", "lRing3", "000"],
+	["pinky01_L", "lPinky1", "BRUT_ORI", "lHand"], ["pinky02_L", "lPinky2", "BRUT_ORI"], ["pinky03_L", "lPinky3", "000"],
 
 	["thumb01_R", "rThumb1", "BRUT_ORI"], ["thumb02_R", "rThumb2", "BRUT_ORI"], ["thumb03_R", "rThumb3", "000"],
 	["index00_R", "rCarpal1", "000"],
 	["middle00_R", "rCarpal2", "000"],
 	["ring00_R", "rCarpal3", "000"],
 	["pinky00_R", "rCarpal4", "000"],
-	["index01_R", "rIndex1", "BRUT_ORI"], ["index02_R", "rIndex2", "BRUT_ORI"], ["index03_R", "rIndex3", "000"],
-	["middle01_R", "rMid1", "BRUT_ORI"], ["middle02_R", "rMid2", "BRUT_ORI"], ["middle03_R", "rMid3", "000"],
-	["ring01_R", "rRing1", "BRUT_ORI"], ["ring02_R", "rRing2", "BRUT_ORI"], ["ring03_R", "rRing3", "000"],
-	["pinky01_R", "rPinky1", "BRUT_ORI"], ["pinky02_R", "rPinky2", "BRUT_ORI"], ["pinky03_R", "rPinky3", "000"],
+	["index01_R", "rIndex1", "BRUT_ORI", "rHand"], ["index02_R", "rIndex2", "BRUT_ORI"], ["index03_R", "rIndex3", "000"],
+	["middle01_R", "rMid1", "BRUT_ORI", "rHand"], ["middle02_R", "rMid2", "BRUT_ORI"], ["middle03_R", "rMid3", "000"],
+	["ring01_R", "rRing1", "BRUT_ORI", "rHand"], ["ring02_R", "rRing2", "BRUT_ORI"], ["ring03_R", "rRing3", "000"],
+	["pinky01_R", "rPinky1", "BRUT_ORI", "rHand"], ["pinky02_R", "rPinky2", "BRUT_ORI"], ["pinky03_R", "rPinky3", "000"],
 
 	# legs
 	["thigh_L", "lThighBend", "BRUT_ABS"],["thigh_R", "rThighBend", "BRUT_ABS"],
-	["calf_L", "lShin", "BRUT_ORI"],["calf_R", "rShin", "BRUT_ORI"],
-	["foot_L", "lMetatarsals", "BRUT_ORI"], ["foot_R", "rMetatarsals", "BRUT_ORI"],
+	["calf_L", "lShin", "BRUT_ABS"],["calf_R", "rShin", "BRUT_ABS"],
+	["foot_L", "lMetatarsals", "BRUT_ABS"], ["foot_R", "rMetatarsals", "BRUT_ABS"],
 	["toes_L", "lSmallToe2", "BRUT_ORI"], ["toes_R", "rSmallToe2", "BRUT_ORI"]
 ]
 
@@ -496,6 +496,7 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 				# unused bone. deleting to make Blender recalc hierarchy
 				bones_err = bones_err+1
 				cloned_arm.data.edit_bones.remove(cl_vn)
+				#print("Clone: deleting unused", cl_bname)
 			else:
 				targbname = donor2targ_map[cl_bname]
 				targsnap = targt_editbone_snap[targbname]
@@ -522,29 +523,39 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 			meth = None
 			if len(step) > 2:
 				meth = step[2]
+			print(meth,": starting for", targt_bn_name, donor_bn_name)
 			targt_bnn = targt_arm.pose.bones.get(targt_bn_name)
 			cloned_bnn = cloned_arm.pose.bones.get(donor_bn_name)
-			if cloned_arm is not None and targt_bnn is not None:
+			if cloned_bnn is not None and targt_bnn is not None:
 				bones_ok = bones_ok+1
-				clone_prel = 1.0
 				minimi_meth = meth
+				clone_inv = 1.0
 				if meth == "BRUT_ORI":
 					meth = "BRUT"
 				if meth == "BRUT_ABS":
 					meth = "BRUT"
 				if meth == "-BRUT_ABS":
 					minimi_meth = "BRUT_ABS"
-					clone_prel = -1.0
+					clone_inv = -1.0
 					meth = "BRUT"
 				if meth == "BRUT":
+					clone_prn_bone = cloned_bnn.parent
+					this_prn_bone = targt_bnn.parent
+					if len(step) > 3:
+						clone_prn_bone = cloned_arm.pose.bones.get(step[3])
+						this_prn_bone = targt_arm.pose.bones.get(donor2targ_map[step[3]])
+
+					clone_dir = clone_inv*(cloned_bnn.tail-cloned_bnn.head)
+					if clone_prn_bone:
+						clone_prn = clone_inv*(clone_prn_bone.tail-clone_prn_bone.head)
+					else:
+						clone_prn = Vector((0,0,1))
+
 					clone_mnm = Vector((0,0,1))
 					if minimi_meth == "BRUT_ORI":
-						clone_prn = Vector((0,0,1))
-						if cloned_bnn.parent:
-							clone_prn = clone_prel*(cloned_bnn.parent.tail-cloned_bnn.parent.head)
-						clone_mnm = self.miniminizerValue((cloned_bnn.tail-cloned_bnn.head), clone_prn)
+						clone_mnm = self.miniminizerValue(clone_dir, clone_prn)
 					if minimi_meth == "BRUT_ABS":
-						clone_mnm = clone_prel*(cloned_bnn.tail-cloned_bnn.head)
+						clone_mnm = Vector(clone_dir)
 						clone_mnm.normalize()
 					min_mnm = 999
 					min_val = Vector((0,0,0))
@@ -559,13 +570,16 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 					for this_v in walklist:
 						targt_bnn.rotation_euler = this_v
 						bpy.context.scene.update()
-						if minimi_meth == "BRUT_ORI":
+						this_dir = (targt_bnn.tail-targt_bnn.head)
+						if this_prn_bone:
+							this_prn = (this_prn_bone.tail-this_prn_bone.head)
+						else:
 							this_prn = Vector((0,0,1))
-							if targt_bnn.parent:
-								this_prn = (targt_bnn.parent.tail-targt_bnn.parent.head)
-							this_mnm = self.miniminizerValue((targt_bnn.tail-targt_bnn.head),this_prn)
+
+						if minimi_meth == "BRUT_ORI":
+							this_mnm = self.miniminizerValue(this_dir,this_prn)
 						if minimi_meth == "BRUT_ABS":
-							this_mnm = (targt_bnn.tail-targt_bnn.head)
+							this_mnm = Vector(this_dir)
 							this_mnm.normalize()
 						actual_mnm = (Vector(this_mnm)-Vector(clone_mnm)).length
 						#print(meth,": test in ",targt_bnn.name, this_mnm, clone_mnm, actual_mnm, min_mnm)
@@ -594,6 +608,8 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 					targt_bnn.rotation_mode = meth
 					targt_bnn.rotation_euler = cloned_bnn.rotation_euler
 				print(meth,": done for ",targt_bnn.name)
+			else:
+				print(meth,": invalid bones", targt_bn_name, targt_bnn, donor_bn_name, cloned_bnn)
 
 		# Applying contraints to get REAL tranforms
 		select_and_change_mode(targt_arm,"POSE")
