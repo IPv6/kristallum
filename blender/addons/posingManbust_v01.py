@@ -41,7 +41,7 @@ bl_info = {
 	"category"	: ""
 	}
 
-ArmatureLimitsPerBone = {
+MBArmatureBones_v02 = {
 	"head" : {
 		"def": Vector((0, 0, 0)), "min": Vector((-30, -60, -10)), "max": Vector((30, 60, 10)),
 		"spd": Vector((1, 1, 1)),
@@ -67,9 +67,14 @@ ArmatureLimitsPerBone = {
 		"spd": Vector((1, 1, 1)),
 		"prop": ["mbh_spine",2]
 	},
+	"pelvis" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-20, -20, -20)), "max": Vector((20, 20, 20)),
+		"spd": Vector((1, 1, 1)),
+		"prop": None
+	},
 	"thigh_L" : {
 		"def": Vector((0, 0, 0)), "min": Vector((-60, -50, -30)), "max": Vector((60, 50, 30)),
-		"spd": Vector((1, 1, 1)),
+		"spd": Vector((0.5, 1, 1)),
 		"prop": ["mbh_legs_L",0]
 	},
 	"calf_L" : {
@@ -187,14 +192,14 @@ ArmatureLimitsPerBone = {
 }
 
 def deduceRightBones():
-	bones = list(ArmatureLimitsPerBone.keys())
+	bones = list(MBArmatureBones_v02.keys())
 	for boneName_L in bones:
 		if boneName_L.find("_L") > 0:
 			boneName_R = boneName_L.replace("_L","_R")
-			propName_L = ArmatureLimitsPerBone[boneName_L]["prop"][0]
+			propName_L = MBArmatureBones_v02[boneName_L]["prop"][0]
 			propName_R = propName_L.replace("_L","_R")
-			ArmatureLimitsPerBone[boneName_R] = copy.deepcopy(ArmatureLimitsPerBone[boneName_L])
-			ArmatureLimitsPerBone[boneName_R]["prop"][0] = propName_R
+			MBArmatureBones_v02[boneName_R] = copy.deepcopy(MBArmatureBones_v02[boneName_L])
+			MBArmatureBones_v02[boneName_R]["prop"][0] = propName_R
 deduceRightBones()
 
 def mixBone(context, boneName, curMuls, addVal, rememAfter, applyLims):
@@ -206,8 +211,8 @@ def mixBone(context, boneName, curMuls, addVal, rememAfter, applyLims):
 	if boneName in boneNames:
 		bone = armatr.pose.bones[boneName]
 		bone.rotation_mode = "ZYX"
-		minVal = ArmatureLimitsPerBone[boneName]["min"]
-		maxVal = ArmatureLimitsPerBone[boneName]["max"]
+		minVal = MBArmatureBones_v02[boneName]["min"]
+		maxVal = MBArmatureBones_v02[boneName]["max"]
 		curVal = bone.rotation_euler
 		newX = curMuls[0]*curVal[0]+addVal[0]
 		newY = curMuls[1]*curVal[1]+addVal[1]
@@ -219,23 +224,23 @@ def mixBone(context, boneName, curMuls, addVal, rememAfter, applyLims):
 		newVal = Vector((newX,newY,newZ))
 		bone.rotation_euler = newVal
 		if rememAfter:
-			ArmatureLimitsPerBone[boneName]["rest"] = newVal
+			MBArmatureBones_v02[boneName]["rest"] = newVal
 		print("Updating bone",boneName,newVal)
 
 def applyAngls(self,context):
 	wpposeOpts = context.scene.wplPoseMBSettings
-	for boneName in ArmatureLimitsPerBone:
-		defSpd = ArmatureLimitsPerBone[boneName]["spd"]
-		defVal = ArmatureLimitsPerBone[boneName]["def"]
-		boneProp = ArmatureLimitsPerBone[boneName]["prop"]
+	for boneName in MBArmatureBones_v02:
+		defSpd = MBArmatureBones_v02[boneName]["spd"]
+		defVal = MBArmatureBones_v02[boneName]["def"]
+		boneProp = MBArmatureBones_v02[boneName]["prop"]
 		propProp = wpposeOpts.get(boneProp[0])
 		isEnabled = 0
 		if propProp is not None:
 			isEnabled = propProp[boneProp[1]]
 		if isEnabled > 0:
 			refVal = defVal
-			if "rest" in ArmatureLimitsPerBone[boneName]:
-				refVal = ArmatureLimitsPerBone[boneName]["rest"]
+			if "rest" in MBArmatureBones_v02[boneName]:
+				refVal = MBArmatureBones_v02[boneName]["rest"]
 			newX = refVal[0]+wpposeOpts.mbh_foldAngle*defSpd[0]
 			newY = refVal[1]+wpposeOpts.mbh_twistAngle*defSpd[1]
 			newZ = refVal[2]+wpposeOpts.mbh_tiltAngle*defSpd[2]
@@ -245,9 +250,9 @@ def applyAngls(self,context):
 
 def restAngls(self,context):
 	wpposeOpts = context.scene.wplPoseMBSettings
-	for boneName in ArmatureLimitsPerBone:
+	for boneName in MBArmatureBones_v02:
 		# isEnabled = 0
-		# boneProp = ArmatureLimitsPerBone[boneName]["prop"]
+		# boneProp = MBArmatureBones_v02[boneName]["prop"]
 		# propProp = wpposeOpts.get(boneProp[0])
 		# if propProp is not None:
 			# isEnabled = propProp[boneProp[1]]
@@ -265,9 +270,9 @@ def deflAngls(self,context):
 	wpposeOpts.mbh_twistAngle = 0
 	wpposeOpts.mbh_tiltAngle = 0
 
-	for boneName in ArmatureLimitsPerBone:
-		defVal = ArmatureLimitsPerBone[boneName]["def"]
-		boneProp = ArmatureLimitsPerBone[boneName]["prop"]
+	for boneName in MBArmatureBones_v02:
+		defVal = MBArmatureBones_v02[boneName]["def"]
+		boneProp = MBArmatureBones_v02[boneName]["prop"]
 		propProp = wpposeOpts.get(boneProp[0])
 		isEnabled = 0
 		if propProp is not None:
@@ -276,40 +281,6 @@ def deflAngls(self,context):
 			mixBone(context, boneName, Vector((0,0,0)), Vector((defVal[0],defVal[1],defVal[2])), True, False)
 	bpy.context.scene.update()
 	return None
-#############################################################################
-#############################################################################
-#############################################################################
-
-def unselect_all():
-	for obj in bpy.data.objects:
-		obj.select = False
-
-def force_visible_object(obj):
-	if obj:
-		if obj.hide == True:
-			obj.hide = False
-		for n in range(len(obj.layers)):
-			obj.layers[n] = False
-		current_layer_index = bpy.context.scene.active_layer
-		obj.layers[current_layer_index] = True
-
-def select_and_change_mode(obj,obj_mode,hidden=False):
-	unselect_all()
-	if obj:
-		obj.select = True
-		bpy.context.scene.objects.active = obj
-		force_visible_object(obj)
-		try:
-			m=bpy.context.mode
-			if bpy.context.mode!='OBJECT':
-				bpy.ops.object.mode_set(mode='OBJECT')
-			bpy.context.scene.update()
-			bpy.ops.object.mode_set(mode=obj_mode)
-			#print("Mode switched to ", obj_mode)
-		except:
-			pass
-		obj.hide = hidden
-	return m
 
 #############################################################################
 #############################################################################
@@ -373,33 +344,33 @@ class wplPoseMBSettings(PropertyGroup):
 		default=[False,False,False], update=restAngls)
 	mbh_foldAngle = FloatProperty(
 		name = "Fold",
-		min = -1.57,
-		soft_min  = -1.57,
-		max = 1.57,
-		soft_max  = 1.57,
-		#step = 0.3,
+		min = -3.14,
+		soft_min  = -3.14,
+		max = 3.14,
+		soft_max  = 3.14,
+		step = 10.0,
 		unit = 'ROTATION',
 		default = 0,
 		update=applyAngls
 	)
 	mbh_tiltAngle = FloatProperty(
 		name = "Tilt",
-		min = -1.57,
-		soft_min  = -1.57,
-		max = 1.57,
-		soft_max  = 1.57,
-		#step = 1.0,
+		min = -3.14,
+		soft_min  = -3.14,
+		max = 3.14,
+		soft_max  = 3.14,
+		step = 3.0,
 		unit = 'ROTATION',
 		default = 0,
 		update=applyAngls
 	)
 	mbh_twistAngle = FloatProperty(
 		name = "Twist",
-		min = -1.57,
-		soft_min  = -1.57,
-		max = 1.57,
-		soft_max  = 1.57,
-		#step = 1.0,
+		min = -3.14,
+		soft_min  = -3.14,
+		max = 3.14,
+		soft_max  = 3.14,
+		step = 10.0,
 		unit = 'ROTATION',
 		default = 0,
 		update=applyAngls
@@ -425,12 +396,91 @@ class wplposing_mbbn2zero( bpy.types.Operator ):
 		deflAngls(self, context)
 		return {'FINISHED'}
 
-class WPLPosingMBArm_Panel(bpy.types.Panel):
-	bl_label = "MB Posing"
+class wplposing_clearchbx( bpy.types.Operator ):
+	bl_idname = "mesh.wplposing_clearchbx"
+	bl_label = "Clear posing checkboxes"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll( cls, context ):
+		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Armature))
+		return p
+
+	def execute( self, context ):
+		wpposeOpts = context.scene.wplPoseMBSettings
+		for boneName in MBArmatureBones_v02:
+			boneProp = MBArmatureBones_v02[boneName]["prop"]
+			if boneProp is not None:
+				propProp = wpposeOpts.get(boneProp[0])
+				if propProp is not None:
+					propProp[boneProp[1]] = False
+		return {'FINISHED'}
+
+class wplposing_bn_select_active( bpy.types.Operator ):
+	bl_idname = "mesh.wplposing_bn_select_active"
+	bl_label = "Select corresponding bones"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll( cls, context ):
+		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Armature))
+		return p
+
+	def execute( self, context ):
+		wpposeOpts = context.scene.wplPoseMBSettings
+		scene = context.scene
+		armatr = context.active_object
+		if armatr is None or not isinstance(armatr.data, bpy.types.Armature):
+			return {'CANCELLED'}
+		boneNames = armatr.pose.bones.keys()
+		for boneName in boneNames:
+			if boneName in MBArmatureBones_v02:
+				boneProp = MBArmatureBones_v02[boneName]["prop"]
+				if boneProp is not None:
+					propProp = wpposeOpts.get(boneProp[0])
+					if propProp is not None and propProp[boneProp[1]] == True:
+						bone = armatr.data.bones[boneName]
+						bone.select = True
+		return {'FINISHED'}
+
+class wplposing_bn_deselect_inactive( bpy.types.Operator ):
+	bl_idname = "mesh.wplposing_bn_deselect_inactive"
+	bl_label = "Select corresponding bones"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll( cls, context ):
+		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Armature))
+		return p
+
+	def execute( self, context ):
+		wpposeOpts = context.scene.wplPoseMBSettings
+		scene = context.scene
+		armatr = context.active_object
+		if armatr is None or not isinstance(armatr.data, bpy.types.Armature):
+			return {'CANCELLED'}
+		boneNames = armatr.pose.bones.keys()
+		for boneName in boneNames:
+			need2deselect = True
+			if boneName in MBArmatureBones_v02:
+				boneProp = MBArmatureBones_v02[boneName]["prop"]
+				if boneProp is not None:
+					propProp = wpposeOpts.get(boneProp[0])
+					if propProp is not None and propProp[boneProp[1]] == True:
+						need2deselect = False
+			if need2deselect:
+				bone = armatr.data.bones[boneName]
+				bone.select = False
+		return {'FINISHED'}
+#############################################################################
+#############################################################################
+#############################################################################
+class WPLPosingMBArmBody_Panel(bpy.types.Panel):
+	bl_label = "Posing: Body"
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'TOOLS'
 	bl_context = "posemode"
-	bl_category = 'WPL'
+	bl_category = 'ManuelBastioniLAB'
 
 	def draw_header(self, context):
 		layout = self.layout
@@ -443,9 +493,6 @@ class WPLPosingMBArm_Panel(bpy.types.Panel):
 
 		# display the properties
 		col = layout.column()
-
-		col.separator()
-		col.label(text = "Body")
 		row_ftt1 = col.row(align=True)
 		row_ftt1.prop(wpposeOpts, "mbh_foldAngle", text="Fold")
 		row_ftt1.prop(wpposeOpts, "mbh_twistAngle", text="Twist")
@@ -467,8 +514,26 @@ class WPLPosingMBArm_Panel(bpy.types.Panel):
 		row_mbh_legs_R.prop(wpposeOpts, "mbh_legs_R", text="R:Leg")
 		col.operator("mesh.wplposing_mbbn2zero", text="Reset to default")
 
-		col.separator()
-		col.label(text = "Left palm")
+
+class WPLPosingMBArmLHand_Panel(bpy.types.Panel):
+	bl_label = "Posing: Left palm"
+	bl_space_type = 'VIEW_3D'
+	bl_region_type = 'TOOLS'
+	bl_context = "posemode"
+	bl_category = 'ManuelBastioniLAB'
+
+	def draw_header(self, context):
+		layout = self.layout
+		layout.label(text="")
+
+	def draw(self, context):
+		layout = self.layout
+		scene = context.scene
+		wpposeOpts = context.scene.wplPoseMBSettings
+
+		# display the properties
+		col = layout.column()
+
 		row_ftt2 = col.row(align=True)
 		row_ftt2.prop(wpposeOpts, "mbh_foldAngle", text="Fold")
 		row_ftt2.prop(wpposeOpts, "mbh_twistAngle", text="Twist")
@@ -489,8 +554,25 @@ class WPLPosingMBArm_Panel(bpy.types.Panel):
 		row_mbh_pinky_L.prop(wpposeOpts, "mbh_pinky_L", text="=:-:-")
 		col.operator("mesh.wplposing_mbbn2zero", text="Reset to default")
 
-		col.separator()
-		col.label(text = "Right palm")
+class WPLPosingMBArmRHand_Panel(bpy.types.Panel):
+	bl_label = "Posing: Right palm"
+	bl_space_type = 'VIEW_3D'
+	bl_region_type = 'TOOLS'
+	bl_context = "posemode"
+	bl_category = 'ManuelBastioniLAB'
+
+	def draw_header(self, context):
+		layout = self.layout
+		layout.label(text="")
+
+	def draw(self, context):
+		layout = self.layout
+		scene = context.scene
+		wpposeOpts = context.scene.wplPoseMBSettings
+
+		# display the properties
+		col = layout.column()
+
 		row_ftt3 = col.row(align=True)
 		row_ftt3.prop(wpposeOpts, "mbh_foldAngle", text="Fold")
 		row_ftt3.prop(wpposeOpts, "mbh_twistAngle", text="Twist")
@@ -510,8 +592,30 @@ class WPLPosingMBArm_Panel(bpy.types.Panel):
 		row_mbh_pinky_R = box_ftt7.row()
 		row_mbh_pinky_R.prop(wpposeOpts, "mbh_pinky_R", text="=:-:-")
 		col.operator("mesh.wplposing_mbbn2zero", text="Reset to default")
-		col.separator()
-		col.prop(wpposeOpts, "mbh_applyLimits", text="Auto-Apply bone limits")
+
+class WPLPosingMBArmSettings_Panel(bpy.types.Panel):
+	bl_label = "Opts and Utils"
+	bl_space_type = 'VIEW_3D'
+	bl_region_type = 'TOOLS'
+	bl_context = "posemode"
+	bl_category = 'ManuelBastioniLAB'
+
+	def draw_header(self, context):
+		layout = self.layout
+		layout.label(text="")
+
+	def draw(self, context):
+		layout = self.layout
+		scene = context.scene
+		wpposeOpts = context.scene.wplPoseMBSettings
+
+		# display the properties
+		col = layout.column()
+		col.prop(wpposeOpts, "mbh_applyLimits", text="Apply physical rotation limits")
+		col.operator("mesh.wplposing_clearchbx", text="Clear checkboxes")
+		row1 = col.row()
+		row1.operator("mesh.wplposing_bn_select_active", text="Select bones")
+		row1.operator("mesh.wplposing_bn_deselect_inactive", text="Deselect others")
 
 #############################################################################
 #############################################################################

@@ -8,7 +8,7 @@ import mathutils
 from math import radians
 from mathutils import Vector
 import numpy as np
-#import json
+import copy
 
 from random import random, seed
 from bpy_extras import view3d_utils
@@ -44,46 +44,207 @@ bl_info = {
 
 boneBrutDeepness = 0.05
 boneMapV8 = [
-	["pelvis", "pelvis", "000", (radians(25),radians(0),radians(-10))],
-	["spine01", "abdomenLower", "ZYX"],
-	["spine02", "abdomenUpper", "ZYX"],
-	["spine03", "chestUpper", "ZYX"],
-	["neck", "neckLower", "ZYX"],
-	["head", "head", "ZYX"],
+	["pelvis", "pelvis", "-BRUT_ABS"],
+	["spine01", "abdomenLower", "BRUT_ABS"],
+	["spine02", "abdomenUpper", "BRUT_ABS"],
+	["spine03", "chestUpper", "BRUT_ABS"],
+	["neck", "neckLower", "BRUT_ABS"],
+	["head", "head", "BRUT_ABS"],
 
 	# hands
-	["clavicle_L", "lCollar", "BRUT_ZX"], ["clavicle_R", "rCollar", "BRUT_ZX"],
-	["upperarm_L", "lShldrBend", "BRUT_ZYX"], ["upperarm_R", "rShldrBend", "BRUT_ZYX",],
-	["lowerarm_L", "lForearmBend", "BRUT_ZYX"], ["lowerarm_R", "rForearmBend", "BRUT_ZYX"],
-	["hand_L", "lHand", "BRUT_ZX"], ["hand_R", "rHand", "BRUT_ZX"],
+	["clavicle_L", "lCollar", "BRUT_ABS"], ["clavicle_R", "rCollar", "BRUT_ABS"],
+	["upperarm_L", "lShldrBend", "BRUT_ABS"], ["upperarm_R", "rShldrBend", "BRUT_ABS",],
+	["lowerarm_L", "lForearmBend", "BRUT_ORI"], ["lowerarm_R", "rForearmBend", "BRUT_ORI"],
+	["hand_L", "lHand", "BRUT_ORI"], ["hand_R", "rHand", "BRUT_ORI"],
 
 	# palms
-	["thumb01_L", "lThumb1", "BRUT_ZX"], ["thumb02_L", "lThumb2", "BRUT_X"], ["thumb03_L", "lThumb3", "000"],
+	["thumb01_L", "lThumb1", "BRUT_ORI"], ["thumb02_L", "lThumb2", "BRUT_ORI"], ["thumb03_L", "lThumb3", "000"],
 	["index00_L", "lCarpal1", "000"],
 	["middle00_L", "lCarpal2", "000"],
 	["ring00_L", "lCarpal3", "000"],
 	["pinky00_L", "lCarpal4", "000"],
-	["index01_L", "lIndex1", "BRUT_X"], ["index02_L", "lIndex2", "BRUT_X"], ["index03_L", "lIndex3", "000"],
-	["middle01_L", "lMid1", "BRUT_X"], ["middle02_L", "lMid2", "BRUT_X"], ["middle03_L", "lMid3", "000"],
-	["ring01_L", "lRing1", "BRUT_X"], ["ring02_L", "lRing2", "BRUT_X"], ["ring03_L", "lRing3", "000"],
-	["pinky01_L", "lPinky1", "BRUT_X"], ["pinky02_L", "lPinky2", "BRUT_X"], ["pinky03_L", "lPinky3", "000"],
+	["index01_L", "lIndex1", "BRUT_ORI"], ["index02_L", "lIndex2", "BRUT_ORI"], ["index03_L", "lIndex3", "000"],
+	["middle01_L", "lMid1", "BRUT_ORI"], ["middle02_L", "lMid2", "BRUT_ORI"], ["middle03_L", "lMid3", "000"],
+	["ring01_L", "lRing1", "BRUT_ORI"], ["ring02_L", "lRing2", "BRUT_ORI"], ["ring03_L", "lRing3", "000"],
+	["pinky01_L", "lPinky1", "BRUT_ORI"], ["pinky02_L", "lPinky2", "BRUT_ORI"], ["pinky03_L", "lPinky3", "000"],
 
-	["thumb01_R", "rThumb1", "BRUT_ZX"], ["thumb02_R", "rThumb2", "BRUT_X"], ["thumb03_R", "rThumb3", "000"],
+	["thumb01_R", "rThumb1", "BRUT_ORI"], ["thumb02_R", "rThumb2", "BRUT_ORI"], ["thumb03_R", "rThumb3", "000"],
 	["index00_R", "rCarpal1", "000"],
 	["middle00_R", "rCarpal2", "000"],
 	["ring00_R", "rCarpal3", "000"],
 	["pinky00_R", "rCarpal4", "000"],
-	["index01_R", "rIndex1", "BRUT_X"], ["index02_R", "rIndex2", "BRUT_X"], ["index03_R", "rIndex3", "000"],
-	["middle01_R", "rMid1", "BRUT_X"], ["middle02_R", "rMid2", "BRUT_X"], ["middle03_R", "rMid3", "000"],
-	["ring01_R", "rRing1", "BRUT_X"], ["ring02_R", "rRing2", "BRUT_X"], ["ring03_R", "rRing3", "000"],
-	["pinky01_R", "rPinky1", "BRUT_X"], ["pinky02_R", "rPinky2", "BRUT_X"], ["pinky03_R", "rPinky3", "000"],
+	["index01_R", "rIndex1", "BRUT_ORI"], ["index02_R", "rIndex2", "BRUT_ORI"], ["index03_R", "rIndex3", "000"],
+	["middle01_R", "rMid1", "BRUT_ORI"], ["middle02_R", "rMid2", "BRUT_ORI"], ["middle03_R", "rMid3", "000"],
+	["ring01_R", "rRing1", "BRUT_ORI"], ["ring02_R", "rRing2", "BRUT_ORI"], ["ring03_R", "rRing3", "000"],
+	["pinky01_R", "rPinky1", "BRUT_ORI"], ["pinky02_R", "rPinky2", "BRUT_ORI"], ["pinky03_R", "rPinky3", "000"],
 
 	# legs
-	["thigh_L", "lThighBend", "-BRUT_ZX"],["thigh_R", "rThighBend", "-BRUT_ZX"],
-	["calf_L", "lShin", "BRUT_ZX"],["calf_R", "rShin", "BRUT_ZX"],
-	["foot_L", "lMetatarsals", "BRUT_ZX"], ["foot_R", "rMetatarsals", "BRUT_ZX"],
-	["toes_L", "lSmallToe2", "BRUT_X"], ["toes_R", "rSmallToe2", "BRUT_X"]
+	["thigh_L", "lThighBend", "BRUT_ABS"],["thigh_R", "rThighBend", "BRUT_ABS"],
+	["calf_L", "lShin", "BRUT_ORI"],["calf_R", "rShin", "BRUT_ORI"],
+	["foot_L", "lMetatarsals", "BRUT_ORI"], ["foot_R", "rMetatarsals", "BRUT_ORI"],
+	["toes_L", "lSmallToe2", "BRUT_ORI"], ["toes_R", "rSmallToe2", "BRUT_ORI"]
 ]
+
+MBArmatureBones_v01 = {
+	"head" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-30, -60, -10)), "max": Vector((30, 60, 10)),
+		"spd": Vector((1, 1, 1)),
+		"prop": ["mbh_head",1]
+	},
+	"neck" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-50, -50, -25)), "max": Vector((50, 50, 25)),
+		"spd": Vector((1, 1, 1)),
+		"prop": ["mbh_head",0]
+	},
+	"spine01" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-60, -30, -20)), "max": Vector((60, 30, 20)),
+		"spd": Vector((1, 1, 1)),
+		"prop": ["mbh_spine",0]
+	},
+	"spine02" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-60, -30, -20)), "max": Vector((60, 30, 20)),
+		"spd": Vector((1, 1, 1)),
+		"prop": ["mbh_spine",1]
+	},
+	"spine03" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-60, -30, -20)), "max": Vector((60, 30, 20)),
+		"spd": Vector((1, 1, 1)),
+		"prop": ["mbh_spine",2]
+	},
+	"pelvis" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-20, -20, -20)), "max": Vector((20, 20, 20)),
+		"spd": Vector((1, 1, 1)),
+		"prop": None
+	},
+	"thigh_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-60, -50, -30)), "max": Vector((60, 50, 30)),
+		"spd": Vector((1, 1, 1)),
+		"prop": ["mbh_legs_L",0]
+	},
+	"calf_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-100, 0, 0)), "max": Vector((2, 0, 0)),
+		"spd": Vector((1, 0, 0)),
+		"prop": ["mbh_legs_L",1]
+	},
+	"foot_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-70, -20, 0)), "max": Vector((50, 20, 0)),
+		"spd": Vector((1, 1, 0)),
+		"prop": ["mbh_legs_L",2]
+	},
+	"toes_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-70, 0, 0)), "max": Vector((90, 0, 0)),
+		"spd": Vector((1, 0, 0)),
+		"prop": ["mbh_legs_L",3]
+	},
+
+	"clavicle_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-20, -30, -30)), "max": Vector((30, 60, 20)),
+		"spd": Vector((1, 1, 1)),
+		"prop": ["mbh_hands_L",0]
+	},
+	"upperarm_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-40, -30, -40)), "max": Vector((80, 50, 60)),
+		"spd": Vector((1, 1, 1)),
+		"prop": ["mbh_hands_L",1]
+	},
+	"lowerarm_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-10, -10, 0)), "max": Vector((130, 50, 0)),
+		"spd": Vector((1, 1, 0)),
+		"prop": ["mbh_hands_L",2]
+	},
+
+	"hand_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-50, -50, -50)), "max": Vector((50, 50, 50)),
+		"spd": Vector((1, 1, 1)),
+		"prop": ["mbh_wrist_L",0]
+	},
+	"thumb01_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-20, -20, -40)), "max": Vector((30, 60, 20)),
+		"spd": Vector((1, 1, 1)),
+		"prop": ["mbh_thumb_L",0]
+	},
+	"thumb02_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, -10)), "max": Vector((10, 0, 50)),
+		"spd": Vector((1, 0, 1)),
+		"prop": ["mbh_thumb_L",1]
+	},
+	"thumb03_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, 0)), "max": Vector((20, 0, 0)),
+		"spd": Vector((1, 0, 0)),
+		"prop": ["mbh_thumb_L",2]
+	},
+	"index01_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, -40)), "max": Vector((30, 0, 10)),
+		"spd": Vector((1, 0, 1)),
+		"prop": ["mbh_index_L",0]
+	},
+	"index02_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, 0)), "max": Vector((10, 0, 0)),
+		"spd": Vector((1, 0, 0)),
+		"prop": ["mbh_index_L",1]
+	},
+	"index03_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, 0)), "max": Vector((10, 0, 0)),
+		"spd": Vector((1, 0, 0)),
+		"prop": ["mbh_index_L",2]
+	},
+	"middle01_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, -40)), "max": Vector((30, 0, 10)),
+		"spd": Vector((1, 0, 1)),
+		"prop": ["mbh_middle_L",0]
+	},
+	"middle02_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, 0)), "max": Vector((10, 0, 0)),
+		"spd": Vector((1, 0, 0)),
+		"prop": ["mbh_middle_L",1]
+	},
+	"middle03_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, 0)), "max": Vector((10, 0, 0)),
+		"spd": Vector((1, 0, 0)),
+		"prop": ["mbh_middle_L",2]
+	},
+	"ring01_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, -40)), "max": Vector((30, 0, 10)),
+		"spd": Vector((1, 0, 1)),
+		"prop": ["mbh_ring_L",0]
+	},
+	"ring02_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, 0)), "max": Vector((10, 0, 0)),
+		"spd": Vector((1, 0, 0)),
+		"prop": ["mbh_ring_L",1]
+	},
+	"ring03_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, 0)), "max": Vector((10, 0, 0)),
+		"spd": Vector((1, 0, 0)),
+		"prop": ["mbh_ring_L",2]
+	},
+	"pinky01_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, -40)), "max": Vector((30, 0, 10)),
+		"spd": Vector((1, 0, 1)),
+		"prop": ["mbh_pinky_L",0]
+	},
+	"pinky02_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, 0)), "max": Vector((10, 0, 0)),
+		"spd": Vector((1, 0, 0)),
+		"prop": ["mbh_pinky_L",1]
+	},
+	"pinky03_L" : {
+		"def": Vector((0, 0, 0)), "min": Vector((-80, 0, 0)), "max": Vector((10, 0, 0)),
+		"spd": Vector((1, 0, 0)),
+		"prop": ["mbh_pinky_L",2]
+	},
+}
+
+def deduceRightBones():
+	bones = list(MBArmatureBones_v01.keys())
+	for boneName_L in bones:
+		if boneName_L.find("_L") > 0:
+			boneName_R = boneName_L.replace("_L","_R")
+			propName_L = MBArmatureBones_v01[boneName_L]["prop"][0]
+			propName_R = propName_L.replace("_L","_R")
+			MBArmatureBones_v01[boneName_R] = copy.deepcopy(MBArmatureBones_v01[boneName_L])
+			MBArmatureBones_v01[boneName_R]["prop"][0] = propName_R
+deduceRightBones()
 
 def getBMStepsForArmt(donor_armt):
 	bonenames = donor_armt.pose.bones.keys()
@@ -252,8 +413,7 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 		return p
 
 	def miniminizerValue(self, vec, axis):
-		axis.normalize()
-		weiquat = vec.rotation_difference(axis)
+		weiquat = vec.normalized().rotation_difference(axis.normalized())
 		#axis2 = axis.cross(Vector((0,0,1)))
 		#axis3 = axis.cross(axis2)
 		#mat = mathutils.Matrix.Identity(3)
@@ -262,6 +422,23 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 		#mat.col[2] = axis
 		#vec = vec*mat
 		return weiquat
+	def getWalkList(self, bonename):
+		boneMin = MBArmatureBones_v01[bonename]["min"]
+		boneMax = MBArmatureBones_v01[bonename]["max"]
+		boneMin = Vector((radians(boneMin[0]),radians(boneMin[1]),radians(boneMin[2])))
+		boneMax = Vector((radians(boneMax[0]),radians(boneMax[0]),radians(boneMax[2])))
+		list = []
+		listx = [x for x in np.arange(boneMin[0],boneMax[0],math.pi*boneBrutDeepness)]
+		listx.append(0)
+		listy = [x for x in np.arange(boneMin[1],boneMax[1],math.pi*boneBrutDeepness)]
+		listy.append(0)
+		listz = [x for x in np.arange(boneMin[2],boneMax[2],math.pi*boneBrutDeepness)]
+		listz.append(0)
+		for tx in listx:
+			for tz in listy:
+				for ty in listz:
+					list.append(Vector((tx,ty,tz)))
+		return list
 	def execute( self, context ):
 		wpposeOpts = context.scene.wplPosingSettings
 		scene = context.scene
@@ -339,15 +516,6 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 		tx = 0
 		ty = 0
 		tz = 0
-		brut_vecX = []
-		brut_vecZX = []
-		brut_vecZYX = []
-		for tx in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*boneBrutDeepness):
-			brut_vecX.append(Vector((tx,0,0)))
-			for tz in np.arange(-math.pi*0.2,math.pi*0.2,math.pi*boneBrutDeepness):
-				brut_vecZX.append(Vector((tx,0,tz)))
-				for ty in np.arange(-math.pi*0.5,math.pi*0.5,math.pi*boneBrutDeepness):
-					brut_vecZYX.append(Vector((tx,ty,tz)))
 		for step in bones_mapping_steps:
 			donor_bn_name = step[1]
 			targt_bn_name = step[0]
@@ -358,31 +526,26 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 			cloned_bnn = cloned_arm.pose.bones.get(donor_bn_name)
 			if cloned_arm is not None and targt_bnn is not None:
 				bones_ok = bones_ok+1
-				walklist = brut_vecZX
 				clone_prel = 1.0
-				if meth == "BRUT_X":
-					walklist = brut_vecX
+				minimi_meth = meth
+				if meth == "BRUT_ORI":
 					meth = "BRUT"
-				if meth == "BRUT_ZX":
-					walklist = brut_vecZX
+				if meth == "BRUT_ABS":
 					meth = "BRUT"
-				if meth == "-BRUT_ZX":
-					clone_prel = -1
-					walklist = brut_vecZX
-					meth = "BRUT"
-				if meth == "BRUT_ZYX":
-					walklist = brut_vecZYX
-					meth = "BRUT"
-				if meth == "-BRUT_ZYX":
-					clone_prel = -1
-					walklist = brut_vecZYX
+				if meth == "-BRUT_ABS":
+					minimi_meth = "BRUT_ABS"
+					clone_prel = -1.0
 					meth = "BRUT"
 				if meth == "BRUT":
-					#clone_mnm = cloned_bnn.tail
-					clone_prn = Vector((0,0,1))
-					if cloned_bnn.parent:
-						clone_prn = clone_prel*(cloned_bnn.parent.tail-cloned_bnn.parent.head)
-					clone_mnm = self.miniminizerValue((cloned_bnn.tail-cloned_bnn.head), clone_prn)
+					clone_mnm = Vector((0,0,1))
+					if minimi_meth == "BRUT_ORI":
+						clone_prn = Vector((0,0,1))
+						if cloned_bnn.parent:
+							clone_prn = clone_prel*(cloned_bnn.parent.tail-cloned_bnn.parent.head)
+						clone_mnm = self.miniminizerValue((cloned_bnn.tail-cloned_bnn.head), clone_prn)
+					if minimi_meth == "BRUT_ABS":
+						clone_mnm = clone_prel*(cloned_bnn.tail-cloned_bnn.head)
+						clone_mnm.normalize()
 					min_mnm = 999
 					min_val = Vector((0,0,0))
 					tx = 0
@@ -391,21 +554,26 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 					targt_bnn.rotation_mode = "ZYX"
 					targt_bnn.rotation_euler = Vector((tx,ty,tz))
 					bpy.context.scene.update()
+					walklist = self.getWalkList(targt_bn_name)
+					#print(meth,": bone:",targt_bnn.name, boneMin, boneMax)
 					for this_v in walklist:
 						targt_bnn.rotation_euler = this_v
 						bpy.context.scene.update()
-						this_prn = Vector((0,0,1))
-						if targt_bnn.parent:
-							this_prn = (targt_bnn.parent.tail-targt_bnn.parent.head)
-						this_mnm = self.miniminizerValue((targt_bnn.tail-targt_bnn.head),this_prn)
+						if minimi_meth == "BRUT_ORI":
+							this_prn = Vector((0,0,1))
+							if targt_bnn.parent:
+								this_prn = (targt_bnn.parent.tail-targt_bnn.parent.head)
+							this_mnm = self.miniminizerValue((targt_bnn.tail-targt_bnn.head),this_prn)
+						if minimi_meth == "BRUT_ABS":
+							this_mnm = (targt_bnn.tail-targt_bnn.head)
+							this_mnm.normalize()
 						actual_mnm = (Vector(this_mnm)-Vector(clone_mnm)).length
-						if actual_mnm < min_mnm:
+						#print(meth,": test in ",targt_bnn.name, this_mnm, clone_mnm, actual_mnm, min_mnm)
+						if actual_mnm <= min_mnm: # even for "==", special for ty == 0 at the finish
+							#print(meth,": test in ",targt_bnn.name, actual_mnm, this_v)
 							min_mnm = actual_mnm
 							min_val = this_v
 					targt_bnn.rotation_euler = min_val
-				elif meth == "Z0X":
-					targt_bnn.rotation_mode = "ZYX"
-					targt_bnn.rotation_euler = Vector((cloned_bnn.rotation_euler[0],0,cloned_bnn.rotation_euler[2]))
 				elif meth == "000":
 					targt_bnn.rotation_mode = "ZYX"
 					targt_bnn.rotation_euler = Vector((0,0,0))
@@ -413,8 +581,6 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 						targt_bnn.rotation_euler = Vector(step[3])
 				elif meth == "CONST":
 					add_copy_constr(targt_arm, cloned_arm, targt_bn_name, donor_bn_name, 'COPY_ROTATION', 'WORLD')
-				elif meth == "CONTS_L":
-					add_copy_constr(targt_arm, cloned_arm, targt_bn_name, donor_bn_name, 'COPY_ROTATION', 'LOCAL')
 				elif (meth == 'QUAT') or (meth is None):
 					cloned_bnn.rotation_mode = 'QUATERNION'
 					targt_bnn.rotation_mode = 'QUATERNION'
@@ -435,8 +601,8 @@ class wplposing_arm2mbp( bpy.types.Operator ):
 		bpy.ops.pose.visual_transform_apply()
 		remove_copy_constr(targt_arm, 'COPY_TRANSFORMS')
 		remove_copy_constr(targt_arm, 'COPY_ROTATION')
-		#scene.objects.unlink(cloned_arm)
-		#bpy.data.objects.remove(cloned_arm)
+		scene.objects.unlink(cloned_arm)
+		bpy.data.objects.remove(cloned_arm)
 		select_and_change_mode(targt_arm,"OBJECT")
 
 		self.report({'INFO'}, "Pose transferred, bones="+str(bones_ok)+", skipped="+str(bones_err))
