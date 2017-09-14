@@ -1,0 +1,130 @@
+// https://github.com/imageworks/OpenShadingLanguage/blob/master/src/doc/osl-languagespec.pdf
+// https://docs.blender.org/manual/en/dev/render/cycles/nodes/osl.html
+
+#define WRI_OBJECT_PREFIX "wri_"
+#define WRI_VERTEXCOL_NAME "Wri"
+#define ISWHITE(cl) (fabs(cl[0]-cl[1])<0.01 && fabs(cl[0]-cl[2])<0.01)
+#define MAXCACHE 100
+
+shader charWriVc (
+    float base_Level = 0.0,
+    point base_Rad_StepsU_StepsV = point(1.0, 30, 10),
+    point base_Elev_FalD_FalS = point(0.1,30,10),
+    float wri_Level = 1.0,
+
+    point in_pos = point(0,0,0),
+    point in_nrm = point(0,0,0),
+	color in_color = color(0,0,0),
+    string in_color_vcname = "",
+    string wri_ObjPrefix = "",
+
+    output float out_Level = 0.0,
+    output point out_Normal = 0.0,
+	output float Wri = 0.0
+){
+
+	float testWidthRadians = base_Rad_StepsU_StepsV[0];
+	float testStepsU = 1/max(1,base_Rad_StepsU_StepsV[1]);
+	float testStepsV = 1/max(1,base_Rad_StepsU_StepsV[2]);
+	float traceElevation = base_Elev_FalD_FalS[0];
+	float traceDireFaloff = base_Elev_FalD_FalS[1];
+	float traceSideFaloff = base_Elev_FalD_FalS[2];
+	
+	string vcname = in_color_vcname;
+	if(strlen(vcname)<3){
+        vcname = WRI_VERTEXCOL_NAME;
+    }
+
+	point pThis = length(in_pos)>0?in_pos:P;
+	point nThis = length(in_nrm)>0?in_nrm:N;
+	point pTraceRoot = pThis+nThis*traceElevation;
+	point nTraceDir = -nThis;
+    point pTracePerp = cross(nThis,point(0,0,1));
+	//color pThisColor;
+	//getattribute(vcname, pThisColor);
+	//if(ISWHITE(pThisColor)){
+	//	pThisColor = color(0,0,0);
+	//}
+
+	string WOP = wri_ObjPrefix;
+    if(strlen(WOP)<3){
+        WOP = WRI_OBJECT_PREFIX;
+    }
+
+	string thisId;
+	getattribute("geom:name",thisId);
+	if(startswith(thisId,WOP) > 0){
+		string hitId;
+		point pCurr = pThis;
+		point pSideHit;
+		point nSideHit;
+		int isHit = trace(pCurr-nThis*0.00001, -nThis);
+		getmessage("trace","geom:name",hitId);
+		getmessage("trace","P",pSideHit);
+		getmessage("trace","N",nSideHit);
+		if(isHit > 0 && startswith(hitId,WOP) < 1){
+			float wriDist = length(pCurr-pSideHit);
+			wriDist = wriDist/(2*traceElevation);
+			nThis = mix(nSideHit,nThis,clamp(wriDist,0,1));
+			//nThis = nSideHit;
+		}
+	}
+
+	if(fabs(wri_Level)>0){
+		int ptncIdx = 0;
+		point potencialsPoints[MAXCACHE];
+		float potencialsLevels[MAXCACHE];
+		for(float ii=0; ii<1; ii = ii+testStepsU){
+			float r1=mix(0, M_2PI, ii);
+			point pTracePerp2 = rotate(pTracePerp,r1,point(0,0,0),nThis);
+			for(float jj=testStepsV*0.1; jj<1; jj = jj+testStepsV){
+				//float skipTest = sin(exp(jj)*50+r1);
+				//if(fabs(skipTest)<0.5){continue;}
+				float r2=mix(0, testWidthRadians, jj);
+				point nTraceDir2 = rotate(nTraceDir,r2,point(0,0,0),pTracePerp2);
+				int isHit = trace(pTraceRoot, nTraceDir2);
+				if(isHit > 0){
+					point hitPos = point(0,0,0);
+					color hitColor = color(0,0,0);
+					getmessage("trace", vcname, hitColor);
+					getmessage("trace", "P", hitPos);
+					float hitLevel = hitColor[0];
+					if(hitLevel > 0.00001){
+						if(ptncIdx<MAXCACHE){
+							potencialsPoints[ptncIdx] = hitPos;
+							potencialsLevels[ptncIdx] = hitLevel;
+							ptncIdx++;
+						}
+						break;
+					}
+				}
+			}
+		}
+		
+		Wri = 0;
+		if(ptncIdx>0){
+			for(int i=0;i<ptncIdx;i++){
+				int intersections = 0;
+				for(int j=i+1;j<ptncIdx;j++){
+					// Is near distance
+					float raylen = length(potencialsPoints[j]-potencialsPoints[i]);
+					if(raylen > 0.1){
+						float pIlen = length(potencialsPoints[i]-pThis);
+						float pJlen = length(potencialsPoints[j]-pThis);
+						float level = (potencialsLevels[j]*pIlen/raylen + potencialsLevels[i]*pJlen/raylen)/2;
+						level = level-pow(traceSideFaloff*fabs(raylen-(pIlen+pJlen)),2);
+						Wri = 1;//max(Wri,level);
+						intersections++;
+					}
+					//point ndir = cross(normalize(potencialsPoints[j]-potencialsPoints[i]),potencialsPoints[j]-pThis);Wri = Wri+length(ndir);
+				}
+				if(intersections == 0){
+					float potencdit = clamp(potencialsLevels[i]-pow(traceDireFaloff*length(potencialsPoints[i]-pThis),2),0.0,1.0);
+					Wri = max(Wri,potencdit);
+				}
+			}
+		}
+		out_Level = base_Level+Wri*wri_Level;
+	}
+	out_Normal = nThis;
+}

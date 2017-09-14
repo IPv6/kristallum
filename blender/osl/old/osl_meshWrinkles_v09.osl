@@ -1,0 +1,146 @@
+// https://github.com/imageworks/OpenShadingLanguage/blob/master/src/doc/osl-languagespec.pdf
+// https://docs.blender.org/manual/en/dev/render/cycles/nodes/osl.html
+
+#define MAX_TRANSPR 5
+#define RAY_MINOFFSET 0.0005
+
+void make_orthonormals(vector N, output vector a, output vector b)
+{
+	if(N[0] != N[1] || N[0] != N[2]) a = cross(vector(1, 1, 1), N);
+	else a = cross(vector(-1, 1, 1), N);
+
+	a = normalize(a);
+	b = cross(N, a);
+}
+
+point vect_rot(point pnt, float ang, point axis)
+{
+	if(fabs(ang) > 0.001){
+		return rotate(pnt, ang, point(0,0,0), axis);
+	}
+	return pnt;
+}
+
+int do_tracing(point pIni, point pDirection, float distcap, string mask_objname, output point out_pos) {
+	out_pos = pIni;
+	int isHit = 0;
+	float maxdst = distcap;
+	float isnameset = strlen(mask_objname);
+	point pFrom = pIni;
+	for(int skipcc = 0;skipcc < MAX_TRANSPR; skipcc++){
+		isHit = trace(pFrom+RAY_MINOFFSET*pDirection, pDirection, "maxdist", maxdst);
+		if(isHit > 0){
+			point tmpP = pFrom;
+			getmessage("trace", "P", tmpP);
+			//point tmpN = nThis;
+			//getmessage("trace", "N", tmpN);
+			float tmpHd = 0;
+			getmessage("trace", "hitdist", tmpHd);
+			if(isnameset > 0){
+				string hitId;
+				getmessage("trace", "geom:name", hitId);
+				if(regex_search(hitId, mask_objname) == 0){
+					isHit = 0;
+				}
+			}
+			if(isHit > 0){
+				out_pos = tmpP;
+				return 1;
+			}
+			maxdst = maxdst-tmpHd;
+			pFrom = tmpP;
+		}
+		if(maxdst < RAY_MINOFFSET){
+			break;
+		}
+	}
+	return 0;
+}
+
+shader wrinkleRaycast (
+	point wr_Dir = point(0, 0, 1),
+	float wr_Elevation = 0.01,
+	float wr_Escape_Dst = 0.0,
+
+	string opt_fall_objName = "",
+	//string opt_rise_objName = "",
+	point opt_TestCone = point(0.0,0.0,0.0),
+
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+
+	output float out_lvl = 0.0,
+	output float out_dst = 0.0,
+	//output float alp_lvl = 0.0,
+	//output float alp_dst = 0.0
+){
+	float coneRad = opt_TestCone[0];
+	if(wr_Escape_Dst < 0.0 || coneRad < 0.0){
+		// Fast exit for no-need-to-test cases
+		return;
+	}
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = isconnected(in_nrm)?in_nrm:N;
+	point p1 = cross(nThis,point("object", 0, 0, 1));
+	point p2 = cross(nThis,p1);
+	float lt_Maxxdst = wr_Escape_Dst>0.0?wr_Escape_Dst:999.0;
+
+	point raypos = pThis;
+	point wr_DirN = normalize(wr_Dir);
+	float originalDot = dot(nThis,wr_DirN);
+	float coneSteps1 = opt_TestCone[1];
+	float coneSteps2 = opt_TestCone[2];
+	int isHit = 0;
+	if(coneRad < 0.001){
+		isHit = do_tracing(pThis+wr_DirN*wr_Elevation, wr_DirN, lt_Maxxdst, opt_fall_objName, raypos);
+	}
+	if(isHit == 0 && coneRad > 0.0){
+		point rp1;
+		point rp2;
+		make_orthonormals(wr_DirN, rp1, rp2);
+		if(coneSteps1 >= 1.0 && coneSteps2 >= 1.0){
+			float csdx = 1/coneSteps1;
+			float csdy = 1/coneSteps2;
+			for(float ii = -1; ii <= 1; ii = ii+csdx){
+				for(float jj = -1; jj <= 1; jj = jj+csdy){
+					point wr_DirN2 = wr_DirN+rp1*ii*coneRad+rp2*jj*coneRad;
+					if(originalDot*dot(wr_DirN2,nThis) > 0){
+						isHit = do_tracing(pThis+wr_DirN2*wr_Elevation, wr_DirN2, lt_Maxxdst, opt_fall_objName, raypos);
+					}
+					if(isHit > 0){
+						ii = 999;
+						jj = 999;
+					}
+				}
+			}
+		}else{
+			float maxrays = max(1,coneSteps1+coneSteps2);
+			for(float kk = 0; kk < maxrays; kk = kk+1){
+				float ii = noise("simplex",pThis*1000000,kk+0.1);
+				float jj = noise("simplex",pThis*1000000,kk+100.1);
+				point wr_DirN2 = wr_DirN+rp1*ii*coneRad+rp2*jj*coneRad;
+				if(originalDot*dot(wr_DirN2,nThis) > 0){
+					isHit = do_tracing(pThis+wr_DirN2*wr_Elevation, wr_DirN2, lt_Maxxdst, opt_fall_objName, raypos);
+				}
+				if(isHit > 0){
+					kk = 999;
+				}
+			}
+		}
+	}
+	if(isHit > 0){
+		out_lvl = 1;
+		out_dst = length(pThis-raypos);
+	}
+	//if(strlen(opt_rise_objName) > 0){
+	//	point raypos1;
+	//	point nThis1 = nThis;
+	//	int isHit1 = do_tracing(pThis, nThis1, lt_Maxxdst, opt_rise_objName, raypos1);
+	//	if(isHit1 > 0){
+	//		point tmpN1 = nThis;
+	//		getmessage("trace", "N", tmpN1);
+	//		alp_lvl = fabs(dot(tmpN1,nThis));
+	//		alp_dst = length(pThis-raypos1);
+	//	}
+	//}
+}

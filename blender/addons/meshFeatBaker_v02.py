@@ -1,17 +1,3 @@
-# Operators:
-# - Project mesh features into vertex color or UV-map (since vertext color limited to 255 gradations) for future use in material nodes
-# TBD: Use normal-dispersion to get gradients. Much better than 3d-distance for mimicing geodesics
-
-# Used resources:
-#https://raw.githubusercontent.com/varkenvarken/blenderaddons/master/connectedvertexcolors%20.py
-#https://blender.stackexchange.com/questions/882/how-to-find-image-coordinates-of-the-rendered-vertex
-#https://blender.stackexchange.com/questions/43335/how-do-i-get-knife-project-operator-to-use-view-settings-within-the-operator
-#https://blenderartists.org/forum/showthread.php?327216-How-to-access-the-view-3d-camera
-
-# Interesting:
-#https://github.com/meta-androcto/blenderpython/blob/master/scripts/addons_extern/mesh_align_to_gpencil_view.py
-#https://github.com/zeffii/TubeTool
-
 import bpy
 import bmesh
 import math
@@ -169,18 +155,13 @@ def get_selected_facesIdx(active_mesh):
 	# print("selected faces: ", faces)
 	return faces
 
-def op_find_and_paint(context, operator, active_object, vc_refmode):
+def op_find_and_paint(context, operator, active_object, color_map, vc_refmode):
 	if not (bpy.context.active_object.mode == 'VERTEX_PAINT') or not (bpy.context.active_object.data.use_paint_mask):
 		operator.report({'ERROR'}, "Use face masking mode, while in Vertex Paint mode")
 		return
 	active_mesh = active_object.data
 	#cursor = active_object.matrix_world.inverted()*get_active_context_cursor(context)
 	cursor = get_active_context_cursor(context)
-	# use active color map, create one if none available
-	if not active_mesh.vertex_colors:
-		active_mesh.vertex_colors.new()
-	color_map = active_mesh.vertex_colors.active
-
 	faces = get_selected_facesIdx(active_mesh)
 	# print("selected faces: ", faces)
 	if len(faces) == 0:
@@ -220,6 +201,38 @@ def get_active_context_cursor(context):
 	cursor = (space if space and space.type == 'VIEW_3D' else scene).cursor_location
 	return cursor
 
+def get_selected_vertsIdx(active_mesh):
+	# find selected faces
+	bpy.ops.object.mode_set(mode='OBJECT')
+	selectedVertsIdx = [e.index for e in active_mesh.vertices if e.select]
+	return selectedVertsIdx
+
+def force_visible_object(obj):
+	if obj:
+		if obj.hide == True:
+			obj.hide = False
+		for n in range(len(obj.layers)):
+			obj.layers[n] = False
+		current_layer_index = bpy.context.scene.active_layer
+		obj.layers[current_layer_index] = True
+
+def select_and_change_mode(obj,obj_mode,hidden=False):
+	if obj:
+		obj.select = True
+		bpy.context.scene.objects.active = obj
+		force_visible_object(obj)
+		try:
+			m = bpy.context.mode
+			if bpy.context.mode!='OBJECT':
+				bpy.ops.object.mode_set(mode='OBJECT')
+			bpy.context.scene.update()
+			bpy.ops.object.mode_set(mode=obj_mode)
+			#print("Mode switched to ", obj_mode)
+		except:
+			pass
+		obj.hide = hidden
+	return m
+
 #class bakeCursorDistanceToVc(bpy.types.Operator):
 	# bl_idname = "object.wplbake_cursor_distance_to_vc"
 	# bl_label = "bakeCursorDistanceToVc"
@@ -236,58 +249,14 @@ def get_active_context_cursor(context):
 		# active_object = context.scene.objects.active
 		# if active_object is not None:
 			# active_object.data.use_paint_mask = True
-		# op_find_and_paint(context, self, active_object, "dist")
+		# op_find_and_paint(context, self, active_object, !!! "dist")
 		# bpy.ops.object.mode_set(mode='VERTEX_PAINT')
 		# context.scene.update()
 		# return {'FINISHED'}
 
-class WPLbakeProj2dAxisToVc(bpy.types.Operator):
-	bl_idname = "object.wplbake_2daxis_to_vc"
-	bl_label = "WPLbakeProj2dAxisToVc"
-	bl_options = {'REGISTER', 'UNDO'}
-
-	@classmethod
-	def poll(self, context):
-		# Check if we have a mesh object active and are in vertex paint mode
-		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Mesh))
-		return p
-
-	def execute(self, context):
-		print("execute ", self.bl_idname)
-		active_object = context.scene.objects.active
-		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
-		if active_object is not None:
-			active_object.data.use_paint_mask = True
-		op_find_and_paint(context, self, active_object, "axis")
-		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
-		context.scene.update()
-		return {'FINISHED'}
-
-class WPLbakeShape2dAxisToVc(bpy.types.Operator):
-	bl_idname = "object.wplbake_2dshape_to_vc"
-	bl_label = "WPLbakeShape2dAxisToVc"
-	bl_options = {'REGISTER', 'UNDO'}
-
-	@classmethod
-	def poll(self, context):
-		# Check if we have a mesh object active and are in vertex paint mode
-		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Mesh))
-		return p
-
-	def execute(self, context):
-		print("execute ", self.bl_idname)
-		active_object = context.scene.objects.active
-		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
-		if active_object is not None:
-			active_object.data.use_paint_mask = True
-		op_find_and_paint(context, self, active_object, "shape")
-		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
-		context.scene.update()
-		return {'FINISHED'}
-
-class WPLbakeMeshCentersToVc(bpy.types.Operator):
-	bl_idname = "object.wplbake_mesh_centers_to_vc"
-	bl_label = "WPLbakeMeshCentersToVc"
+class WPLbake_mesh_centers(bpy.types.Operator):
+	bl_idname = "object.wplbake_mesh_centers"
+	bl_label = "WPLbake_mesh_centers"
 	bl_options = {'REGISTER', 'UNDO'}
 	actionType = bpy.props.IntProperty()
 
@@ -341,7 +310,7 @@ class WPLbakeMeshCentersToVc(bpy.types.Operator):
 
 		uv_values1 = {}
 		uv_values2 = {}
-		vc_values = {}
+		#vc_values = {}
 		selverts = []
 		for v in bm.verts:
 			v.tag = False
@@ -356,11 +325,11 @@ class WPLbakeMeshCentersToVc(bpy.types.Operator):
 				meshlist = []
 				add_connected_bmverts(v,meshlist,selverts)
 				if len(meshlist) > 0:
-					if self.actionType == 1:
-						rndc = (random(),random(),random())
-						for mv in meshlist:
-							vc_values[mv.index] = rndc
-					elif self.actionType == 2 or self.actionType == 6:
+					#if self.actionType == 1:
+					#	rndc = (random(),random(),random())
+					#	for mv in meshlist:
+					#		vc_values[mv.index] = rndc
+					if self.actionType == 2 or self.actionType == 6:
 						medianpoint = mathutils.Vector()
 						for mv in meshlist:
 							medianpoint = medianpoint+mv.co
@@ -413,17 +382,17 @@ class WPLbakeMeshCentersToVc(bpy.types.Operator):
 							yrel = (vec2d[1]-min_y)/projscale
 							uv_values2[mv.index] = (xrel, yrel)
 		ok_count = 0;
-		if len(vc_values)>0:
-			if not active_mesh.vertex_colors:
-				active_mesh.vertex_colors.new()
-			color_map = active_mesh.vertex_colors.active
-			for poly in active_mesh.polygons:
-				face_is_selected = poly.index in selfaces
-				if face_is_selected:
-					for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
-						vi = active_mesh.loops[loop_index].vertex_index
-						if (vi in vc_values):#(vi in selverts) and
-							color_map.data[loop_index].color = vc_values[vi]
+		#if len(vc_values)>0:
+		#	if not active_mesh.vertex_colors:
+		#		active_mesh.vertex_colors.new()
+		#	color_map = active_mesh.vertex_colors.active
+		#	for poly in active_mesh.polygons:
+		#		face_is_selected = poly.index in selfaces
+		#		if face_is_selected:
+		#			for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
+		#				vi = active_mesh.loops[loop_index].vertex_index
+		#				if (vi in vc_values):#(vi in selverts) and
+		#					color_map.data[loop_index].color = vc_values[vi]
 		if len(uv_values1)>0:
 			uv_layer_bx = bm.loops.layers.uv.get(bakemap_x)
 			uv_layer_by = bm.loops.layers.uv.get(bakemap_y)
@@ -450,12 +419,221 @@ class WPLbakeMeshCentersToVc(bpy.types.Operator):
 		#bpy.ops.object.mode_set(mode='EDIT')
 		return {'FINISHED'}
 
+class WPL_weig_edt( bpy.types.Operator ):
+	bl_idname = "mesh.wplweig_edt"
+	bl_label = "Change weight value in vertex group on surrent selection"
+	bl_options = {'REGISTER', 'UNDO'}
+	opt_stepadd = bpy.props.FloatProperty(
+		name		= "Value",
+		default	 	= 0.33
+		)
+	opt_stepmul = bpy.props.FloatProperty(
+		name		= "Multiplier",
+		default	 	= 1.0
+		)
 
+	@classmethod
+	def poll( cls, context ):
+		return ( context.object is not None  and
+				context.object.type == 'MESH' )
+
+	def execute( self, context ):
+		oldmode = bpy.context.active_object.mode
+		active_object = context.scene.objects.active
+		active_mesh = active_object.data
+		bakeOpts = context.scene.bakeOpts
+		selvertsAll = get_selected_vertsIdx(active_mesh)
+		if len(selvertsAll) == 0:
+			self.report({'ERROR'}, "No selected vertices found")
+			return {'CANCELLED'}
+		select_and_change_mode(active_object,"OBJECT")
+		vg = active_object.vertex_groups.get(bakeOpts.bake_wmco) #obj.vertex_groups.new("group name")
+		if vg is None:
+			self.report({'ERROR'}, "No active vertex group found")
+			return {'CANCELLED'}
+		for idx in selvertsAll:
+			wmod = 'REPLACE'
+			try:
+				oldval = vg.weight(idx)
+			except Exception as e:
+				wmod = 'ADD'
+				oldval = 0
+			newval = oldval
+			if self.opt_stepmul == 0.0:
+				newval = self.opt_stepadd
+			else:
+				newval = oldval+self.opt_stepmul*self.opt_stepadd
+			vg.add([idx], newval, wmod)
+		if oldmode != 'EDIT':
+			select_and_change_mode(active_object,"EDIT")
+		select_and_change_mode(active_object,oldmode)
+		#bpy.context.scene.objects.active = bpy.context.scene.objects.active
+		bpy.context.scene.update()
+		return {'FINISHED'}
+
+###### ########## ######
+class WPLbake_2daxis_to_vc(bpy.types.Operator):
+	bl_idname = "object.wplbake_2daxis_to_vc"
+	bl_label = "WPLbake_2daxis_to_vc"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll(self, context):
+		# Check if we have a mesh object active and are in vertex paint mode
+		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Mesh))
+		return p
+
+	def execute(self, context):
+		print("execute ", self.bl_idname)
+		active_object = context.scene.objects.active
+		if active_object is None:
+			return {'CANCELLED'}
+		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+		active_object.data.use_paint_mask = True
+		bakeOpts = context.scene.bakeOpts
+		color_map = active_object.data.vertex_colors.get(bakeOpts.bake_vcnm)
+		if color_map is None:
+			self.report({'ERROR'}, "Target VC not found")
+			return {'CANCELLED'}
+		op_find_and_paint(context, self, active_object, color_map, "axis")
+		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+		context.scene.update()
+		return {'FINISHED'}
+
+class WPLbake_2dshape_to_vc(bpy.types.Operator):
+	bl_idname = "object.wplbake_2dshape_to_vc"
+	bl_label = "WPLbake_2dshape_to_vc"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll(self, context):
+		# Check if we have a mesh object active and are in vertex paint mode
+		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Mesh))
+		return p
+
+	def execute(self, context):
+		print("execute ", self.bl_idname)
+		active_object = context.scene.objects.active
+		if active_object is None:
+			return {'CANCELLED'}
+		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+		active_object.data.use_paint_mask = True
+		bakeOpts = context.scene.bakeOpts
+		color_map = active_object.data.vertex_colors.get(bakeOpts.bake_vcnm)
+		if color_map is None:
+			self.report({'ERROR'}, "Target VC not found")
+			return {'CANCELLED'}
+		op_find_and_paint(context, self, active_object, color_map, "shape")
+		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+		context.scene.update()
+		return {'FINISHED'}
+
+class WPLbake_shpk_to_vc(bpy.types.Operator):
+	bl_idname = "object.wplbake_shpk_to_vc"
+	bl_label = "WPLbake_shpk_to_vc"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	opt_r_infl = bpy.props.FloatProperty(
+		name		= "R: Positive shift influence",
+		min			= 0.0, max = 1000,
+		default	 	= 100.0
+		)
+	opt_b_infl = bpy.props.FloatProperty(
+		name		= "B: Negative shift influence",
+		min			= 0.0, max = 1000,
+		default	 	= 100.0
+		)
+	opt_g_infl = bpy.props.FloatProperty(
+		name		= "G: Normals influence",
+		min			= 0.0, max = 100,
+		default	 	= 1.0
+		)
+
+	@classmethod
+	def poll(self, context):
+		# Check if we have a mesh object active and are in vertex paint mode
+		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Mesh))
+		return p
+
+	def execute(self, context):
+		print("execute ", self.bl_idname)
+		active_object = context.scene.objects.active
+		if active_object is None or active_object.data is None:
+			return {'CANCELLED'}
+		active_mesh = active_object.data
+		bpy.ops.object.mode_set(mode='OBJECT')
+		#bpy.ops.object.mode_set(mode='EDIT')
+		#bm = bmesh.from_edit_mesh(active_mesh)
+		#bm.verts.ensure_lookup_table()
+		#bm.faces.ensure_lookup_table()
+		#bm.verts.index_update()
+		#selectedVerts = [v for v in bm.verts if v.select]
+		selectedVertsIdx = [v.index for v in active_mesh.vertices if v.select]
+		if len(selectedVertsIdx) < 3:
+			self.report({'ERROR'}, "Not enough selected vertices found")
+			return {'CANCELLED'}
+		active_object.data.use_paint_mask = True
+		bakeOpts = context.scene.bakeOpts
+		color_map = active_mesh.vertex_colors.get(bakeOpts.bake_vcnm)
+		if color_map is None:
+			self.report({'ERROR'}, "Target VC not found")
+			return {'CANCELLED'}
+		shpk1 = active_mesh.shape_keys.key_blocks[bakeOpts.bake_shk1]
+		shpk2 = active_mesh.shape_keys.key_blocks[bakeOpts.bake_shk2]
+		if shpk1 is None or shpk2 is None:
+			self.report({'ERROR'}, "One of shapekeys not found")
+			return {'CANCELLED'}
+		#selectedVertsIdx = [v.index for v in selectedVerts]
+		#selectedVertsLoops = [v.link_loops for v in selectedVerts]
+		#selectedVertsLoopsIdx = [item.index for sublist in selectedVertsLoops for item in sublist]
+		#for loop_index in selectedVertsLoopsIdx:
+		#	loop_vert_index = active_mesh.loops[loop_index].vertex_index
+		#	color_map.data[loop_index].color = (0.1,0.2,0.3)
+		for poly in active_mesh.polygons:
+			for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
+				vi = active_mesh.loops[loop_index].vertex_index
+				if (vi in selectedVertsIdx):
+					co1 = shpk1.data[vi].co
+					co2 = shpk2.data[vi].co
+					distP = (co1-co2).length
+					distN = distP
+					ndir = active_mesh.vertices[vi].normal.dot((co2-co1).normalized())
+					if ndir<=0:
+						distP = 0
+					else:
+						distN = 0
+					color_map.data[loop_index].color = (distP*self.opt_r_infl,abs(ndir*self.opt_g_infl),distN*self.opt_b_infl)
+		context.scene.update()
+		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+		return {'FINISHED'}
+
+######### ############ ################# ############
 class WPLBakeSettings(PropertyGroup):
 	bake_uvbase = StringProperty(
 		name="UVMap prefix",
 		description="Bake into set of UVMaps",
 		default = "MeshPt_"
+		)
+
+	bake_vcnm = StringProperty(
+		name="Target VC",
+		description="Target VC",
+		default = ""
+		)
+	bake_shk1 = StringProperty(
+		name="Base shapekey",
+		description="Base shapekey",
+		default = ""
+		)
+	bake_shk2 = StringProperty(
+		name="Diff shapekey",
+		description="Diff shapekey",
+		default = ""
+		)
+	bake_wmco = StringProperty(
+		name="Vert group",
+		description="Vert group",
+		default = ""
 		)
 #	bake_shift = FloatProperty(
 #		name = "Baking shift",
@@ -468,45 +646,85 @@ class WPLBakeSettings(PropertyGroup):
 #		default = 0.1
 #		)
 
-class WPLBakeMeshFeatures_Panel(bpy.types.Panel):
-	bl_label = "Bake Mesh Features"
+class WPLBakeMeshFeatures_Panel1(bpy.types.Panel):
+	bl_label = "Bake WPL Features"
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'TOOLS'
 	bl_category = 'WPL'
 
-	def draw_header(self, context):
+	def draw(self, context):
 		layout = self.layout
-		layout.label(text="")
+		bakeOpts = context.scene.bakeOpts
+		active_object = context.scene.objects.active
+		col = layout.column()
+		if active_object is not None and active_object.data is not None:
+			col.label("Weight map control")
+			col.prop_search(bakeOpts, "bake_wmco", active_object, "vertex_groups", icon='GROUP_VERTEX')
+			row1 = col.row()
+			row1.operator("mesh.wplweig_edt", text="+").opt_stepmul = 1.0
+			row1.operator("mesh.wplweig_edt", text="-").opt_stepmul = -1.0
+			row1.operator("mesh.wplweig_edt", text="=").opt_stepmul = 0.0
+
+class WPLBakeMeshFeatures_Panel2(bpy.types.Panel):
+	bl_label = "Bake WPL Features"
+	bl_space_type = 'VIEW_3D'
+	bl_region_type = 'TOOLS'
+	bl_category = 'WPL'
 
 	def draw(self, context):
 		layout = self.layout
 		bakeOpts = context.scene.bakeOpts
-
+		active_object = context.scene.objects.active
 		col = layout.column()
-		col.label("Bake to VCol")
-		col.operator("object.wplbake_2daxis_to_vc", text="Bake Flat projection)") # normalized
-		col.operator("object.wplbake_2dshape_to_vc", text="Bake Shape projection") # normalized
-		#col.operator("object.wplbake_cursor_distance_to_vc", text="Bake 3D-cursor distance") # normalized
-		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake random color").actionType = 1
-		col.separator()
+		if active_object is not None and active_object.data is not None:
+			vertex_colors_d = active_object.data
+			if vertex_colors_d is not None:
+				col.separator()
+				col.label("VC: Selection")
+				col.prop_search(bakeOpts, "bake_vcnm", vertex_colors_d, "vertex_colors", icon='GROUP_VCOL')
+				col.operator("object.wplbake_2daxis_to_vc", text="Bake Flat projection") # normalized
+				col.operator("object.wplbake_2dshape_to_vc", text="Bake Shape projection") # normalized
+				#col.operator("object.wplbake_cursor_distance_to_vc", text="Bake 3D-cursor distance") # normalized
+				#col.operator("object.wplbake_mesh_centers", text="Bake random color").actionType = 1
 
-		# display the properties
-		col.label("Bake to UVMap")
-		col.prop(bakeOpts, "bake_uvbase")
-		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake 2d-Axis (View Proj)").actionType = 4
-		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake offset: 3D Cursor").actionType = 3
-		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake offset: Mesh-mids").actionType = 2
-		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake local: 3D Cursor").actionType = 5
-		col.operator("object.wplbake_mesh_centers_to_vc", text="Bake local: Mesh-mids").actionType = 6
+				shape_keys_d = active_object.data.shape_keys
+				if shape_keys_d is not None:
+					col.separator()
+					col.label("VC: Shapekey diffs")
+					col.prop_search(bakeOpts, "bake_shk1", shape_keys_d, "key_blocks", icon='SHAPEKEY_DATA')
+					col.prop_search(bakeOpts, "bake_shk2", shape_keys_d, "key_blocks", icon='SHAPEKEY_DATA')
+					col.operator("object.wplbake_shpk_to_vc", text="Bake Shapekey diff")
+
+class WPLBakeMeshFeatures_Panel3(bpy.types.Panel):
+	bl_label = "Bake WPL Features"
+	bl_space_type = 'VIEW_3D'
+	bl_region_type = 'TOOLS'
+	bl_category = 'WPL'
+
+	def draw(self, context):
+		layout = self.layout
+		bakeOpts = context.scene.bakeOpts
+		active_object = context.scene.objects.active
+		col = layout.column()
+		if active_object is not None and active_object.data is not None:
+			col.label("UV: Selection")
+			col.prop(bakeOpts, "bake_uvbase")
+			col.operator("object.wplbake_mesh_centers", text="Bake 2d-Axis (View Proj)").actionType = 4
+			col.operator("object.wplbake_mesh_centers", text="Bake offset: 3D Cursor").actionType = 3
+			col.operator("object.wplbake_mesh_centers", text="Bake offset: Mesh-mids").actionType = 2
+			col.operator("object.wplbake_mesh_centers", text="Bake local: 3D Cursor").actionType = 5
+			col.operator("object.wplbake_mesh_centers", text="Bake local: Mesh-mids").actionType = 6
 
 def register():
-	print("WPLBakeMeshFeatures_Panel registered")
+	print("WPLBakeMeshFeatures_Panel register")
 	bpy.utils.register_module(__name__)
 	bpy.types.Scene.bakeOpts = PointerProperty(type=WPLBakeSettings)
 
 def unregister():
+	print("WPLBakeMeshFeatures_Panel unregister")
 	bpy.utils.unregister_module(__name__)
 	del bpy.types.Scene.bakeOpts
+	bpy.utils.unregister_class(WPLBakeSettings)
 
 if __name__ == "__main__":
 	register()

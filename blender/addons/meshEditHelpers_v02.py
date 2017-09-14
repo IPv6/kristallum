@@ -13,6 +13,7 @@ import math
 import mathutils
 from mathutils import Vector
 from random import random, seed
+from mathutils.bvhtree import BVHTree
 from bpy_extras import view3d_utils
 from bpy_extras.object_utils import world_to_camera_view
 
@@ -43,6 +44,14 @@ bl_info = {
 	"category"	: ""
 	}
 
+WPL_PROJM = [
+	('TO_CAMERA', "To camera", "", 1),
+	('USE_NORMALS', "Use Normals", "", 2),
+]
+
+kRaycastEpsilon = 0.01
+kRaycastDeadzone = 0.05
+
 def force_visible_object(obj):
 	if obj:
 		if obj.hide == True:
@@ -69,29 +78,28 @@ def select_and_change_mode(obj,obj_mode,hidden=False):
 		obj.hide = hidden
 	return m
 
-def camera_position(matrix):
-	""" From 4x4 matrix, calculate camera location """
-	t = (matrix[0][3], matrix[1][3], matrix[2][3])
-	r = (
-	  (matrix[0][0], matrix[0][1], matrix[0][2]),
-	  (matrix[1][0], matrix[1][1], matrix[1][2]),
-	  (matrix[2][0], matrix[2][1], matrix[2][2])
-	)
-	rp = (
-	  (-r[0][0], -r[1][0], -r[2][0]),
-	  (-r[0][1], -r[1][1], -r[2][1]),
-	  (-r[0][2], -r[1][2], -r[2][2])
-	)
-	output = mathutils.Vector((
-	  rp[0][0] * t[0] + rp[0][1] * t[1] + rp[0][2] * t[2],
-	  rp[1][0] * t[0] + rp[1][1] * t[1] + rp[1][2] * t[2],
-	  rp[2][0] * t[0] + rp[2][1] * t[1] + rp[2][2] * t[2],
-	))
-	return output
-
 def camera_pos(region_3d):
 	""" Return position, rotation data about a given view for the first space attached to it """
 	#https://stackoverflow.com/questions/9028398/change-viewport-angle-in-blender-using-python
+	def camera_position(matrix):
+		""" From 4x4 matrix, calculate camera location """
+		t = (matrix[0][3], matrix[1][3], matrix[2][3])
+		r = (
+		  (matrix[0][0], matrix[0][1], matrix[0][2]),
+		  (matrix[1][0], matrix[1][1], matrix[1][2]),
+		  (matrix[2][0], matrix[2][1], matrix[2][2])
+		)
+		rp = (
+		  (-r[0][0], -r[1][0], -r[2][0]),
+		  (-r[0][1], -r[1][1], -r[2][1]),
+		  (-r[0][2], -r[1][2], -r[2][2])
+		)
+		output = mathutils.Vector((
+		  rp[0][0] * t[0] + rp[0][1] * t[1] + rp[0][2] * t[2],
+		  rp[1][0] * t[0] + rp[1][1] * t[1] + rp[1][2] * t[2],
+		  rp[2][0] * t[0] + rp[2][1] * t[1] + rp[2][2] * t[2],
+		))
+		return output
 	#look_at = region_3d.view_location
 	matrix = region_3d.view_matrix
 	#rotation = region_3d.view_rotation
@@ -252,6 +260,9 @@ class WPL_selvisible( bpy.types.Operator ):
 				context.object.type == 'MESH' )
 
 	def execute( self, context ):
+		if not bpy.context.space_data.region_3d.is_perspective:
+			self.report({'ERROR'}, "Can`t work in ORTHO mode")
+			return {'CANCELLED'}
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
 		visibilitySelect(active_object, active_mesh, context, 0, self.opt_rayFuzz )
@@ -271,6 +282,9 @@ class WPL_deselvisible( bpy.types.Operator ):
 				context.object.type == 'MESH' )
 
 	def execute( self, context ):
+		if not bpy.context.space_data.region_3d.is_perspective:
+			self.report({'ERROR'}, "Can`t work in ORTHO mode")
+			return {'CANCELLED'}
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
 		visibilitySelect(active_object, active_mesh, context, 1, self.opt_rayFuzz )
@@ -290,6 +304,9 @@ class WPL_deselunvisible( bpy.types.Operator ):
 				context.object.type == 'MESH' )
 
 	def execute( self, context ):
+		if not bpy.context.space_data.region_3d.is_perspective:
+			self.report({'ERROR'}, "Can`t work in ORTHO mode")
+			return {'CANCELLED'}
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
 		visibilitySelect(active_object, active_mesh, context, 2, self.opt_rayFuzz )
@@ -325,13 +342,96 @@ class WPL_refill_select( bpy.types.Operator ):
 		bpy.ops.mesh.fill()
 		return {'FINISHED'}
 
+class WPL_proj_bubble( bpy.types.Operator ):
+	bl_idname = "mesh.wplproj_bubble"
+	bl_label = "Bubble verts into direction"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	opt_flatnMeth = EnumProperty(
+		items = WPL_PROJM,
+		name="Method",
+		description="Method",
+		default='TO_CAMERA',
+	)
+	opt_flatnFac = bpy.props.FloatProperty(
+		name		= "Influence",
+		description = "Influence",
+		default	 = 1.0,
+		min		 = -100,
+		max		 = 100
+		)
+	opt_maxDist = bpy.props.FloatProperty(
+		name		= "Max distance",
+		description = "Max distance",
+		default	 = 100.0,
+		min		 = 0.001,
+		max		 = 100
+		)
+
+	@classmethod
+	def poll( cls, context ):
+		return ( context.object is not None  and
+				context.object.type == 'MESH' )
+
+	def execute( self, context ):
+		active_object = context.scene.objects.active
+		active_mesh = active_object.data
+		if not bpy.context.space_data.region_3d.is_perspective:
+			self.report({'ERROR'}, "Can`t work in ORTHO mode")
+			return {'CANCELLED'}
+		cameraOrigin_g = camera_pos(bpy.context.space_data.region_3d)
+		selvertsAll = get_selected_vertsIdx(active_mesh)
+		if len(selvertsAll) == 0:
+			self.report({'ERROR'}, "No selected vertices found")
+			return {'CANCELLED'}
+		bpy.ops.object.mode_set( mode = 'EDIT' )
+		bm = bmesh.from_edit_mesh(active_mesh)
+		bm.verts.ensure_lookup_table()
+		bm.faces.ensure_lookup_table()
+		bm.verts.index_update()
+		bm_tree = BVHTree.FromBMesh(bm, epsilon = kRaycastEpsilon)
+		# tracing to new geometry
+		matrix_world_inv = active_object.matrix_world.inverted()
+		cameraOrigin = matrix_world_inv * cameraOrigin_g
+		inner_verts = [ (vIdx, bm.verts[vIdx].co, bm.verts[vIdx].normal) for vIdx in selvertsAll ]
+		opt_flatnFac = self.opt_flatnFac
+		opt_normdir = 1
+		if opt_flatnFac < 0 and self.opt_flatnMeth == 'USE_NORMALS':
+			opt_flatnFac = abs(opt_flatnFac)
+			opt_normdir = -1
+		for w_v in inner_verts:
+			hit = None
+			if self.opt_flatnMeth == 'TO_CAMERA':
+				direction = w_v[1] - cameraOrigin
+				direction.normalize()
+				hit, normal, index, distance = bm_tree.ray_cast(cameraOrigin, direction)
+			else:
+				origin = w_v[1]
+				direction = w_v[2]
+				direction.normalize()
+				hit, normal, index, distance = bm_tree.ray_cast(origin+kRaycastDeadzone*direction*opt_normdir, direction*opt_normdir)
+			if (hit is not None) and ((w_v[1]-hit).length <= self.opt_maxDist):
+				# lerping position
+				vco_shift = hit - w_v[1]
+				vco = w_v[1]+vco_shift*opt_flatnFac
+				bm.verts[w_v[0]].co = vco
+		bmesh.update_edit_mesh(active_mesh, True)
+		return {'FINISHED'}
+
 class WPL_proj_flatten( bpy.types.Operator ):
 	bl_idname = "mesh.wplproj_flatten"
-	bl_label = "Flatten toward camera"
+	bl_label = "Flatten to convex hull"
 	bl_options = {'REGISTER', 'UNDO'}
+
+	opt_flatnMeth = EnumProperty(
+		items = WPL_PROJM,
+		name="Method",
+		description="Method",
+		default='TO_CAMERA',
+	)
 	opt_flatnFac = bpy.props.FloatProperty(
-		name		= "Flatness",
-		description = "Flatness applied",
+		name		= "Influence",
+		description = "Influence",
 		default	 = 1.0,
 		min		 = -100,
 		max		 = 100
@@ -345,7 +445,10 @@ class WPL_proj_flatten( bpy.types.Operator ):
 	def execute( self, context ):
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
-		cameraOrigin = camera_pos(bpy.context.space_data.region_3d)
+		if not bpy.context.space_data.region_3d.is_perspective:
+			self.report({'ERROR'}, "Can`t work in ORTHO mode")
+			return {'CANCELLED'}
+		cameraOrigin_g = camera_pos(bpy.context.space_data.region_3d)
 		selvertsAll = get_selected_vertsIdx(active_mesh)
 		bpy.ops.object.mode_set( mode = 'EDIT' )
 		bpy.ops.mesh.region_to_loop()
@@ -356,39 +459,35 @@ class WPL_proj_flatten( bpy.types.Operator ):
 			#print("All: ",selvertsAll," outer:", selvertsBnd)
 			return {'CANCELLED'}
 		bm2 = bmesh.new()
-		chull_verts = [ active_object.matrix_world * active_mesh.vertices[vIdx].co for vIdx in selvertsBnd ]
+		chull_verts = [ active_mesh.vertices[vIdx].co for vIdx in selvertsBnd ]
 		for v in chull_verts:
 			bm2.verts.new(v)
 		bmesh.ops.convex_hull(bm2, input=bm2.verts)
-
-		# hack from https://blender.stackexchange.com/questions/9073/how-to-check-if-two-meshes-intersect-in-python
-		scene = bpy.context.scene
-		me_tmp = bpy.data.meshes.new(name="~temp~")
-		bm2.to_mesh(me_tmp)
+		bm2_tree = BVHTree.FromBMesh(bm2, epsilon = kRaycastEpsilon)
 		bm2.free()
-		obj_tmp = bpy.data.objects.new(name=me_tmp.name, object_data=me_tmp)
-		scene.objects.link(obj_tmp)
-		scene.update()
+		#obj_tmp = bpy.data.objects.new(name=me_tmp.name, object_data=me_tmp)
+		#scene.objects.link(obj_tmp)
+		#scene.update()
 		# tracing to new geometry
 		matrix_world_inv = active_object.matrix_world.inverted()
-		inner_verts = [ (vIdx,active_object.matrix_world * active_mesh.vertices[vIdx].co) for vIdx in selvertsInner ]
+		cameraOrigin = matrix_world_inv * cameraOrigin_g
+		inner_verts = [ (vIdx, active_mesh.vertices[vIdx].co, active_mesh.vertices[vIdx].normal) for vIdx in selvertsInner ]
 		for w_v in inner_verts:
-			#print("w_v",w_v," cameraOrigin",cameraOrigin)
-			direction = w_v[1] - cameraOrigin
-			direction.normalize()
-			result, location, normal, faceIndex, object, matrix = scene.ray_cast( cameraOrigin, direction )
-			# projecting each vertex to nearest
-			if result:
+			hit = None
+			if self.opt_flatnMeth == 'TO_CAMERA':
+				direction = w_v[1] - cameraOrigin
+				direction.normalize()
+				hit, normal, index, distance = bm2_tree.ray_cast(cameraOrigin, direction)
+			else:
+				origin = w_v[1]
+				direction = w_v[2]
+				direction.normalize()
+				hit, normal, index, distance = bm2_tree.ray_cast(origin+kRaycastDeadzone*direction, direction)
+			if hit is not None:
 				# lerping position
-				vco_shift = location - w_v[1]
+				vco_shift = hit - w_v[1]
 				vco = w_v[1]+vco_shift*self.opt_flatnFac
-				active_mesh.vertices[w_v[0]].co = matrix_world_inv * vco
-
-		scene.objects.unlink(obj_tmp)
-		bpy.data.objects.remove(obj_tmp)
-		bpy.data.meshes.remove(me_tmp)
-		scene.update()
-
+				active_mesh.vertices[w_v[0]].co = vco
 		bpy.ops.object.mode_set( mode = 'EDIT' )
 		return {'FINISHED'}
 
@@ -561,59 +660,8 @@ class WPL_uv_flatten( bpy.types.Operator ):
 		bmesh.update_edit_mesh(active_mesh)
 		return {'FINISHED'}
 
-class WPL_weig_edt( bpy.types.Operator ):
-	bl_idname = "mesh.wplweig_edt"
-	bl_label = "Change weight value in vertex group on surrent selection"
-	bl_options = {'REGISTER', 'UNDO'}
-	opt_stepadd = bpy.props.FloatProperty(
-		name		= "Value",
-		default	 	= 0.33
-		)
-	opt_stepmul = bpy.props.FloatProperty(
-		name		= "Multiplier",
-		default	 	= 1.0
-		)
-
-	@classmethod
-	def poll( cls, context ):
-		return ( context.object is not None  and
-				context.object.type == 'MESH' )
-
-	def execute( self, context ):
-		oldmode = bpy.context.active_object.mode
-		active_object = context.scene.objects.active
-		active_mesh = active_object.data
-		selvertsAll = get_selected_vertsIdx(active_mesh)
-		if len(selvertsAll) == 0:
-			self.report({'ERROR'}, "No selected vertices found")
-			return {'CANCELLED'}
-		select_and_change_mode(active_object,"OBJECT")
-		vg = active_object.vertex_groups.active #obj.vertex_groups.new("group name")
-		if vg is None:
-			self.report({'ERROR'}, "No active vertex group found")
-			return {'CANCELLED'}
-		for idx in selvertsAll:
-			wmod = 'REPLACE'
-			try:
-				oldval = vg.weight(idx)
-			except Exception as e:
-				wmod = 'ADD'
-				oldval = 0
-			newval = oldval
-			if self.opt_stepmul == 0.0:
-				newval = self.opt_stepadd
-			else:
-				newval = oldval+self.opt_stepmul*self.opt_stepadd
-			vg.add([idx], newval, wmod)
-		if oldmode != 'EDIT':
-			select_and_change_mode(active_object,"EDIT")
-		select_and_change_mode(active_object,oldmode)
-		#bpy.context.scene.objects.active = bpy.context.scene.objects.active
-		bpy.context.scene.update()
-		return {'FINISHED'}
-
 class WPLSculptFeatures_Panel(bpy.types.Panel):
-	bl_label = "mesh.wplHelpers"
+	bl_label = "Sculpt helpers"
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'TOOLS'
 	bl_category = 'WPL'
@@ -625,13 +673,7 @@ class WPLSculptFeatures_Panel(bpy.types.Panel):
 	def draw(self, context):
 		layout = self.layout
 		#wplScultSets = context.scene.wplScultSets
-
-		# display the properties
 		col = layout.column()
-		col.label("Subdividers")
-		col.operator("mesh.wplrefill_select", text="ReFill selected")
-		col.operator("mesh.wplsubdiv_long_edges", text="Cut Long Edges")
-		col.operator("mesh.wplbridge_mesh_islands", text="Bridge islands")
 
 		col.separator()
 		col.label("Selection control")
@@ -640,17 +682,22 @@ class WPLSculptFeatures_Panel(bpy.types.Panel):
 		col.operator("mesh.wplvert_deselunvisible", text="Deselect invisible")
 
 		col.separator()
-		col.label("Flattening")
-		col.operator("mesh.wplproj_flatten", text="Projected flatten")
-		col.operator("mesh.wpluv_flatten", text="UVMap flatten")
+		col.label("Bubbling")
+		col.operator("mesh.wplproj_flatten", text="Projected flatten (Camera)").opt_flatnMeth = 'TO_CAMERA'
+		col.operator("mesh.wplproj_flatten", text="Projected flatten (Normals)").opt_flatnMeth = 'USE_NORMALS'
+		col.separator()
+		col.operator("mesh.wplproj_bubble", text="Bubble verts (Camera)").opt_flatnMeth = 'TO_CAMERA'
+		col.operator("mesh.wplproj_bubble", text="Bubble verts (Normals)").opt_flatnMeth = 'USE_NORMALS'
 
 		col.separator()
-		col.label("Weight control")
-		#col.prop(wplScultSets, "weig_stp")
-		row1 = col.row()
-		row1.operator("mesh.wplweig_edt", text="+").opt_stepmul = 1.0
-		row1.operator("mesh.wplweig_edt", text="-").opt_stepmul = -1.0
-		row1.operator("mesh.wplweig_edt", text="=").opt_stepmul = 0.0
+		col.label("Subdivide")
+		col.operator("mesh.wplrefill_select", text="ReFill selected")
+		col.operator("mesh.wplsubdiv_long_edges", text="Cut Long Edges")
+		col.operator("mesh.wplbridge_mesh_islands", text="Bridge islands")
+
+		col.separator()
+		col.label("UV Flattening")
+		col.operator("mesh.wpluv_flatten", text="UVMap flatten")
 
 #class WPLSculptSettings(PropertyGroup):
 #	weig_stp = FloatProperty(

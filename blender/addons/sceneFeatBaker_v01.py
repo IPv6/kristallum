@@ -196,27 +196,46 @@ class wplscene_dedupnods( bpy.types.Operator ):
 	def poll( cls, context ):
 		return True
 
-	def eliminate(self, node):
-		node_groups = bpy.data.node_groups
+	def dump(self,obj):
+		for attr in dir(obj):
+			if hasattr( obj, attr ):
+				print( "obj.%s = %s" % (attr, getattr(obj, attr)))
 
+	def eliminateNG(self, node):
+		node_groups = bpy.data.node_groups
+		
 		# Get the node group name as 3-tuple (base, separator, extension)
 		(base, sep, ext) = node.node_tree.name.rpartition('.')
 
 		# Replace the numeric duplicate
 		if ext.isnumeric():
 			if base in node_groups:
-				print("  Replace '%s' with '%s'" % (node.node_tree.name, base))
+				print("- Replace nodegroup '%s' with '%s'" % (node.node_tree.name, base))
 				node.node_tree.use_fake_user = False
 				node.node_tree = node_groups.get(base)
 
+	def eliminateSN(self, node):
+		#print("Checking ",node.name,node.script)
+		oldscript = node.script
+		if oldscript is not None:
+			(base, sep, ext) = oldscript.name.rpartition('.')
+			# Replace the numeric duplicate
+			if ext.isnumeric():
+				if base in bpy.data.texts:
+					print("- Replace script '%s' with '%s'" % (oldscript.name, base))
+					node.script = bpy.data.texts.get(base)
+					#postTextblocksCleanup.append(oldscript)
+					node.update()
+		
 	def execute( self, context ):
 		#--- Search for duplicates in actual node groups
 		node_groups = bpy.data.node_groups
-
 		for group in node_groups:
 			for node in group.nodes:
-				if node.type == 'GROUP':
-					self.eliminate(node)
+				if node.bl_idname == 'ShaderNodeScript':
+					self.eliminateSN(node)
+				elif node.type == 'GROUP':
+					self.eliminateNG(node)
 
 		#--- Search for duplicates in materials
 		mats = list(bpy.data.materials)
@@ -225,9 +244,18 @@ class wplscene_dedupnods( bpy.types.Operator ):
 		for mat in mats + worlds:
 			if mat.use_nodes:
 				for node in mat.node_tree.nodes:
-					if node.type == 'GROUP':
-						self.eliminate(node)
+					if node.bl_idname == 'ShaderNodeScript':
+						self.eliminateSN(node)
+					elif node.type == 'GROUP':
+						self.eliminateNG(node)
 
+		allTexts = bpy.data.texts.keys()
+		for scriptname in allTexts:
+			(base, sep, ext) = scriptname.rpartition('.')
+			if ext.isnumeric():
+				if base in bpy.data.texts:
+					print("- Text cleanup: Removing ", scriptname)
+					bpy.data.texts.remove(bpy.data.texts.get(scriptname))
 		self.report({'INFO'}, "NodeGroups deduped")
 		return {'FINISHED'}
 
@@ -296,11 +324,12 @@ class wplscene_swtstate( bpy.types.Operator ):
 								i = p.bones.find(agrp.name)
 								if i != -1:
 									pb = p.bones[i]
-									# Determine where to assign this value based upon the data_path.
 									if fc.data_path.find("location") != -1:
 										pb.location[fc.array_index] = tmpValue
 									if fc.data_path.find("rotation_quaternion") != -1:
 										pb.rotation_quaternion[fc.array_index] = tmpValue
+									if fc.data_path.find("rotation_euler") != -1:
+										pb.rotation_euler[fc.array_index] = tmpValue
 									if fc.data_path.find("scale") != -1:
 										pb.scale[fc.array_index] = tmpValue
 

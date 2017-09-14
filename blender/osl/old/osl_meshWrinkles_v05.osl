@@ -1,0 +1,79 @@
+#define WRI_VERTEXCOL_NAME "Wri"
+#define MAX_TRANSPR 5
+#define MIN_LVL2DETECT 0.00001
+
+void make_orthonormals(vector N, output vector a, output vector b)
+{
+	if(N[0] != N[1] || N[0] != N[2]) a = cross(vector(1, 1, 1), N);
+	else a = cross(vector(-1, 1, 1), N);
+
+	a = normalize(a);
+	b = cross(N, a);
+}
+
+shader wriDetect (
+	float base_Alpha = 0.0,
+	float rayc_Maxdist = 0.1,
+	float rayc_Elevation = -0.01,
+
+	color in_color = color(0,0,0),
+	string in_color_vcname = "",
+	color color_hitmask = color(1.0,1.0,1.0),
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+	point in_inc = point(0,0,0),
+
+	output float out_depth = 0.0,
+	output color out_color = color(0,0,0),
+	output float out_dst = 0,
+	output point out_nrm = point(0,0,0)
+){
+	if(base_Alpha < 0.001){
+		return;
+	}
+	string vcname = in_color_vcname;
+	if(strlen(vcname)<3){
+		vcname = WRI_VERTEXCOL_NAME;
+	}
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = isconnected(in_nrm)?in_nrm:N;
+	out_nrm = nThis;
+
+	int isHit = 0;
+	float hitdist = 0;
+	color hitColor = color(0,0,0);
+	point nTraceDir = isconnected(in_inc)?normalize(in_inc):I;//normalize(point("camera", 0, 0, 0)-pThis);
+	point pTraceRoot = pThis + nTraceDir*rayc_Elevation;
+	float currDist = 0;
+	float maxxDist = rayc_Maxdist;
+	point pSideHit = pThis;
+	point pSideN = nThis;
+	for(int skipcc = 0;skipcc < MAX_TRANSPR;skipcc++){
+		isHit = trace(pTraceRoot+nTraceDir*MIN_LVL2DETECT, nTraceDir, "maxdist", maxxDist);
+		if(isHit != 0){
+			getmessage("trace","P", pSideHit);
+			getmessage("trace", vcname, hitColor);
+			getmessage("trace", "hitdist", hitdist);
+			getmessage("trace", "N", pSideN);
+			pTraceRoot = pSideHit;// For next attempt
+			currDist = currDist+hitdist;
+			maxxDist = maxxDist-hitdist;
+			float level = hitColor[0]*color_hitmask[0]+hitColor[1]*color_hitmask[1]+hitColor[2]*color_hitmask[2];
+			if(level >= MIN_LVL2DETECT){
+				out_depth = level;
+				out_dst = currDist;
+				out_color = hitColor;
+				out_nrm = -1*pSideN;
+			}
+			//else{
+			//	if(hitColor[0]+hitColor[1]+hitColor[2] < MIN_LVL2DETECT){
+			//		// Non-wri stuff, ray dropped
+			//		isHit = 0;
+			//	}
+			//}
+		}
+		if(isHit == 0 || maxxDist < MIN_LVL2DETECT){
+			break;
+		}
+	}
+}

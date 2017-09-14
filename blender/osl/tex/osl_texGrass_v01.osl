@@ -1,0 +1,67 @@
+#define MAX_POINTS 30
+
+shader texBallgen (
+	point local_pos = point(0.0,0.0,0.0),
+	point offset1_xyz = point(1.0,0.0,0.0),
+	point offset2_xyz = point(0.01,0.0,0.0),
+	point radius1_xyz = point(1.0,1.0,1.0),
+	point radius2_xyz = point(0.1,0.1,0.1),
+	//point signchn_xyz = point(0.0,0.0,0.0),
+	point rnd_seed = 0,
+	
+	output float out_Alpha = 0.0,
+	output point out_hfade = point(0.0,0.0,0.0),
+)
+{
+	float rnd = rnd_seed[0]+rnd_seed[1]+rnd_seed[2];
+	float random0a = noise("uperlin",point(40.11,110.1,53*(rnd+rnd_seed[0])));
+	float random1a = noise("uperlin",point(50.21,220.2,71*(rnd+rnd_seed[1])));
+	float random2a = noise("uperlin",point(60.31,330.3,97*(rnd+rnd_seed[2])));
+	point center1 = point(
+		-offset1_xyz[0]+random0a*2*offset1_xyz[0],
+		-offset1_xyz[1]+random1a*2*offset1_xyz[1],
+		-offset1_xyz[2]+random2a*2*offset1_xyz[2]);
+	//if(signchn_xyz[0] != 0){
+	//	float random0c = noise("uperlin",point(2.11,2.1,rnd));
+	//	if(random0c < abs(signchn_xyz[0])){
+	//		center1[0] = abs(center1[0])*sign(signchn_xyz[0]);
+	//	}
+	//}
+	//if(signchn_xyz[1] != 0){
+	//	float random1c = noise("uperlin",point(3.11,3.1,rnd));
+	//	if(random1c < abs(signchn_xyz[1])){
+	//		center1[1] = abs(center1[1])*sign(signchn_xyz[1]);
+	//	}
+	//}
+	//if(signchn_xyz[2] != 0){
+	//	float random2c = noise("uperlin",point(3.11,3.1,rnd));
+	//	if(random2c < abs(signchn_xyz[2])){
+	//		center1[2] = abs(center1[2])*sign(signchn_xyz[2]);
+	//	}
+	//}
+
+	float random0b = noise("uperlin",point(10.41,400,53*(rnd+rnd_seed[0])));
+	float random1b = noise("uperlin",point(20.51,500,97*(rnd+rnd_seed[1])));
+	float random2b = noise("uperlin",point(30.61,600,71*(rnd+rnd_seed[2])));
+	point center2 = center1+point(
+		sign(center1[0])*random0b*offset2_xyz[0],
+		sign(center1[1])*random1b*offset2_xyz[1],
+		sign(center1[2])*random2b*offset2_xyz[2]);
+	
+	float radius = length(center1);
+	point intrl1_pos = point(
+		local_pos[0]/radius1_xyz[0],
+		local_pos[1]/radius1_xyz[1],
+		local_pos[2]/radius1_xyz[2]);
+	point intrl2_pos = point(
+		local_pos[0]/(radius1_xyz[0]+radius2_xyz[0]),
+		local_pos[1]/(radius1_xyz[1]+radius2_xyz[1]),
+		local_pos[2]/(radius1_xyz[2]+radius2_xyz[2]));
+	if(length(intrl1_pos-center1)<radius && length(intrl2_pos-center2)>radius){
+		out_Alpha = 1;
+		out_hfade = point(
+			abs(intrl1_pos[0]/(center1[0]+radius)),
+			abs(intrl1_pos[1]/(center1[1]+radius)),
+			abs(intrl1_pos[2]/(center1[2]+radius)));
+	}
+}

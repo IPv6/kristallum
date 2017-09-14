@@ -1,0 +1,193 @@
+// https://github.com/imageworks/OpenShadingLanguage/blob/master/src/doc/osl-languagespec.pdf
+// https://docs.blender.org/manual/en/dev/render/cycles/nodes/osl.html
+
+// To prevent "AO leaking" ignoring far points (near plane is not affected by objects BEHIND it)
+#define NORMALIZE(value, nrm, normalAffect, clampArray) {\
+	float res = value;\
+	if(normalAffect>0.0001){\
+		res = res*mix(1,nrm,normalAffect);\
+	}else if(normalAffect<0.0001){\
+		res = res*mix(1,(1-nrm),-1*normalAffect);\
+	}\
+	if(fabs(clampArray[1] - clampArray[0]) > 0.0001){res = (res - clampArray[0])/(clampArray[1]-clampArray[0]);res = clamp(res,0,1);};\
+	res = pow(res,clampArray[2]);\
+	value = res;\
+}
+
+shader charMat (
+	float base_Level = 0.5,
+	point base_Frac_Steps = point(0.02, 15, 0),
+
+	point ao_Frac_Limit_Vafk = point(1.0, 0.1, 1.0),
+	point ao_Normalize = point(0.3, 0.7, 1.0),
+	float ao_Level = -0.5,
+
+	point cu_Frac_Limit_Vafk = point(1.0, 0.0, 0.0),
+	point cu_Normalize = point(0.0, 1.0, 1.0),
+	float cu_Level = 0.2,
+	
+	point sp_Frac_Limit_Vafk = point(0.8, 0.05, 0.1),
+	point sp_Normalize = point(0.3, 0.7, 1.0),
+	float sp_Level = 0.2,
+
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+
+	output float out_Level = 0.0,
+	output float Ao = 0.0,
+	output float Cu = 0.0,
+	output float Sp = 0.0
+	){
+	point rbtPixels = transform("raster", point("NDC", 1,1,0));
+	float pixelWidth = min(rbtPixels[0],rbtPixels[1])*base_Frac_Steps[0];
+
+	float aoSoftness = ao_Frac_Limit_Vafk[0];
+	float aoMinDst = ao_Frac_Limit_Vafk[1];
+	float aoViewAffect = ao_Frac_Limit_Vafk[2];
+
+	float spSoftness = sp_Frac_Limit_Vafk[0];
+	float spMinDst = sp_Frac_Limit_Vafk[1];
+	float spViewAffect = sp_Frac_Limit_Vafk[2];
+	
+	float cuSoftness = cu_Frac_Limit_Vafk[0];
+	float cuMinDst = cu_Frac_Limit_Vafk[1];
+	float cuViewAffect = cu_Frac_Limit_Vafk[2];
+
+	aoSoftness = max(0.0,aoSoftness)*(fabs(ao_Level)<0.0001?0:1);
+	spSoftness = max(0.0,spSoftness)*(fabs(sp_Level)<0.0001?0:1);
+	cuSoftness = max(0.0,cuSoftness)*(fabs(cu_Level)<0.0001?0:1);
+
+	point pThis = length(in_pos)>0?in_pos:P;
+	point nThis = length(in_nrm)>0?in_nrm:N;
+
+	string thisId;
+	getattribute("geom:name",thisId);
+	point pCamWrl = point("camera", 0, 0, 0);
+	point pThisRST = transform("raster", pThis);
+	float distBase = length(pCamWrl-pThis);
+	point nFarFarAway = pCamWrl+9999*(pCamWrl-pThis);
+
+	point pSideHit;
+	point nSideHit;
+	float hitDist = 0;
+	float hitCamDist = 0;
+	int isHit = 0;
+	string hitId;
+
+	point viDirN = normalize(pCamWrl-pThis);
+	float viDot = max(0,dot(nThis,viDirN));
+
+	float aoLevlCount = 0;
+	float testTotalAo = 0;
+	float cuLevlCount = 0;
+	float testTotalCu = 0;
+	float spLevlCount = 0;
+	float testTotalSp = 0;
+	if(pixelWidth > 0 && fabs(ao_Level)+fabs(sp_Level)+fabs(cu_Level)){
+		float testWidth = pixelWidth;
+		float testStep = 1;
+		if(base_Frac_Steps[2]>0){
+			testStep = base_Frac_Steps[2]*1/(2*testWidth);
+		}else{
+			testStep = max(0.01,1/base_Frac_Steps[1]);
+		}
+		for(float ii=0; ii<1; ii = ii+testStep){
+			float xi=mix(-testWidth,testWidth, ii);
+			for(float jj=0; jj<1; jj = jj+testStep){
+				float yi=mix(-testWidth,testWidth, jj);
+				float ptlen = sqrt(xi*xi+yi*yi);
+				if(ptlen > testWidth+0.1){
+					continue;
+				}
+				float aoWeight = (1.0-ptlen/(testWidth*aoSoftness))*(aoSoftness>0?1:0);
+				float spWeight = (1.0-ptlen/(testWidth*spSoftness))*(spSoftness>0?1:0);
+				float cuWeight = (1.0-ptlen/(testWidth*cuSoftness))*(cuSoftness>0?1:0);
+				if(aoWeight <= 0 && spWeight <= 0 && cuWeight <= 0){
+					continue;
+				}
+
+				point pSideRst = pThisRST+point(xi,yi,0);
+				point pSideWlr = transform("raster", "world", pSideRst);
+				isHit = trace(pCamWrl, pSideWlr-pCamWrl);
+				if(isHit > 0){
+					getmessage("trace","N",nSideHit);
+					getmessage("trace","P",pSideHit);
+					getmessage("trace","geom:name",hitId);
+				}else{
+					hitId = "";
+					nSideHit = nThis;
+					pSideHit = nFarFarAway;
+				}
+				hitCamDist = length(pSideHit-pCamWrl);
+				point dir2hit = pThis-pSideHit;
+				hitDist = length(dir2hit);
+
+				if(aoWeight > 0){
+					testTotalAo = testTotalAo+1;
+					float aoHitDist = hitDist;
+					if(aoMinDst == 0.0){
+						aoLevlCount = aoLevlCount + aoWeight*aoHitDist;
+					} else if((hitCamDist <= distBase && aoMinDst>0)
+						|| (hitCamDist >= distBase && aoMinDst<0))
+					{
+						if(aoWeight*aoHitDist > fabs(aoMinDst)){
+							aoLevlCount = aoLevlCount+1;
+						}else{
+							aoLevlCount = aoLevlCount+aoWeight*aoHitDist/fabs(aoMinDst);
+						}
+					}
+				}
+				
+				if(cuWeight > 0){
+					testTotalCu = testTotalCu+1;
+					float cuHitDist = fabs(dot(nThis,nSideHit));
+					if(cuMinDst == 0.0){
+						cuLevlCount = cuLevlCount + cuWeight*cuHitDist;
+					} else if((hitCamDist <= distBase && cuMinDst>0)
+						|| (hitCamDist >= distBase && cuMinDst<0))
+					{
+						if(cuWeight*cuHitDist > fabs(cuMinDst)){
+							cuLevlCount = cuLevlCount+1;
+						}else{
+							cuLevlCount = cuLevlCount+cuWeight*cuHitDist/fabs(cuMinDst);
+						}
+					}
+				}
+
+				if(spWeight > 0){
+					testTotalSp = testTotalSp+1;
+					if(spMinDst == 0.0){
+						// Special case - object bounds
+						if(hitId == thisId){
+							spLevlCount = spLevlCount + 1;
+						}
+					} else //if((hitCamDist <= distBase && spMinDst>0) || (hitCamDist >= distBase && spMinDst<0))
+					{
+						// http://mathworld.wolfram.com/Point-PlaneDistance.html
+						// dist2pln = Length to PLANE, not Segment
+						float dist2pln = fabs(dot(dir2hit,nThis));
+						if(dist2pln < spMinDst){
+							spLevlCount = spLevlCount+1;
+						}
+						//if(spWeight*dist2pln > fabs(spMinDst)){
+						//    spLevlCount = spLevlCount+1;
+						//}else{
+						//    spLevlCount = spLevlCount+spWeight*dist2pln/fabs(spMinDst);
+						//}
+					}
+				}
+			}
+		}
+	}
+
+	Ao = aoLevlCount/testTotalAo;
+	NORMALIZE(Ao,viDot,aoViewAffect,ao_Normalize);
+
+	Sp = spLevlCount/testTotalSp;
+	NORMALIZE(Sp,viDot,spViewAffect,sp_Normalize);
+	
+	Cu = cuLevlCount/testTotalCu;
+	NORMALIZE(Cu,viDot,cuViewAffect,cu_Normalize);
+
+	out_Level = base_Level+Ao*ao_Level+Sp*sp_Level+Cu*cu_Level;
+}

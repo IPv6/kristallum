@@ -1,0 +1,22 @@
+shader detColorChooser (
+	float topMixFac = 0,
+	color topMixColor = color(1,1,1),
+	float botMixFac = 0,
+	color botMixColor = color(0,0,0),
+	//float shiness = 0,
+	color c1 = color(1,1,1),
+	color c4 = color(0,0,0),
+
+	output color out_cUp = color(1,1,1),
+	output color out_cDown = color(0,0,0)
+)
+{
+	out_cUp = c1;
+	out_cDown = c4;
+	if(topMixFac > 0){
+		out_cUp = mix(out_cUp,topMixColor,topMixFac);
+	}
+	if(botMixFac > 0){
+		out_cDown = mix(out_cDown,botMixColor,botMixFac);
+	}
+}
