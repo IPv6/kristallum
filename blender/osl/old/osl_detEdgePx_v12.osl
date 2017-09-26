@@ -1,0 +1,163 @@
+// Details:
+// dd1) pixelStep<1 - this helps to avoid stairs on angled edges
+// dd2) Normals calcualted on half-width to avoid double-thikness
+// dd3) Edges are cast to "near side" only
+// dd4) When pixel covers wide area (antiFlatArea)- zdiff calculated ONLY between different objects
+// dd5) When traced point on the same plane as center one (antiSamePlane) -> trace ignored
+// *_Inner - minimal Difference inside object
+// *_Outer - minimal Difference between different objects (can be more sensitive)
+
+#define PX_MINWIDTH 1
+#define OUT_DEADZONE 0.1
+#define WIDECOVER_MUL 1000000
+#define WIDECOVER_BLEN 0.7
+
+float triangleArea(point p1, point p2, point p3)
+{
+	point s1 = p2-p1;
+	point s2 = p3-p1;
+	float ar = 0.5*length(cross(s1,s2));
+	return ar;
+}
+
+shader detEdge(
+	float pixelWidth = 5,
+	float pixelStep = 1.0,
+	float minZdiff_Inner = 1.0,
+	float minZdiff_Outer = 0.3,
+	float minNdiff_Inner = 1.0,
+	float minNdiff_Outer = 0.5,
+	point anti_FL_SP_AD = point(400.0,0.001,0),
+
+	string ignorePostfix = "",
+	point in_pos = point(0,0,0),
+
+	output float Alpha = 0.0,
+	output float edgeZ_Inner = 0.0,
+	output float edgeZ_Outer = 0.0,
+	output float edgeN_Inner = 0.0,
+	output float edgeN_Outer = 0.0
+	//output float pixelCoverage = 0.0
+){
+	string thisId;
+	getattribute("geom:name",thisId);
+	if (strlen(ignorePostfix) > 0 && endswith(thisId,ignorePostfix)){
+		return;
+	}
+
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = Ng;
+	point pCamWrl = point("camera", 0, 0, 0);
+	float distBase = length(pCamWrl-pThis);
+	point pThisRST = transform("raster", pThis);
+	float coverageFact = area(P)*WIDECOVER_MUL;
+	float edgeWidth = max(PX_MINWIDTH,pixelWidth);
+	float testStep = max(0.01,pixelStep);
+	float testWidth = edgeWidth;
+	float testZWidth = edgeWidth;
+	float testNWidth = max(PX_MINWIDTH, edgeWidth*0.5);
+	// dd4)
+	float antiFlatArea = anti_FL_SP_AD[0];
+	float antiSamePlane = anti_FL_SP_AD[1];
+	float antiAreaDispr = anti_FL_SP_AD[2];
+	float antiFac = 1.0;
+	int forceNonSameObjectDetection = 0;
+	if(antiFlatArea > 0){
+		if(coverageFact > antiFlatArea){
+			// Flat usrfaces under short angles - Unusable in edge detection at all
+			// Alsmost the same as "same plane" ingorance but differs
+			forceNonSameObjectDetection = 1;
+		}else if(coverageFact > antiFlatArea*WIDECOVER_BLEN){
+			antiFac = 1.0-(coverageFact-antiFlatArea*WIDECOVER_BLEN)/(antiFlatArea-antiFlatArea*WIDECOVER_BLEN);
+		}
+	}
+	point triagVertx[3];
+	getattribute("geom:trianglevertices",triagVertx);
+	float baseAr = triangleArea(triagVertx[0],triagVertx[1],triagVertx[2]);
+
+	float zzIMax = 0;
+	float zzOMax = 0;
+	float nnIMax = 0;
+	float nnOMax = 0;
+	for(float i=-testWidth; i<testWidth; i = i+testStep){
+		for(float j=-testWidth; j<testWidth; j = j+testStep){
+			float ptlen = sqrt(i*i+j*j);
+			if(ptlen > testWidth+0.1){
+				continue;
+			}
+
+			point pSideHit;
+			int isHit = 1;
+			string hitId = thisId;
+			float nrmDist = 0;
+			float sideDist = distBase;
+			point sideNang = nThis;
+			float sideAr = 0;
+			point pSideRst = pThisRST+point(i,j,0);
+			point pSideWlr = transform("raster", "world", pSideRst);
+			isHit = trace(pCamWrl, pSideWlr-pCamWrl);
+			if(isHit < 1){
+				zzIMax = zzIMax+minZdiff_Inner;
+				zzOMax = zzOMax+minZdiff_Outer;
+				continue;
+			}
+			getmessage("trace","geom:name",hitId);
+			if (strlen(ignorePostfix) > 0 && endswith(hitId,ignorePostfix)){
+				nnIMax = 0;
+				nnOMax = 0;
+				zzIMax = 0;
+				zzOMax = 0;
+				continue;
+			}
+			getmessage("trace","P",pSideHit);
+			getmessage("trace","Ng",sideNang);
+			point hitVertx[3];
+			getmessage("trace","geom:trianglevertices",hitVertx);
+			sideAr = triangleArea(hitVertx[0],hitVertx[1],hitVertx[2]);
+			sideDist = length(pCamWrl-pSideHit);
+			nrmDist = fabs(acos(dot(sideNang,nThis)))/M_PI;
+			if(antiAreaDispr>0 && max(sideAr/baseAr,baseAr/sideAr)>antiAreaDispr){
+				continue;
+			}
+			// is point on the same plane?
+			point pnp = pThis-pSideHit;
+			float pnpd = dot(pnp,nThis);
+			if(antiSamePlane > 0 && fabs(pnpd) < antiSamePlane){
+				// Hitpoint SHOULD NOT be on the same plane!
+				continue;
+			}
+			int isHitSameObject = 1;
+			if(thisId != hitId){
+				isHitSameObject = 0;
+			}else if(forceNonSameObjectDetection > 0){
+				continue;
+			}
+			if(sideDist >= distBase)
+			{
+				// dd2) + dd3)
+				if(ptlen <= testNWidth){
+					if(isHitSameObject == 0){
+						nnOMax = max(nnOMax,nrmDist);
+					}else{
+						nnIMax = max(nnIMax,nrmDist);
+					}
+				}
+				// dd3)
+				if(ptlen <= testZWidth){
+					if(isHitSameObject == 0){
+						zzOMax = max(zzOMax, fabs(sideDist-distBase));
+					}else{
+						zzIMax = max(zzIMax, fabs(sideDist-distBase));
+					}
+				}
+			}
+		}
+	}
+	//pixelCoverage = coverageFact;
+	edgeZ_Inner = clamp(zzIMax/minZdiff_Inner-OUT_DEADZONE,0,1);
+	edgeZ_Outer = clamp(zzOMax/minZdiff_Outer-OUT_DEADZONE,0,1);
+	edgeN_Inner = clamp(nnIMax/minNdiff_Inner-OUT_DEADZONE,0,1);
+	edgeN_Outer = clamp(nnOMax/minNdiff_Outer-OUT_DEADZONE,0,1);
+	float total = max(edgeZ_Inner,edgeZ_Outer) + max(edgeN_Inner,edgeN_Outer);
+	Alpha = total*antiFac;
+}

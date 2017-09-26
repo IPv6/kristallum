@@ -540,13 +540,13 @@ class WPLGRDEFR_push(bpy.types.Operator):
 
 class WPLGRDEFR_vcdr(bpy.types.Operator):
 	bl_idname = "mesh.wplgrdf_vcdr"
-	bl_label = "VC draw with last stroke"
+	bl_label = "Bake across stroke into VC"
 	bl_options = {'REGISTER', 'UNDO'}
 
 	vcdr_trg = EnumProperty(
 			items = WPLGRDEFR_vcdr_trg,
-			name="Target",
-			description="Target",
+			name="Action",
+			description="Action",
 			default='REPLACE_WHITE',
 	)
 	influence = FloatProperty(
@@ -612,12 +612,83 @@ class WPLGRDEFR_vcdr(bpy.types.Operator):
 			self.report({'ERROR'}, "Grease pencil stroke too short or not found")
 			return {'CANCELLED'}
 
-		eo_mx_inv = edit_obj.matrix_world.inverted()
-		eo_dir2cam = eo_mx_inv * (region.view_rotation * Vector((0.0, 0.0, 1.0)))
-		eo_dir2cam = eo_dir2cam.normalized()
 		verts3dPoints = [v.co for v in selectedVerts]
 		verts2dPoints = vectors_to_screenpos(context, verts3dPoints, edit_obj.matrix_world, region)
 		vertsFieldDispersion, nearestStrokeInPoints = getVertsFD(verts2dPoints, verts3dPoints, stroke2dPoints, self.FacMid, self.FacPits, self.SlopePits, self.inpaintStrk)
+		select_and_change_mode(active_obj, 'OBJECT')
+		active_mesh = active_obj.data
+		if not active_mesh.vertex_colors:
+			active_mesh.vertex_colors.new()
+		color_map = active_mesh.vertex_colors.active
+		for i, vIdx in enumerate(selectedVertsIdx):
+			fac = self.influence*vertsFieldDispersion[i]
+			set_color2vertex(active_mesh, selectedVertsLoopsIdx, color_map, vIdx, fac, self.vcdr_trg)
+		select_and_change_mode(active_obj, 'VERTEX_PAINT')
+		return {'FINISHED'}
+
+class WPLGRDEFR_vcal(bpy.types.Operator):
+	bl_idname = "mesh.wplgrdf_vcal"
+	bl_label = "Bake along stroke into VC"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	vcdr_trg = EnumProperty(
+			items = WPLGRDEFR_vcdr_trg,
+			name="Action",
+			description="Action",
+			default='REPLACE_WHITE',
+	)
+	influence = FloatProperty(
+			name="Influence",
+			description="Influence",
+			min=-1.0, max=1.0,
+			default=1.0,
+	)
+	FacMid = FloatProperty(
+			name="Middle point",
+			description="Middle point",
+			min=0.0, max=1.0,
+			default=0.5,
+	)
+	inpaintStrk = IntProperty(
+			name="Curvature simplification",
+			description="Curvature simplification",
+			min=0, max=1000,
+			default=10,
+	)
+
+	@classmethod
+	def poll(self, context):
+		# Check if we have a mesh object active and are in vertex paint mode
+		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Mesh)) and check_if_any_gp_exists(context)
+		return p
+
+	def execute(self, context):
+		region = getActiveRegion3d()
+		active_obj = context.scene.objects.active
+		active_mesh = active_obj.data
+		select_and_change_mode(active_obj, 'EDIT')
+		edit_obj = bpy.context.edit_object
+		active_mesh = edit_obj.data
+		bm = bmesh.from_edit_mesh(active_mesh)
+		bm.verts.ensure_lookup_table()
+		bm.faces.ensure_lookup_table()
+		bm.verts.index_update()
+		# Get all selected vertices (in their local space).
+		selectedVerts = [v for v in bm.verts if v.select]
+		if len(selectedVerts) < 3:
+			self.report({'ERROR'}, "Not enough selected vertices found")
+			return {'CANCELLED'}
+		selectedVertsIdx = [v.index for v in selectedVerts]
+		selectedVertsLoops = [v.link_loops for v in selectedVerts]
+		selectedVertsLoopsIdx = [item.index for sublist in selectedVertsLoops for item in sublist]
+		stroke2dPoints, stroke3dPoints = gpencil_to_screenpos(context, g_strokeResl, region)
+		if len(stroke2dPoints) < 3:
+			self.report({'ERROR'}, "Grease pencil stroke too short or not found")
+			return {'CANCELLED'}
+
+		verts3dPoints = [v.co for v in selectedVerts]
+		verts2dPoints = vectors_to_screenpos(context, verts3dPoints, edit_obj.matrix_world, region)
+		vertsFieldDispersion, nearestStrokeInPoints = getVertsFD(verts2dPoints, verts3dPoints, stroke2dPoints, self.FacMid, (1.0,0.5,0.0), (0,0,0), self.inpaintStrk)
 		select_and_change_mode(active_obj, 'OBJECT')
 		active_mesh = active_obj.data
 		if not active_mesh.vertex_colors:
@@ -951,7 +1022,8 @@ class WPLGreaseDefr_Panel(bpy.types.Panel):
 		col.operator("mesh.wplgrdf_snap", text="Snap to last stroke")
 		col.operator("mesh.wplgrdf_strf", text="Stripify last stroke")
 		col.separator()
-		col.operator("mesh.wplgrdf_vcdr", text="Bake stroke into VC")
+		col.operator("mesh.wplgrdf_vcdr", text="VC-Bake across stroke")
+		col.operator("mesh.wplgrdf_vcal", text="VC-Bake along stroke")
 		col.separator()
 		col.label("Selection")
 		col.operator("mesh.wplgrdf_selvnear", text="Select verts under stroke")

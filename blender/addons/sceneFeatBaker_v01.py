@@ -201,9 +201,20 @@ class wplscene_dedupnods( bpy.types.Operator ):
 			if hasattr( obj, attr ):
 				print( "obj.%s = %s" % (attr, getattr(obj, attr)))
 
+	#def checkDump(self, node):
+	#	dumpNameParts = ["rotate","clampval"]
+	#	nodeLowrc = node.name.lower()
+	#	#print("checkDump", nodeLowrc)
+	#	for test in dumpNameParts:
+	#		if test in nodeLowrc:
+	#			if node.links:
+	#				for link in node.links:
+	#					self.dump(link)
+	#			return
+
 	def eliminateNG(self, node):
 		node_groups = bpy.data.node_groups
-		
+
 		# Get the node group name as 3-tuple (base, separator, extension)
 		(base, sep, ext) = node.node_tree.name.rpartition('.')
 
@@ -226,12 +237,14 @@ class wplscene_dedupnods( bpy.types.Operator ):
 					node.script = bpy.data.texts.get(base)
 					#postTextblocksCleanup.append(oldscript)
 					node.update()
-		
+
 	def execute( self, context ):
 		#--- Search for duplicates in actual node groups
 		node_groups = bpy.data.node_groups
 		for group in node_groups:
+			#self.checkDump(group)
 			for node in group.nodes:
+				#self.checkDump(node)
 				if node.bl_idname == 'ShaderNodeScript':
 					self.eliminateSN(node)
 				elif node.type == 'GROUP':
@@ -244,6 +257,7 @@ class wplscene_dedupnods( bpy.types.Operator ):
 		for mat in mats + worlds:
 			if mat.use_nodes:
 				for node in mat.node_tree.nodes:
+					#self.checkDump(node)
 					if node.bl_idname == 'ShaderNodeScript':
 						self.eliminateSN(node)
 					elif node.type == 'GROUP':
@@ -354,6 +368,29 @@ class wplscene_swtstate( bpy.types.Operator ):
 
 		self.report({'INFO'}, "Scene state switched")
 		return {'FINISHED'}
+		
+class wplscene_meshrnm( bpy.types.Operator ):
+	bl_idname = "object.wplscene_meshrnm"
+	bl_label = "Rename mesh after object"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll( cls, context ):
+		return True
+
+	def execute( self, context ):
+		objs2check = [obj for obj in bpy.context.scene.objects if obj.select]
+		if len(objs2check) < 1:
+			self.report({'ERROR'}, "No objects selected")
+			return {'CANCELLED'}
+		count = 0
+		for obj in objs2check:
+			if obj.data is not None:
+				print("Renaming data",obj.data.name,"to",obj.name)
+				obj.data.name = obj.name
+				count = count+1
+		self.report({'INFO'}, "Renamed "+str(count)+" datas")
+		return {'FINISHED'}
 
 class WPLScene2OslSettings(PropertyGroup):
 	oslScriptName = bpy.props.StringProperty(
@@ -407,6 +444,7 @@ class WPLScene2Osl_Panel(bpy.types.Panel):
 		col.separator()
 		col.operator("object.wplscene_dedupnods", text="Dedupe NodeGroups")
 		col.operator("object.wplscene_dedupmats", text="Dedupe Materials")
+		col.operator("object.wplscene_meshrnm", text="Rename meshes to objects")
 
 def register():
 	print("WPLScene2Osl_Panel registered")

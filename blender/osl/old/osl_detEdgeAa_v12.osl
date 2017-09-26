@@ -1,0 +1,176 @@
+#define OUT_DEADZONE 0.1
+#define WIDECOVER_MUL 1000000
+#define WIDECOVER_BLEN 0.7
+
+float triangleArea(point p1, point p2, point p3)
+{
+	point s1 = p2-p1;
+	point s2 = p3-p1;
+	float ar = 0.5*length(cross(s1,s2));
+	return ar;
+}
+
+void make_orthonormals(vector N, output vector a, output vector b)
+{
+	if(N[0] != N[1] || N[0] != N[2]) a = cross(vector(1, 1, 1), N);
+	else a = cross(vector(-1, 1, 1), N);
+	a = normalize(a);
+	b = cross(N, a);
+}
+
+
+shader detEdge(
+	point opt_TestCone = point(0.1,2,2),
+	float minZdiff_Inner = 1.0,
+	float minZdiff_Outer = 0.3,
+	float minNdiff_Inner = 1.0,
+	float minNdiff_Outer = 0.5,
+	point anti_FL_SP_AD = point(400.0,0.001,0),
+
+	string ignorePostfix = "",
+	point in_pos = point(0,0,0),
+
+	output float Alpha = 0.0,
+	output float edgeAvg = 0.0,
+	output float edgeZ_Inner = 0.0,
+	output float edgeZ_Outer = 0.0,
+	output float edgeN_Inner = 0.0,
+	output float edgeN_Outer = 0.0)
+{
+	string thisId;
+	getattribute("geom:name",thisId);
+	if (strlen(ignorePostfix) > 0 && endswith(thisId,ignorePostfix)){
+		return;
+	}
+	float coneRad = opt_TestCone[0];
+	if(coneRad <= 0.0){
+		// Fast exit for no-need-to-test cases
+		return;
+	}
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = N;
+	point pCamWrlIni = transform("camera", "common", point(0,0,0));
+	point pDirIni = normalize(pThis - pCamWrlIni);
+	float distBase = length(pThis - pCamWrlIni);
+	float coverageFact = area(P)*WIDECOVER_MUL;
+	float antiFlatArea = anti_FL_SP_AD[0];
+	float antiSamePlane = anti_FL_SP_AD[1];
+	float antiAreaDispr = anti_FL_SP_AD[2];
+	float antiFac = 1.0;
+	int forceNonSameObjectDetection = 0;
+	if(antiFlatArea > 0){
+		if(coverageFact > antiFlatArea){
+			// Flat usrfaces under short angles - Unusable in edge detection at all
+			// Alsmost the same as "same plane" ingorance but differs
+			forceNonSameObjectDetection = 1;
+		}else if(coverageFact > antiFlatArea*WIDECOVER_BLEN){
+			antiFac = 1.0-(coverageFact-antiFlatArea*WIDECOVER_BLEN)/(antiFlatArea-antiFlatArea*WIDECOVER_BLEN);
+		}
+	}
+	point triagVertx[3];
+	getattribute("geom:trianglevertices",triagVertx);
+	float baseAr = triangleArea(triagVertx[0],triagVertx[1],triagVertx[2]);
+
+	float zzIMax = 0;
+	float zzOMax = 0;
+	float nnIMax = 0;
+	float nnOMax = 0;
+	point rp1 = N;
+	point rp2 = N;
+	//rp1 = cross(I,N);
+	//rp2 = cross(I,rp1);
+	make_orthonormals(I, rp1, rp2);
+	float coneSteps1 = max(1,opt_TestCone[1]);
+	float coneSteps2 = max(1,opt_TestCone[2]);
+	float csdx = 1/coneSteps1;
+	float csdy = 1/coneSteps2;
+	
+	float totlOk = 0;
+	float totlHt = 0;
+	for(float ii = -1; ii <= 1; ii = ii+csdx){
+		for(float jj = -1; jj <= 1; jj = jj+csdy){
+			point pCamWrl = pCamWrlIni+rp1*ii*coneRad+rp2*jj*coneRad;
+			point pSideHit;
+			int isHit = trace(pCamWrl, pDirIni);
+			if(isHit < 1){
+				zzIMax = zzIMax+minZdiff_Inner;
+				zzOMax = zzOMax+minZdiff_Outer;
+				continue;
+			}
+			string hitId;
+			getmessage("trace","geom:name",hitId);
+			if (strlen(ignorePostfix) > 0 && endswith(hitId,ignorePostfix)){
+				nnIMax = 0;
+				nnOMax = 0;
+				zzIMax = 0;
+				zzOMax = 0;
+				continue;
+			}
+			float sideDist = distBase;
+			point sideNang = nThis;
+			point hitVertx[3];
+			getmessage("trace","P",pSideHit);
+			getmessage("trace","N",sideNang);
+			getmessage("trace","geom:trianglevertices",hitVertx);
+			float sideAr = triangleArea(hitVertx[0],hitVertx[1],hitVertx[2]);
+			sideDist = length(pCamWrl-pSideHit);
+			if(antiAreaDispr>0 && max(sideAr/baseAr,baseAr/sideAr)>antiAreaDispr){
+				continue;
+			}
+			// dd5) is point on the same plane?
+			point pnp = pThis-pSideHit;
+			float pnpd = dot(pnp,nThis);
+			// Hitpoint SHOULD NOT be on the same plane!
+			if(antiSamePlane > 0 && fabs(pnpd) < antiSamePlane){
+				continue;
+			}
+			int isHitSameObject = 1;
+			if(thisId != hitId){
+				isHitSameObject = 0;
+			}else if(forceNonSameObjectDetection > 0){
+				continue;
+			}
+			if(sideDist >= distBase)
+			{
+				int isTotlOk = 0;
+				totlHt = totlHt+1;
+				float nrmDist = fabs(acos(dot(sideNang,nThis)))/M_PI;
+				if(isHitSameObject == 0){
+					nnOMax = max(nnOMax,nrmDist);
+					if(nrmDist>minNdiff_Outer){
+						isTotlOk = 1;
+					}
+				}else{
+					nnIMax = max(nnIMax,nrmDist);
+					if(nrmDist>minNdiff_Inner){
+						isTotlOk = 1;
+					}
+				}
+				float posDist = fabs(sideDist-distBase);
+				if(isHitSameObject == 0){
+					zzOMax = max(zzOMax, posDist);
+					if(posDist>minZdiff_Outer){
+						isTotlOk = 1;
+					}
+				}else{
+					zzIMax = max(zzIMax, posDist);
+					if(posDist>minZdiff_Inner){
+						isTotlOk = 1;
+					}
+				}
+				if(isTotlOk>0){
+					totlOk = totlOk+(1.0-length(pCamWrl - pCamWrlIni)/coneRad);
+				}
+			}
+		}
+	}
+	edgeZ_Inner = clamp(zzIMax/minZdiff_Inner-OUT_DEADZONE,0,1);
+	edgeZ_Outer = clamp(zzOMax/minZdiff_Outer-OUT_DEADZONE,0,1);
+	edgeN_Inner = clamp(nnIMax/minNdiff_Inner-OUT_DEADZONE,0,1);
+	edgeN_Outer = clamp(nnOMax/minNdiff_Outer-OUT_DEADZONE,0,1);
+	float total = max(edgeZ_Inner,edgeZ_Outer) + max(edgeN_Inner,edgeN_Outer);
+	Alpha = total*antiFac;
+	if(totlHt > 0){
+		edgeAvg = totlOk/totlHt;
+	}
+}

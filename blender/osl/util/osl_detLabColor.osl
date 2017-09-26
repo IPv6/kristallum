@@ -1,0 +1,152 @@
+// https://github.com/Naixor/cv/tree/e5576b2602b68517b69102a38a3bf9baa24ecaa9/src/color
+// D65 standard referent
+#define LAB_X 0.950470
+#define LAB_Y 1
+#define LAB_Z 1.088830
+
+float gamma(float x) {
+	return x > 0.04045 ? pow(((x + 0.055) / 1.055), 2.4) : (x / 12.92);
+}
+
+point rgb2xyz(point rgb)
+{
+	float r = rgb[0];
+	float g = rgb[1];
+	float b = rgb[2];
+
+	// sRGB
+	r = gamma(r);
+	g = gamma(g);
+	b = gamma(b);
+
+	float x = (r * 0.4124) + (g * 0.3576) + (b * 0.1805);
+	float y = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+	float z = (r * 0.0193) + (g * 0.1192) + (b * 0.9505);
+
+	point xyz = point(x * 100.0, y * 100.0, z * 100.0);
+	return xyz;
+}
+
+point rgb2lab(point rgb)
+{
+	point xyz = rgb2xyz(rgb);
+	float x = xyz[0];
+	float y = xyz[1];
+	float z = xyz[2];
+
+	x = x/95.047;
+	y = y/100.0;
+	z = z/108.883;
+
+	x = x > 0.008856 ? pow(x, 1.0/3.0) : (7.787 * x) + (16.0 / 116.0);
+	y = y > 0.008856 ? pow(y, 1.0/3.0) : (7.787 * y) + (16.0 / 116.0);
+	z = z > 0.008856 ? pow(z, 1.0/3.0) : (7.787 * z) + (16.0 / 116.0);
+
+	float l = (116.0 * y) - 16.0;
+	float a = 500.0 * (x - y);
+	float b = 200.0 * (y - z);
+
+	point lab = point(l,a,b);
+	return lab;
+}
+
+float f_lab2xyz(float x) {
+	return x > 0.206893034 ? pow(x, 3.0) : (x - 4.0 / 29.0) / 7.787037;
+}
+
+point lab2xyz(point lab) {
+	float l = lab[0];
+	float a = lab[1];
+	float b = lab[2];
+	float y = (l + 16.0) / 116.0;
+	float x = y + a / 500.0;
+	float z = y - b / 200.0;
+	x = f_lab2xyz(x) * LAB_X * 100.0;
+	y = f_lab2xyz(y) * LAB_Y * 100.0;
+	z = f_lab2xyz(z) * LAB_Z * 100.0;
+	return point(x,y,z);
+}
+
+point xyz2rgb(point xyz) {
+	float x = xyz[0] / 100.0;
+	float y = xyz[1] / 100.0;
+	float z = xyz[2] / 100.0;
+	float r, g, b;
+
+	r = (x * 3.2406) + (y * -1.5372) + (z * -0.4986);
+	g = (x * -0.9689) + (y * 1.8758) + (z * 0.0415);
+	b = (x * 0.0557) + (y * -0.2040) + (z * 1.0570);
+
+	// assume sRGB. 0.003 -> pow((0.04045 + 0.055) / 1.055, 2.4)
+	r = r > 0.0031308 ? ((1.055 * pow(r, 1.0 / 2.4)) - 0.055) : (r * 12.92);
+	g = g > 0.0031308 ? ((1.055 * pow(g, 1.0 / 2.4)) - 0.055) : (g * 12.92);
+	b = b > 0.0031308 ? ((1.055 * pow(b, 1.0 / 2.4)) - 0.055) : (b * 12.92);
+
+	r = min(max(0, r), 1);
+	g = min(max(0, g), 1);
+	b = min(max(0, b), 1);
+	point rgb = point(r, g, b);
+	return rgb;
+}
+
+point lab2rgb(point lab)
+{
+	//printf("\nlab2rgb lab: %f %f %f",lab[0],lab[1],lab[2]);
+	point xyz = lab2xyz(lab);
+	//printf("\nlab2rgb xyz: %f %f %f",xyz[0],xyz[1],xyz[2]);
+	point rgb = xyz2rgb(xyz);
+	//printf("\nlab2rgb rgb: %f %f %f",rgb[0],rgb[1],rgb[2]);
+	return rgb;
+}
+
+shader detLabColor (
+	color input = color(0.5,0.5,0.5),
+	point add_HSV = point(0.0,0.0,0.0),
+	point mul_HSV = point(1.0,1.0,1.0),
+	float hsvFac = 0.0,
+
+	color mix_RGB = color(0.0,0.0,0.0),
+	float mixFac = 0.0,
+
+	output color RGB = color(0.5,0.5,0.5),
+	output point LAB = point(0,0,0)
+)
+{
+	point lab = rgb2lab((point)input);
+	LAB = point(lab);
+	//printf("\nRgb: %f %f %f",input[0],input[1],input[2]);
+	//printf("\nLab: %f %f %f",lab[0],lab[1],lab[2]);
+	if(fabs(hsvFac) > 0.001){
+		point lab_before = point(lab);
+		//if(fabs(add_HSV[0])+fabs(mul_HSV[0]) > 0.001)// Or zero values will be ignored
+		{
+			point lab_p = point(0,lab[1],lab[2]);
+			float lab_ln = length(lab_p);
+			float new_angle = atan2(lab[2],lab[1])*mul_HSV[0]+add_HSV[0]*M_PI;
+			lab[1] = lab_ln*cos(new_angle);
+			lab[2] = lab_ln*sin(new_angle);
+		}
+		//if(fabs(add_HSV[1])+fabs(mul_HSV[1]) > 0.001)// Or zero values will be ignored
+		{
+			point lab_p = point(0,lab[1],lab[2]);
+			float lab_ln = length(lab_p);
+			point lab_pn = normalize(lab_p);
+			point lab_p2 = lab_pn*(lab_ln*mul_HSV[1]+add_HSV[1]*128.0);
+			lab[1] = lab_p2[1];
+			lab[2] = lab_p2[2];
+		}
+		//if(fabs(add_HSV[2])+fabs(mul_HSV[2]) > 0.001)// Or zero values will be ignored
+		{
+			lab[0] = lab[0]*mul_HSV[2]+add_HSV[2]*100.0;
+		}
+		lab = mix(lab_before, lab, hsvFac);
+	}
+	if(fabs(mixFac) > 0.001){
+		point mix_LAB = rgb2lab(mix_RGB);
+		lab = mix(lab, mix_LAB, mixFac);
+	}
+	point rgb_p = lab2rgb(lab);
+	//printf("\nLab fin: %f %f %f",lab[0],lab[1],lab[2]);
+	//printf("\nRgb fin: %f %f %f",rgb_p[0],rgb_p[1],rgb_p[2]);
+	RGB = (color)rgb_p;
+}

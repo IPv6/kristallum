@@ -1,12 +1,3 @@
-# Operators:
-# - Cut long edges / Subdivide big faces into smaller one
-# - Select all visible vertices/Deselect visible/invisible verts. Can give "strange" results in local mode, since raytrace using WHOLE scene ALWAYS!
-# - Flatten inner vertices (of selected region) on the virtually-visible convex-hull of region boundaries
-# - Bridge edges of selected mesh regions based on min distance between vertices
-
-# Inetresting:
-# - UV-flattening https://github.com/the3dadvantage/BlenderSurfaceFollow/blob/master/UVShape.py
-
 import bpy
 import bmesh
 import math
@@ -106,6 +97,13 @@ def camera_pos(region_3d):
 	camera_pos = camera_position(matrix)
 	return camera_pos
 
+def get_selected_facesIdx(active_mesh):
+	# find selected faces
+	bpy.ops.object.mode_set(mode='OBJECT')
+	faces = [f.index for f in active_mesh.polygons if f.select]
+	# print("selected faces: ", faces)
+	return faces
+
 def get_selected_edgesIdx(active_mesh):
 	# find selected faces
 	bpy.ops.object.mode_set(mode='OBJECT')
@@ -118,66 +116,21 @@ def get_selected_vertsIdx(active_mesh):
 	selectedVertsIdx = [e.index for e in active_mesh.vertices if e.select]
 	return selectedVertsIdx
 
-def add_connected_bmverts(v,verts_list,selvertsIdx):
-	v.tag = True
-	if (selvertsIdx is not None) and (v.index not in selvertsIdx):
-		return
-	if v not in verts_list:
-		verts_list.append(v)
-	for edge in v.link_edges:
-		ov = edge.other_vert(v)
-		if (ov is not None) and not ov.tag:
-			ov.tag = True
-			if (selvertsIdx is not None) and (ov.index not in selvertsIdx):
-				return
-			if ov not in verts_list:
-				verts_list.append(ov)
-			add_connected_bmverts(ov,verts_list,selvertsIdx)
-
-def visibilitySelect(active_object, active_mesh, context, actionSelectType, fuzz):
-	selverts = get_selected_vertsIdx(active_mesh)
-	bpy.ops.object.mode_set( mode = 'EDIT' )
-	bpy.ops.mesh.select_all(action = 'DESELECT')
-	scene = bpy.context.scene
-	bm = bmesh.from_edit_mesh( active_mesh )
-	bm.verts.ensure_lookup_table()
-	bm.faces.ensure_lookup_table()
-	bm.verts.index_update()
-	cameraOrigin = camera_pos(bpy.context.space_data.region_3d)
-	affectedVerts = []
-	fuzzlist = [(0,0,0),(fuzz,0,0),(-fuzz,0,0),(0,fuzz,0),(0,-fuzz,0),(0,0,fuzz),(0,0,-fuzz)]
-	for face in bm.faces:
-		for vert in face.verts:
-			for fuzzpic in fuzzlist:
-				if vert.index not in affectedVerts:
-					# Cast a ray from the "camera" position
-					co_world = active_object.matrix_world * vert.co + mathutils.Vector(fuzzpic)
-					direction = co_world - cameraOrigin;
-					direction.normalize()
-					result, location, normal, faceIndex, object, matrix = scene.ray_cast( cameraOrigin, direction )
-					#print ("result",result," faceIndex",faceIndex," vert",vert, " verts", bm.faces[faceIndex].verts)
-					if result and object.name == active_object.name:
-						facevrt = [ e.index for e in bm.faces[faceIndex].verts]
-						#print ("vert.index",vert.index," facevrt",facevrt)
-						if vert.index in facevrt:
-							affectedVerts.append(vert.index)
-	#bmesh.update_edit_mesh( active_mesh )
-	bpy.ops.object.mode_set(mode='OBJECT')
-	if actionSelectType == 0:
-		for vertIdx in affectedVerts:
-			active_mesh.vertices[vertIdx].select = True
-	elif actionSelectType == 1:
-		for vertIdx in selverts:
-			if vertIdx in affectedVerts:
-				active_mesh.vertices[vertIdx].select = True
-	elif actionSelectType == 2:
-		for vertIdx in selverts:
-			if vertIdx not in affectedVerts:
-				active_mesh.vertices[vertIdx].select = True
-	bpy.ops.object.mode_set(mode='EDIT')
-	#context.tool_settings.mesh_select_mode = (True, False, False)
-	bpy.ops.mesh.select_mode(type="VERT")
-
+# def add_connected_bmverts(v,verts_list,selvertsIdx):
+	# v.tag = True
+	# if (selvertsIdx is not None) and (v.index not in selvertsIdx):
+		# return
+	# if v not in verts_list:
+		# verts_list.append(v)
+	# for edge in v.link_edges:
+		# ov = edge.other_vert(v)
+		# if (ov is not None) and not ov.tag:
+			# ov.tag = True
+			# if (selvertsIdx is not None) and (ov.index not in selvertsIdx):
+				# return
+			# if ov not in verts_list:
+				# verts_list.append(ov)
+			# add_connected_bmverts(ov,verts_list,selvertsIdx)
 
 def cutLongEdges(active_mesh, seledgesIdx, context, opt_edgelen ):
 	bpy.ops.object.mode_set( mode = 'EDIT' )
@@ -236,7 +189,6 @@ class WPL_subdiv_long_edges( bpy.types.Operator ):
 				context.object.type == 'MESH' )
 
 	def execute( self, context ):
-		#wplScultSets = context.scene.wplScultSets  #wplScultSets.opt_edgelen
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
 		seledgesIdx = get_selected_edgesIdx(active_mesh)
@@ -245,73 +197,7 @@ class WPL_subdiv_long_edges( bpy.types.Operator ):
 			return {'FINISHED'}
 		cutLongEdges(active_mesh, seledgesIdx, context, self.opt_edgelen )
 		return {'FINISHED'}
-
-class WPL_selvisible( bpy.types.Operator ):
-	bl_idname = "mesh.wplvert_selvisible"
-	bl_label = "Select visible verts"
-	bl_options = {'REGISTER', 'UNDO'}
-	opt_rayFuzz = bpy.props.FloatProperty(
-		name		= "Fuzziness",
-		default	 = 0.05
-	)
-	@classmethod
-	def poll( cls, context ):
-		return ( context.object is not None  and
-				context.object.type == 'MESH' )
-
-	def execute( self, context ):
-		if not bpy.context.space_data.region_3d.is_perspective:
-			self.report({'ERROR'}, "Can`t work in ORTHO mode")
-			return {'CANCELLED'}
-		active_object = context.scene.objects.active
-		active_mesh = active_object.data
-		visibilitySelect(active_object, active_mesh, context, 0, self.opt_rayFuzz )
-		return {'FINISHED'}
-
-class WPL_deselvisible( bpy.types.Operator ):
-	bl_idname = "mesh.wplvert_deselunvisible"
-	bl_label = "Deselect invisible verts"
-	bl_options = {'REGISTER', 'UNDO'}
-	opt_rayFuzz = bpy.props.FloatProperty(
-		name		= "Fuzziness",
-		default	 = 0.05
-	)
-	@classmethod
-	def poll( cls, context ):
-		return ( context.object is not None  and
-				context.object.type == 'MESH' )
-
-	def execute( self, context ):
-		if not bpy.context.space_data.region_3d.is_perspective:
-			self.report({'ERROR'}, "Can`t work in ORTHO mode")
-			return {'CANCELLED'}
-		active_object = context.scene.objects.active
-		active_mesh = active_object.data
-		visibilitySelect(active_object, active_mesh, context, 1, self.opt_rayFuzz )
-		return {'FINISHED'}
-
-class WPL_deselunvisible( bpy.types.Operator ):
-	bl_idname = "mesh.wplvert_deselvisible"
-	bl_label = "Deselect visible verts"
-	bl_options = {'REGISTER', 'UNDO'}
-	opt_rayFuzz = bpy.props.FloatProperty(
-		name		= "Fuzziness",
-		default	 = 0.05
-	)
-	@classmethod
-	def poll( cls, context ):
-		return ( context.object is not None  and
-				context.object.type == 'MESH' )
-
-	def execute( self, context ):
-		if not bpy.context.space_data.region_3d.is_perspective:
-			self.report({'ERROR'}, "Can`t work in ORTHO mode")
-			return {'CANCELLED'}
-		active_object = context.scene.objects.active
-		active_mesh = active_object.data
-		visibilitySelect(active_object, active_mesh, context, 2, self.opt_rayFuzz )
-		return {'FINISHED'}
-
+		
 class WPL_refill_select( bpy.types.Operator ):
 	bl_idname = "mesh.wplrefill_select"
 	bl_label = "Refill selection"
@@ -491,17 +377,16 @@ class WPL_proj_flatten( bpy.types.Operator ):
 		bpy.ops.object.mode_set( mode = 'EDIT' )
 		return {'FINISHED'}
 
-
-class WPL_bridge_mesh_islands( bpy.types.Operator ):
-	# Operator get all selected faces, extracts bounds and then make faces BETWEEN mesh-selection islands, basing on distance between vertices
-	bl_idname = "mesh.wplbridge_mesh_islands"
-	bl_label = "Bridge edges of selected islands"
+class WPL_bridge_cirkpunch( bpy.types.Operator ):
+	bl_idname = "mesh.wplbridge_cirkpunch"
+	bl_label = "Break face with star pattern"
 	bl_options = {'REGISTER', 'UNDO'}
-	opt_flatnFac = bpy.props.FloatProperty(
-		name		= "Minimal distance",
-		description = "Distance to merge",
-		default	 = 0.3,
-		min		 = 0,
+
+	opt_iters = bpy.props.IntProperty(
+		name		= "Iterations",
+		description = "Iterations",
+		default	 = 1,
+		min		 = 1,
 		max		 = 100
 		)
 
@@ -513,152 +398,219 @@ class WPL_bridge_mesh_islands( bpy.types.Operator ):
 	def execute( self, context ):
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
-		selvertsAll = get_selected_vertsIdx(active_mesh)
-		bpy.ops.object.mode_set( mode = 'EDIT' )
-		bpy.ops.mesh.region_to_loop()
-		selvertsBnd = get_selected_vertsIdx(active_mesh)
-		seledgesBnd = get_selected_edgesIdx(active_mesh)
-		if len(seledgesBnd) == 0:
-			self.report({'ERROR'}, "No bounds found")
-			#print("All: ",selvertsAll," outer:", selvertsBnd)
+		selfaceAll = get_selected_facesIdx(active_mesh)
+		if len(selfaceAll) == 0:
+			self.report({'ERROR'}, "No selected faces found")
 			return {'CANCELLED'}
+
 		bpy.ops.object.mode_set( mode = 'EDIT' )
-		bm = bmesh.from_edit_mesh(active_mesh)
+		bm = bmesh.from_edit_mesh( active_mesh )
 		bm.verts.ensure_lookup_table()
 		bm.faces.ensure_lookup_table()
 		bm.verts.index_update()
-		islandVerts = {}
-		islandNum = 1
-		for v in bm.verts:
-			if v.tag == False:
-				meshlist = []
-				add_connected_bmverts(v,meshlist,selvertsAll)
-				for vv in meshlist:
-					islandVerts[vv.index] = islandNum
-				islandNum = islandNum+1
-		if islandNum < 3:
-			self.report({'ERROR'}, "No islands found, need at least 2 islands")
-			#print("All: ",selvertsAll," outer:", selvertsBnd)
-			return {'CANCELLED'}
-		#nearest vertices for each boundary vertice
-		for v in bm.verts:
-			v.tag = False
-		islandVertsUsed = {}
-		for isl1 in range(1,islandNum):
-			for isl2 in range(1,islandNum):
-				if isl1 != isl2:
-					hull_edges = []
-					for bndIdx1 in selvertsBnd:
-						if islandVerts[bndIdx1] == isl1 and bndIdx1 not in islandVertsUsed:
-							bndV1 = bm.verts[bndIdx1]
-							bndNearest = None
-							bndNearestDist = 99999
-							for bndIdx2 in selvertsBnd:
-								if islandVerts[bndIdx2] == isl2:#!!! and bndIdx2 not in islandVertsUsed:
-									bndV2 = bm.verts[bndIdx2]
-									dst = (bndV2.co-bndV1.co).length
-									if dst < self.opt_flatnFac and dst < bndNearestDist:
-										bndNearestDist = dst
-										bndNearest = bndV2
-							if bndNearest is not None:
-								# selecting edges
-								islandVertsUsed[bndIdx1]=bndIdx2
-								islandVertsUsed[bndIdx2]=bndIdx1
-								verts2join = []
-								verts2join.append(bndV1)
-								verts2join.append(bndNearest)
-								crtres = bmesh.ops.contextual_create(bm, geom=verts2join)
-								hull_edges.extend(crtres["edges"])
-								hull_edges.extend(bndV1.link_edges)
-								hull_edges.extend(bndNearest.link_edges)
-					hull_edges_pack = list(set(hull_edges))
-					if len(hull_edges_pack)>2:
-						bmesh.ops.holes_fill(bm, edges=hull_edges_pack,sides=4)
-						#bmesh.ops.edgeloop_fill(bm, edges=hull_edges)
-						#bmesh.ops.bridge_loops(bm, edges=hull_edges)
-						#bmesh.ops.contextual_create(bm, geom=(edg1,edg2))
-		bmesh.update_edit_mesh(active_mesh)
-		bm.free()
-		return {'FINISHED'}
+		iters = self.opt_iters
+		facemap= {}
+		edgmap = []
+		for selfi in selfaceAll:
+			face = bm.faces[selfi]
+			facemap[selfi] = (face, face.calc_center_median())
+			for edg in face.edges:
+				if edg not in edgmap:
+					edgmap.append(edg)
+		for edg in edgmap:
+			bm.verts.ensure_lookup_table()
+			bm.faces.ensure_lookup_table()
+			bm.verts.index_update()
+			result = bmesh.ops.subdivide_edges(
+				bm,
+				edges=[edg],
+				cuts=self.opt_iters
+			)
+		for selfi in selfaceAll:
+			bm.verts.ensure_lookup_table()
+			bm.faces.ensure_lookup_table()
+			bm.verts.index_update()
+			face = facemap[selfi][0]
+			cenpos = facemap[selfi][1]
+			facesnew = bmesh.ops.extrude_discrete_faces(bm, faces = [face], use_select_history = False)
+			other_verts = [v for v in facesnew["faces"][0].verts]
+			for v in other_verts:
+				v.co = cenpos
+			bmesh.ops.remove_doubles(bm, verts=other_verts, dist=0.01)
 
-class WPL_uv_flatten( bpy.types.Operator ):
-	bl_idname = "mesh.wpluv_flatten"
-	bl_label = "Flatten toward active UVMap"
-	bl_options = {'REGISTER', 'UNDO'}
-	opt_flatnFac = bpy.props.FloatProperty(
-		name		= "Flatness",
-		description = "Flatness applied",
-		default	 = 1.0,
-		min		 = -100,
-		max		 = 100
-		)
-
-	@classmethod
-	def poll( cls, context ):
-		return ( context.object is not None  and
-				context.object.type == 'MESH' )
-
-	def execute( self, context ):
-		active_object = context.scene.objects.active
-		active_mesh = active_object.data
-		active_uvmap = active_mesh.uv_textures.active
-		selvertsAll = get_selected_vertsIdx(active_mesh)
-		if len(selvertsAll) == 0:
-			self.report({'ERROR'}, "No inner vertices found")
-			#print("All: ",selvertsAll," outer:", selvertsBnd)
-			return {'CANCELLED'}
-		if active_uvmap is None:
-			self.report({'ERROR'}, "No active UVMap found, unwrap mesh first")
-			#print("All: ",selvertsAll," outer:", selvertsBnd)
-			return {'CANCELLED'}
-
-		bpy.ops.object.mode_set( mode = 'EDIT' )
-		bm = bmesh.from_edit_mesh(active_mesh)
 		bm.verts.ensure_lookup_table()
 		bm.faces.ensure_lookup_table()
 		bm.verts.index_update()
-		uv_layer = bm.loops.layers.uv.verify()
-		bm.faces.layers.tex.verify()  # currently blender needs both layers.
-		# sorting vertex list on Z coord
-		selvertsAll = sorted(selvertsAll, key=lambda plt: (-active_mesh.vertices[plt].co[2]))
-		anchor_vertIdx = selvertsAll[0]
-		anchor_p1 = mathutils.Vector((1,0,0))
-		anchor_p2 = mathutils.Vector((0,1,0))
-		for elem in reversed(bm.select_history):
-			if isinstance(elem, bmesh.types.BMFace):
-				anchor_vertIdx = elem.verts[0].index
-				facen = elem.normal
-				if facen.dot(mathutils.Vector((0,0,1))) > 0.99:
-					anchor_p1 = facen.cross(mathutils.Vector((1,0,0)))
-				else:
-					anchor_p1 = facen.cross(mathutils.Vector((0,0,1)))
-				anchor_p2 = facen.cross(anchor_p1)
-				tmp = anchor_p2
-				anchor_p2 = anchor_p1
-				anchor_p1 = -tmp
-				break
-			if isinstance(elem, bmesh.types.BMVert):
-				anchor_vertIdx = elem.index
-				break
-		first_co = active_mesh.vertices[anchor_vertIdx].co
-		first_uv = mathutils.Vector((0,0))
-		#searching for first_co_uv
-		for face in bm.faces:
-			for loop in face.loops:
-				vert = loop.vert
-				if vert.index == anchor_vertIdx:
-					first_uv = loop[uv_layer].uv
-		for face in bm.faces:
-			for loop in face.loops:
-				vert = loop.vert
-				if (vert.index in selvertsAll):
-					rel_uv = loop[uv_layer].uv - first_uv
-					new_co = first_co+anchor_p1*rel_uv[0]+anchor_p2*rel_uv[1]
-					vert.co = vert.co.lerp(new_co,self.opt_flatnFac)
-					selvertsAll.remove(vert.index) #to avoid double-effect when vert in several loops
-		#bm.to_mesh(active_mesh)
-		bmesh.update_edit_mesh(active_mesh)
+		bmesh.update_edit_mesh( active_mesh )
 		return {'FINISHED'}
+
+# class WPL_bridge_mesh_islands( bpy.types.Operator ):
+# 	# Operator get all selected faces, extracts bounds and then make faces BETWEEN mesh-selection islands, basing on distance between vertices
+# 	bl_idname = "mesh.wplbridge_mesh_islands"
+# 	bl_label = "Bridge edges of selected islands"
+# 	bl_options = {'REGISTER', 'UNDO'}
+# 	opt_flatnFac = bpy.props.FloatProperty(
+# 		name		= "Minimal distance",
+# 		description = "Distance to merge",
+# 		default	 = 0.3,
+# 		min		 = 0,
+# 		max		 = 100
+# 		)
+#
+# 	@classmethod
+# 	def poll( cls, context ):
+# 		return ( context.object is not None  and
+# 				context.object.type == 'MESH' )
+#
+# 	def execute( self, context ):
+# 		active_object = context.scene.objects.active
+# 		active_mesh = active_object.data
+# 		selvertsAll = get_selected_vertsIdx(active_mesh)
+# 		bpy.ops.object.mode_set( mode = 'EDIT' )
+# 		bpy.ops.mesh.region_to_loop()
+# 		selvertsBnd = get_selected_vertsIdx(active_mesh)
+# 		seledgesBnd = get_selected_edgesIdx(active_mesh)
+# 		if len(seledgesBnd) == 0:
+# 			self.report({'ERROR'}, "No bounds found")
+# 			#print("All: ",selvertsAll," outer:", selvertsBnd)
+# 			return {'CANCELLED'}
+# 		bpy.ops.object.mode_set( mode = 'EDIT' )
+# 		bm = bmesh.from_edit_mesh(active_mesh)
+# 		bm.verts.ensure_lookup_table()
+# 		bm.faces.ensure_lookup_table()
+# 		bm.verts.index_update()
+# 		islandVerts = {}
+# 		islandNum = 1
+# 		for v in bm.verts:
+# 			if v.tag == False:
+# 				meshlist = []
+# 				add_connected_bmverts(v,meshlist,selvertsAll)
+# 				for vv in meshlist:
+# 					islandVerts[vv.index] = islandNum
+# 				islandNum = islandNum+1
+# 		if islandNum < 3:
+# 			self.report({'ERROR'}, "No islands found, need at least 2 islands")
+# 			#print("All: ",selvertsAll," outer:", selvertsBnd)
+# 			return {'CANCELLED'}
+# 		#nearest vertices for each boundary vertice
+# 		for v in bm.verts:
+# 			v.tag = False
+# 		islandVertsUsed = {}
+# 		for isl1 in range(1,islandNum):
+# 			for isl2 in range(1,islandNum):
+# 				if isl1 != isl2:
+# 					hull_edges = []
+# 					for bndIdx1 in selvertsBnd:
+# 						if islandVerts[bndIdx1] == isl1 and bndIdx1 not in islandVertsUsed:
+# 							bndV1 = bm.verts[bndIdx1]
+# 							bndNearest = None
+# 							bndNearestDist = 99999
+# 							for bndIdx2 in selvertsBnd:
+# 								if islandVerts[bndIdx2] == isl2:#!!! and bndIdx2 not in islandVertsUsed:
+# 									bndV2 = bm.verts[bndIdx2]
+# 									dst = (bndV2.co-bndV1.co).length
+# 									if dst < self.opt_flatnFac and dst < bndNearestDist:
+# 										bndNearestDist = dst
+# 										bndNearest = bndV2
+# 							if bndNearest is not None:
+# 								# selecting edges
+# 								islandVertsUsed[bndIdx1]=bndIdx2
+# 								islandVertsUsed[bndIdx2]=bndIdx1
+# 								verts2join = []
+# 								verts2join.append(bndV1)
+# 								verts2join.append(bndNearest)
+# 								crtres = bmesh.ops.contextual_create(bm, geom=verts2join)
+# 								hull_edges.extend(crtres["edges"])
+# 								hull_edges.extend(bndV1.link_edges)
+# 								hull_edges.extend(bndNearest.link_edges)
+# 					hull_edges_pack = list(set(hull_edges))
+# 					if len(hull_edges_pack)>2:
+# 						bmesh.ops.holes_fill(bm, edges=hull_edges_pack,sides=4)
+# 						#bmesh.ops.edgeloop_fill(bm, edges=hull_edges)
+# 						#bmesh.ops.bridge_loops(bm, edges=hull_edges)
+# 						#bmesh.ops.contextual_create(bm, geom=(edg1,edg2))
+# 		bmesh.update_edit_mesh(active_mesh)
+# 		bm.free()
+# 		return {'FINISHED'}
+
+# class WPL_uv_flatten( bpy.types.Operator ):
+# 	bl_idname = "mesh.wpluv_flatten"
+# 	bl_label = "Flatten toward active UVMap"
+# 	bl_options = {'REGISTER', 'UNDO'}
+# 	opt_flatnFac = bpy.props.FloatProperty(
+# 		name		= "Flatness",
+# 		description = "Flatness applied",
+# 		default	 = 1.0,
+# 		min		 = -100,
+# 		max		 = 100
+# 		)
+#
+# 	@classmethod
+# 	def poll( cls, context ):
+# 		return ( context.object is not None  and
+# 				context.object.type == 'MESH' )
+#
+# 	def execute( self, context ):
+# 		active_object = context.scene.objects.active
+# 		active_mesh = active_object.data
+# 		active_uvmap = active_mesh.uv_textures.active
+# 		selvertsAll = get_selected_vertsIdx(active_mesh)
+# 		if len(selvertsAll) == 0:
+# 			self.report({'ERROR'}, "No inner vertices found")
+# 			#print("All: ",selvertsAll," outer:", selvertsBnd)
+# 			return {'CANCELLED'}
+# 		if active_uvmap is None:
+# 			self.report({'ERROR'}, "No active UVMap found, unwrap mesh first")
+# 			#print("All: ",selvertsAll," outer:", selvertsBnd)
+# 			return {'CANCELLED'}
+#
+# 		bpy.ops.object.mode_set( mode = 'EDIT' )
+# 		bm = bmesh.from_edit_mesh(active_mesh)
+# 		bm.verts.ensure_lookup_table()
+# 		bm.faces.ensure_lookup_table()
+# 		bm.verts.index_update()
+# 		uv_layer = bm.loops.layers.uv.verify()
+# 		bm.faces.layers.tex.verify()  # currently blender needs both layers.
+# 		# sorting vertex list on Z coord
+# 		selvertsAll = sorted(selvertsAll, key=lambda plt: (-active_mesh.vertices[plt].co[2]))
+# 		anchor_vertIdx = selvertsAll[0]
+# 		anchor_p1 = mathutils.Vector((1,0,0))
+# 		anchor_p2 = mathutils.Vector((0,1,0))
+# 		for elem in reversed(bm.select_history):
+# 			if isinstance(elem, bmesh.types.BMFace):
+# 				anchor_vertIdx = elem.verts[0].index
+# 				facen = elem.normal
+# 				if facen.dot(mathutils.Vector((0,0,1))) > 0.99:
+# 					anchor_p1 = facen.cross(mathutils.Vector((1,0,0)))
+# 				else:
+# 					anchor_p1 = facen.cross(mathutils.Vector((0,0,1)))
+# 				anchor_p2 = facen.cross(anchor_p1)
+# 				tmp = anchor_p2
+# 				anchor_p2 = anchor_p1
+# 				anchor_p1 = -tmp
+# 				break
+# 			if isinstance(elem, bmesh.types.BMVert):
+# 				anchor_vertIdx = elem.index
+# 				break
+# 		first_co = active_mesh.vertices[anchor_vertIdx].co
+# 		first_uv = mathutils.Vector((0,0))
+# 		#searching for first_co_uv
+# 		for face in bm.faces:
+# 			for loop in face.loops:
+# 				vert = loop.vert
+# 				if vert.index == anchor_vertIdx:
+# 					first_uv = loop[uv_layer].uv
+# 		for face in bm.faces:
+# 			for loop in face.loops:
+# 				vert = loop.vert
+# 				if (vert.index in selvertsAll):
+# 					rel_uv = loop[uv_layer].uv - first_uv
+# 					new_co = first_co+anchor_p1*rel_uv[0]+anchor_p2*rel_uv[1]
+# 					vert.co = vert.co.lerp(new_co,self.opt_flatnFac)
+# 					selvertsAll.remove(vert.index) #to avoid double-effect when vert in several loops
+# 		#bm.to_mesh(active_mesh)
+# 		bmesh.update_edit_mesh(active_mesh)
+# 		return {'FINISHED'}
 
 class WPLSculptFeatures_Panel(bpy.types.Panel):
 	bl_label = "Sculpt helpers"
@@ -672,14 +624,7 @@ class WPLSculptFeatures_Panel(bpy.types.Panel):
 
 	def draw(self, context):
 		layout = self.layout
-		#wplScultSets = context.scene.wplScultSets
 		col = layout.column()
-
-		col.separator()
-		col.label("Selection control")
-		col.operator("mesh.wplvert_selvisible", text="Select visible")
-		col.operator("mesh.wplvert_deselvisible", text="Deselect visible")
-		col.operator("mesh.wplvert_deselunvisible", text="Deselect invisible")
 
 		col.separator()
 		col.label("Bubbling")
@@ -692,28 +637,20 @@ class WPLSculptFeatures_Panel(bpy.types.Panel):
 		col.separator()
 		col.label("Subdivide")
 		col.operator("mesh.wplrefill_select", text="ReFill selected")
+		col.operator("mesh.wplbridge_cirkpunch", text="Star break faces")
 		col.operator("mesh.wplsubdiv_long_edges", text="Cut Long Edges")
-		col.operator("mesh.wplbridge_mesh_islands", text="Bridge islands")
+		#col.operator("mesh.wplbridge_mesh_islands", text="Bridge islands")
 
-		col.separator()
-		col.label("UV Flattening")
-		col.operator("mesh.wpluv_flatten", text="UVMap flatten")
-
-#class WPLSculptSettings(PropertyGroup):
-#	weig_stp = FloatProperty(
-#		name = "Weight value",
-#		description = "Value to add/substruct",
-#		default = 1.0
-#	)
+		#col.separator()
+		#col.label("UV Flattening")
+		#col.operator("mesh.wpluv_flatten", text="UVMap flatten")
 
 def register():
 	print("WPLSculptFeatures_Panel registered")
 	bpy.utils.register_module(__name__)
-	#bpy.types.Scene.wplScultSets = PointerProperty(type=WPLSculptSettings)
 
 def unregister():
 	bpy.utils.unregister_module(__name__)
-	#del bpy.types.Scene.wplScultSets
 
 if __name__ == "__main__":
 	register()
