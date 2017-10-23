@@ -9,40 +9,53 @@ import os
 import sys
 import subprocess
 
-isWin = True
-if isWin:
-	oiioexe = "f:\__GameResources\zzz_TOOLS\openimageio\oiiotool.exe"
-	ocioconf = "c:\Program Files\Blender Foundation\Blender\2.78\datafiles\colormanagement\config.ocio"
-else:
-	oiioexe = "/Users/ipv6/Documents/zTmp/oiio/dist/macosx/bin/oiiotool"
-	ocioconf = ""
+toolsetups = [
+	("f:\__GameResources\zzz_TOOLS\openimageio\oiiotool.exe",
+	"c:\Program Files\Blender Foundation\Blender\2.78\datafiles\colormanagement\config.ocio"),
+	("/usr/local/Cellar/openimageio/1.7.17/bin/oiiotool",
+	"")]
 
 if len(sys.argv) < 2:
 	print 'Need path to EXR, quitting'
 	sys.exit(0)
 
-print 'Oiiotool path:', oiioexe
-if not os.path.exists(oiioexe):
+oiio_exe = "???"
+ocio_conf = "???"
+for stp in toolsetups:
+	if os.path.exists(stp[0]):
+		oiio_exe = stp[0]
+		ocio_conf = stp[1]
+		break
+
+print '- Oiiotool path:', oiio_exe
+if not os.path.exists(oiio_exe):
 	print 'Invalid path to oiiotool, quitting'
 	sys.exit(0)
 
-exrfile = sys.argv[1]
-print 'EXR to parse:', exrfile
-if not os.path.exists(exrfile):
+exr_file = sys.argv[1]
+print '- EXR to parse:', exr_file
+if not os.path.exists(exr_file):
 	print 'Invalid path to EXR, quitting'
 	sys.exit(0)
-exrlayers = []
 
+layer2bw = []
+if len(sys.argv) > 2:
+	layer2bw = [sys.argv[2]]
+	print '- Raw dumps (as BW):', layer2bw
+
+print '- Getting layers info...'
+exrlayers = []
 oiio_env = os.environ.copy()
-if len(ocioconf) > 0:
-	oiio_env["OCIO"] = ocioconf
+if len(ocio_conf) > 0:
+	oiio_env["OCIO"] = ocio_conf
 oiiocall = []
-oiiocall.append(oiioexe)
+oiiocall.append(oiio_exe)
 oiiocall.append("--info")
 oiiocall.append("-v")
-oiiocall.append(exrfile)
+oiiocall.append(exr_file)
 ps = subprocess.Popen(oiiocall, stdin = subprocess.PIPE, stdout = subprocess.PIPE, env=oiio_env)
 (stdout, stderr) = ps.communicate()
+
 exrinfo = stdout.splitlines()
 for exrinfoline in exrinfo:
 	if exrinfoline.find("channel list:") >= 0:
@@ -50,24 +63,24 @@ for exrinfoline in exrinfo:
 		if len(headr_content) >= 2:
 			exrlayers = [x.strip() for x in headr_content[1].split(',')]
 			break
-print 'Layers found:', exrlayers
+print '- Layers found:', exrlayers
 if len(exrlayers) == 0:
 	print 'No layers found, quitting'
 	sys.exit(0)
 
-exrname = os.path.basename(exrfile)
+exrname = os.path.basename(exr_file)
 exrname = os.path.splitext(exrname)[0]
-def flush_stack(stk, stkfrm):
+def dump_layers_stack(stk, stkfrm):
 	if len(stk) == 0:
 		return
 	outname = stk[0].rsplit('.', 1)[0]
 	outname = outname.replace(".","_")
 	outname = outname.replace("+","_")
 	outname = exrname+"_"+outname
-	print "Extracting: ", outname, ", format:", stkfrm
+	print "- Extracting: ", outname, ", format:", stkfrm
 	oiiocall = []
-	oiiocall.append(oiioexe)
-	oiiocall.append(exrfile)
+	oiiocall.append(oiio_exe)
+	oiiocall.append(exr_file)
 	oiiocall.append("--ch")
 	oiiocall.append(",".join(stk))
 	oiiocall.append("-d")
@@ -79,28 +92,52 @@ def flush_stack(stk, stkfrm):
 	ps = subprocess.Popen(oiiocall, stdin = subprocess.PIPE, stdout = subprocess.PIPE, env=oiio_env)
 	(stdout, stderr) = ps.communicate()
 	return
+
+def dump_layer_aspng(layr, stkfrm):
+	outname = layr+"_bw"
+	outname = outname.replace(".","_")
+	outname = outname.replace("+","_")
+	outname = exrname+"_"+outname
+	print "- Extracting: ", outname, ", format:", stkfrm
+	oiiocall = []
+	oiiocall.append(oiio_exe)
+	oiiocall.append(exr_file)
+	oiiocall.append("-d")
+	oiiocall.append(stkfrm)
+	oiiocall.append("--tocolorspace")
+	oiiocall.append("sRGB")
+	oiiocall.append("-o")
+	oiiocall.append(outname+".png")
+	ps = subprocess.Popen(oiiocall, stdin = subprocess.PIPE, stdout = subprocess.PIPE, env=oiio_env)
+	(stdout, stderr) = ps.communicate()
+	return
+
 curr_format = "half"
 curr_chstack = []
 for layername in exrlayers:
 	name_type_pair = layername.split(' ')
-	#print "Analyzing: ", layername, ", format:", ",".join(name_type_pair)
 	if len(name_type_pair) > 0:
 		layerName = name_type_pair[0]
 		if len(name_type_pair) > 1:
 			layerFrmt = name_type_pair[1]
 		else:
 			layerFrmt = "(half)"
+		for bwmark in layer2bw:
+			if bwmark in layerName:
+				dump_layer_aspng(layerName, layerFrmt)
+				break
 		if layerName.find(".R") >= 0:
 			# flushing previous layer
-			flush_stack(curr_chstack, curr_format)
+			dump_layers_stack(curr_chstack, curr_format)
 			# setting new layer up
 			curr_chstack = []
 			curr_format = re.search(r'\((.*?)\)',layerFrmt).group(1)
 		if layerName.find(".R") >= 0 or layerName.find(".G") >= 0 or layerName.find(".B") >= 0 or layerName.find(".A") >= 0:
 			curr_chstack.append(layerName)
-flush_stack(curr_chstack, curr_format)
+
+dump_layers_stack(curr_chstack, curr_format)
 curr_chstack = []
-print "All done"
+print "- All done"
 
 
 # WIN:

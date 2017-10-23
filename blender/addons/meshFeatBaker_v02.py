@@ -76,7 +76,7 @@ def do_painting(context, active_object, active_mesh, color_map, paint_list, glob
 			xrel = (vec2d[0]-min_x)/(max_x-min_x)
 			yrel = (vec2d[1]-min_y)/(max_y-min_y)
 			drel = 2.0*(vertex_data[3]-srt_dd[0][3]).length/maxdim
-			color_map.data[vertex_data[0]].color = (xrel,yrel,drel)
+			color_map.data[vertex_data[0]].color = (xrel,yrel,drel,1.0)
 	if vc_refmode == "axis":
 		min_x = 9999
 		max_x = 0
@@ -107,7 +107,7 @@ def do_painting(context, active_object, active_mesh, color_map, paint_list, glob
 				nrel = math.acos(min_nx.dot(vertex_data[2]))/nn_rads
 			else:
 				nrel = 0
-			color_map.data[vertex_data[0]].color = (xrel,yrel,nrel)
+			color_map.data[vertex_data[0]].color = (xrel,yrel,nrel,1.0)
 	# if vc_refmode == "dist":
 		# glob_refpoint2d = location_to_region(glob_refpoint)
 		# maxlen3d = 0
@@ -126,7 +126,7 @@ def do_painting(context, active_object, active_mesh, color_map, paint_list, glob
 			# reldist3d = (vec3d.length-minlen3d)/(maxlen3d-minlen3d)
 			# vec2d = vertex_data[3]-glob_refpoint2d
 			# reldist2d = (vec2d.length-minlen2d)/(maxlen2d-minlen2d)
-			# color_map.data[vertex_data[0]].color = (reldist3d,reldist2d,vec3d.length*0.1)
+			# color_map.data[vertex_data[0]].color = (reldist3d,reldist2d,vec3d.length*0.1,1.0)
 		# return
 	return
 
@@ -310,7 +310,6 @@ class WPLbake_mesh_centers(bpy.types.Operator):
 
 		uv_values1 = {}
 		uv_values2 = {}
-		#vc_values = {}
 		selverts = []
 		for v in bm.verts:
 			v.tag = False
@@ -325,10 +324,6 @@ class WPLbake_mesh_centers(bpy.types.Operator):
 				meshlist = []
 				add_connected_bmverts(v,meshlist,selverts)
 				if len(meshlist) > 0:
-					#if self.actionType == 1:
-					#	rndc = (random(),random(),random())
-					#	for mv in meshlist:
-					#		vc_values[mv.index] = rndc
 					if self.actionType == 2 or self.actionType == 6:
 						medianpoint = mathutils.Vector()
 						for mv in meshlist:
@@ -382,17 +377,6 @@ class WPLbake_mesh_centers(bpy.types.Operator):
 							yrel = (vec2d[1]-min_y)/projscale
 							uv_values2[mv.index] = (xrel, yrel)
 		ok_count = 0;
-		#if len(vc_values)>0:
-		#	if not active_mesh.vertex_colors:
-		#		active_mesh.vertex_colors.new()
-		#	color_map = active_mesh.vertex_colors.active
-		#	for poly in active_mesh.polygons:
-		#		face_is_selected = poly.index in selfaces
-		#		if face_is_selected:
-		#			for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
-		#				vi = active_mesh.loops[loop_index].vertex_index
-		#				if (vi in vc_values):#(vi in selverts) and
-		#					color_map.data[loop_index].color = vc_values[vi]
 		if len(uv_values1)>0:
 			uv_layer_bx = bm.loops.layers.uv.get(bakemap_x)
 			uv_layer_by = bm.loops.layers.uv.get(bakemap_y)
@@ -416,7 +400,6 @@ class WPLbake_mesh_centers(bpy.types.Operator):
 		bm.free()
 		context.scene.update()
 		print("Vertices baked:", ok_count)
-		#bpy.ops.object.mode_set(mode='EDIT')
 		return {'FINISHED'}
 
 class WPL_weig_edt( bpy.types.Operator ):
@@ -602,9 +585,77 @@ class WPLbake_shpk_to_vc(bpy.types.Operator):
 						distP = 0
 					else:
 						distN = 0
-					color_map.data[loop_index].color = (distP*self.opt_r_infl,abs(ndir*self.opt_g_infl),distN*self.opt_b_infl)
+					color_map.data[loop_index].color = (distP*self.opt_r_infl,abs(ndir*self.opt_g_infl),distN*self.opt_b_infl,1.0)
 		context.scene.update()
 		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+		return {'FINISHED'}
+
+class WPLbake_rndcol_to_vc(bpy.types.Operator):
+	bl_idname = "object.wplbake_rndcol_to_vc"
+	bl_label = "WPLbake_rndcol_to_vc"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	@classmethod
+	def poll(self, context):
+		# Check if we have a mesh object active and are in vertex paint mode
+		p = context.object and context.object.data and (isinstance(context.scene.objects.active, bpy.types.Object) and isinstance(context.scene.objects.active.data, bpy.types.Mesh))
+		return p
+
+	def execute(self, context):
+		print("execute ", self.bl_idname)
+		active_object = context.scene.objects.active
+		if active_object is None:
+			return {'CANCELLED'}
+		active_mesh = active_object.data
+		selfaces = get_selected_facesIdx(active_mesh)
+		if len(selfaces) == 0:
+			operator.report({'ERROR'}, "No faces selected, select some faces first")
+			return {'FINISHED'}
+		bpy.ops.object.mode_set(mode='EDIT')
+		bakeOpts = context.scene.bakeOpts
+		color_map = active_object.data.vertex_colors.get(bakeOpts.bake_vcnm)
+		if color_map is None:
+			self.report({'ERROR'}, "Target VC not found")
+			return {'CANCELLED'}
+
+		bm = bmesh.new()
+		bm.from_mesh(active_mesh)
+		bm.verts.ensure_lookup_table()
+		bm.faces.ensure_lookup_table()
+		bm.verts.index_update()
+		vc_values = {}
+		selverts = []
+		for v in bm.verts:
+			v.tag = False
+		for face in bm.faces:
+			face_is_selected = face.index in selfaces
+			if face_is_selected:
+				for vert, loop in zip(face.verts, face.loops):
+					selverts.append(vert.index)
+		print("Faces selected:", len(selfaces), "; Vertices selected:", len(selverts))
+		for v in bm.verts:
+			if v.tag == False:
+				meshlist = []
+				add_connected_bmverts(v,meshlist,selverts)
+				if len(meshlist) > 0:
+					rndc = (random(),random(),random(),1.0)
+					for ov in meshlist:
+						vc_values[ov.index] = rndc
+		bpy.ops.object.mode_set(mode='OBJECT')
+		context.scene.update()
+		color_map = active_object.data.vertex_colors.get(bakeOpts.bake_vcnm)
+		color_map.active = True
+		if len(vc_values)>0:
+			for poly in active_mesh.polygons:
+				face_is_selected = poly.index in selfaces
+				if face_is_selected:
+					ipoly = poly.index
+					for idx, ivertex in enumerate(active_mesh.polygons[ipoly].loop_indices):
+						ivdx = active_mesh.polygons[ipoly].vertices[idx]
+						if (ivdx in vc_values):
+							color_map.data[ivertex].color = vc_values[ivdx]
+		bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+		context.scene.update()
 		return {'FINISHED'}
 
 ######### ############ ################# ############
@@ -685,7 +736,7 @@ class WPLBakeMeshFeatures_Panel2(bpy.types.Panel):
 				col.operator("object.wplbake_2daxis_to_vc", text="Bake Flat projection") # normalized
 				col.operator("object.wplbake_2dshape_to_vc", text="Bake Shape projection") # normalized
 				#col.operator("object.wplbake_cursor_distance_to_vc", text="Bake 3D-cursor distance") # normalized
-				#col.operator("object.wplbake_mesh_centers", text="Bake random color").actionType = 1
+				col.operator("object.wplbake_rndcol_to_vc", text="Bake random color")
 
 				shape_keys_d = active_object.data.shape_keys
 				if shape_keys_d is not None:

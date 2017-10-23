@@ -35,14 +35,6 @@ bl_info = {
 	"category"	: ""
 	}
 
-WPL_PROJM = [
-	('TO_CAMERA', "To camera", "", 1),
-	('USE_NORMALS', "Use Normals", "", 2),
-]
-
-kRaycastEpsilon = 0.01
-kRaycastDeadzone = 0.05
-
 def force_visible_object(obj):
 	if obj:
 		if obj.hide == True:
@@ -159,7 +151,7 @@ def visibilitySelect(active_object, active_mesh, context, actionSelectType, fuzz
 	bpy.ops.object.mode_set(mode='EDIT')
 	#context.tool_settings.mesh_select_mode = (True, False, False)
 	bpy.ops.mesh.select_mode(type="VERT")
-		
+
 class WPL_selvccol( bpy.types.Operator ):
 	bl_idname = "mesh.wplvert_selvccol"
 	bl_label = "Select by VC color"
@@ -171,7 +163,8 @@ class WPL_selvccol( bpy.types.Operator ):
 	@classmethod
 	def poll( cls, context ):
 		return ( context.object is not None  and
-				context.object.type == 'MESH' )
+				context.object.type == 'MESH' and
+				context.area.type == 'VIEW_3D' and context.vertex_paint_object)
 
 	def current_brush(self, context):
 		if context.area.type == 'VIEW_3D' and context.vertex_paint_object:
@@ -211,6 +204,56 @@ class WPL_selvccol( bpy.types.Operator ):
 				active_mesh.vertices[idx].select = True
 			select_and_change_mode(active_object,"EDIT")
 			#select_and_change_mode(active_object,"VERTEX_PAINT")
+		return {'FINISHED'}
+
+class WPL_pickvccol( bpy.types.Operator ):
+	bl_idname = "mesh.wplvert_pickvccol"
+	bl_label = "Pick VC color from selection"
+	bl_options = {'REGISTER', 'UNDO'}
+	@classmethod
+	def poll( cls, context ):
+		return ( context.object is not None  and
+				context.object.type == 'MESH' and
+				context.area.type == 'VIEW_3D' and context.vertex_paint_object)
+
+	def current_brush(self, context):
+		if context.area.type == 'VIEW_3D' and context.vertex_paint_object:
+			brush = context.tool_settings.vertex_paint.brush
+		elif context.area.type == 'VIEW_3D' and context.image_paint_object:
+			brush = context.tool_settings.image_paint.brush
+		elif context.area.type == 'IMAGE_EDITOR' and  context.space_data.mode == 'PAINT':
+			brush = context.tool_settings.image_paint.brush
+		else :
+			brush = None
+		return brush
+
+	def execute( self, context ):
+		active_object = context.scene.objects.active
+		active_mesh = active_object.data
+		if not active_mesh.vertex_colors:
+			self.report({'ERROR'}, "Active object has no Vertex color layer")
+			return {'FINISHED'}
+		select_and_change_mode(active_object,"OBJECT")
+		selfaces = get_selected_facesIdx(active_mesh)
+		select_and_change_mode(active_object,"VERTEX_PAINT")
+		if len(selfaces) < 1:
+			self.report({'ERROR'}, "Not enough verts, select verts first")
+			return {'FINISHED'}
+		br = self.current_brush(context)
+		if br:
+			baselayr = active_mesh.vertex_colors.active
+			vertx2cols = None
+			vertx2cnt = 0
+			for ipoly in range(len(active_mesh.polygons)):
+				if ipoly in selfaces:
+					for idx, ivertex in enumerate(active_mesh.polygons[ipoly].loop_indices):
+						ivdx = active_mesh.polygons[ipoly].vertices[idx]
+						if vertx2cnt == 0:
+							vertx2cols = baselayr.data[ivertex].color
+						else:
+							vertx2cols = vertx2cols + baselayr.data[ivertex].color
+						vertx2cnt = vertx2cnt+1
+			br.color = vertx2cols/vertx2cnt
 		return {'FINISHED'}
 
 class WPL_selvisible( bpy.types.Operator ):
@@ -298,6 +341,23 @@ class WPLSelectFeatures_Panel(bpy.types.Panel):
 		col.operator("mesh.wplvert_selvisible", text="Select visible")
 		col.operator("mesh.wplvert_deselvisible", text="Deselect visible")
 		col.operator("mesh.wplvert_deselunvisible", text="Deselect invisible")
+
+class WPLPaintSelect_Panel(bpy.types.Panel):
+	bl_label = "VC Selection helpers"
+	bl_space_type = 'VIEW_3D'
+	bl_region_type = 'TOOLS'
+	bl_category = 'Tools'
+
+	def draw_header(self, context):
+		layout = self.layout
+		layout.label(text="")
+
+	def draw(self, context):
+		layout = self.layout
+		col = layout.column()
+
+		col.separator()
+		col.operator("mesh.wplvert_pickvccol", text="Pick color from faces")
 		col.operator("mesh.wplvert_selvccol", text="Select by VC color")
 
 def register():

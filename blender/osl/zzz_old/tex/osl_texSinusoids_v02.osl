@@ -1,0 +1,80 @@
+// https://github.com/imageworks/OpenShadingLanguage/blob/master/src/doc/osl-languagespec.pdf
+
+#define MAX_POINTS 5
+
+shader texSinMess (
+	point waves_cnt_grm1_grm2 = point(1.0,0.0,0.0),
+	point scale_min_max_pow = point(1.0,1.0,1.0),
+	point main_spd_min_max_pow = point(0.5,1.5,1.0),
+	point main_phs_min_max_pow = point(0.5,1.5,1.0),
+	point grm1_spd_min_max_pow = point(0.5,1.5,1.0),
+	point grm1_phs_min_max_pow = point(0.5,1.5,1.0),
+	point grm2_spd_min_max_pow = point(0.5,1.5,1.0),
+	point grm2_phs_min_max_pow = point(0.5,1.5,1.0),
+	float profile = 1.0,
+	float rnd_seed = 0,
+	point in_pos = point(0,0,0),
+
+	output float out_Max = 0.0,
+	output float out_Sum = 0.0
+)
+{
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point sinu_koefs[MAX_POINTS];
+	point sinu_gar1_koefs[MAX_POINTS];
+	point sinu_gar2_koefs[MAX_POINTS];
+	float points = min(max(waves_cnt_grm1_grm2[0],1),MAX_POINTS);
+	//float scale_pow = fabs(scale_min_max_pow[2]);
+	for(int i=0;i<points;i++){
+		float random_spd = noise("uperlin",point(i,rnd_seed,1));
+		random_spd = main_spd_min_max_pow[0]+(main_spd_min_max_pow[1]-main_spd_min_max_pow[0])*pow(random_spd,main_spd_min_max_pow[2]);
+		float random_phs = noise("uperlin",point(i,rnd_seed,2));
+		random_phs = main_phs_min_max_pow[0]+(main_phs_min_max_pow[1]-main_phs_min_max_pow[0])*pow(random_phs,main_phs_min_max_pow[2]);
+		float random_scl = noise("uperlin",point(i,rnd_seed,3));
+		random_scl = scale_min_max_pow[0]+(scale_min_max_pow[1]-scale_min_max_pow[0])*pow(random_scl,scale_min_max_pow[2]);
+		sinu_koefs[i] = point(random_spd,random_phs,random_scl);
+
+		float random_spd1 = noise("uperlin",point(i,rnd_seed,4));
+		random_spd1 = grm1_spd_min_max_pow[0]+(grm1_spd_min_max_pow[1]-grm1_spd_min_max_pow[0])*pow(random_spd1,grm1_spd_min_max_pow[2]);
+		float random_phs1 = noise("uperlin",point(i,rnd_seed,5));
+		random_phs1 = grm1_phs_min_max_pow[0]+(grm1_phs_min_max_pow[1]-grm1_phs_min_max_pow[0])*pow(random_phs1,grm1_phs_min_max_pow[2]);
+		sinu_gar1_koefs[i] = point(random_spd1,random_phs1,0);
+
+		float random_spd2 = noise("uperlin",point(i,rnd_seed,4));
+		random_spd2 = grm2_spd_min_max_pow[0]+(grm2_spd_min_max_pow[1]-grm2_spd_min_max_pow[0])*pow(random_spd2,grm2_spd_min_max_pow[2]);
+		float random_phs2 = noise("uperlin",point(i,rnd_seed,5));
+		random_phs2 = grm2_phs_min_max_pow[0]+(grm2_phs_min_max_pow[1]-grm2_phs_min_max_pow[0])*pow(random_phs2,grm2_phs_min_max_pow[2]);
+		sinu_gar2_koefs[i] = point(random_spd2,random_phs2,0);
+	}
+	float maxval = 0;
+	float mulval = 0;
+	float avgsum = 0;
+	float avg_cc = 0;
+	float rawsum = 0;
+	float t = pThis[0]+pThis[1]+pThis[2];
+	//float maxHeight = 0;
+	//if(scale_min_max_pow[2]<0){
+	//	maxHeight = pThis[1];
+	//}else{
+	//	maxHeight = fabs(pThis[1]);
+	//}
+	for(int i=0;i<points;i++){
+		float height1 = sin(t*sinu_koefs[i][0]+sinu_koefs[i][1]);
+		float height2 = sin(t*sinu_gar1_koefs[i][0]+sinu_gar1_koefs[i][1]);
+		float height3 = sin(t*sinu_gar2_koefs[i][0]+sinu_gar2_koefs[i][1]);
+		float height = sinu_koefs[i][2]*height1*mix(1,height2,waves_cnt_grm1_grm2[1])*mix(1,height3,waves_cnt_grm1_grm2[2]);
+		rawsum = rawsum+height;
+		if(i==0){
+			maxval = height;
+		}
+		maxval = max(maxval,height);
+	}
+	maxval = maxval*profile;
+	rawsum = rawsum*profile;
+	//if(maxval >= maxHeight){
+	//	out_Max = maxHeight>0?(1.0-maxHeight/maxval):1;
+	//}
+	//if(rawsum >= maxHeight){
+	//	out_Sum = profile*maxHeight>0?(1.0-maxHeight/rawsum):1;
+	//}
+}

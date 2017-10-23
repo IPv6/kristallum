@@ -1,0 +1,90 @@
+// https://github.com/imageworks/OpenShadingLanguage/blob/master/src/doc/osl-languagespec.pdf
+// https://docs.blender.org/manual/en/dev/render/cycles/nodes/osl.html
+
+#define NORMALIZE(value, nrm, normalAffect, clampArray) {\
+	float res = value;\
+	if(normalAffect>0.0001){\
+		res = res*mix(1,nrm,normalAffect);\
+	}else if(normalAffect<0.0001){\
+		res = res*mix(1,(1-nrm),-1*normalAffect);\
+	}\
+	if(fabs(clampArray[1] - clampArray[0]) > 0.0001){res = (res - clampArray[0])/(clampArray[1]-clampArray[0]);res = clamp(res,0,1);};\
+	res = pow(res,fabs(clampArray[2]));\
+	if(clampArray[2]<0){res = 1.0 - res;}\
+	value = res;\
+}
+
+shader charLight (
+	float base_Level = 0.0,
+	point base_Rad_StepsU_StepsV = point(0.02, 1, 1),
+
+	point lt_Dir = point(0, -1.1, 1),
+	point lt_Pow_Nafk_Vafk = point(1.0, 2.0, 0.0),
+	point lt_Normalize = point(0.0, 1.0, 1.0),
+	float lt_DeadzoneDist = 0.1,
+	float lt_EscapeDist = 0.0,
+	float lt_LevelOn = 0.0,
+	float lt_LevelOff = 0.0,
+
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+
+	output float out_Level = 0.0,
+	output float Lt = 0.0
+){
+	float ltExpL = lt_Pow_Nafk_Vafk[0];
+	float ltNormalAffect = lt_Pow_Nafk_Vafk[1];
+	float ltViewAffect = lt_Pow_Nafk_Vafk[2];
+	point lt_vNormalize = point(0.0, 0.0, 1.0);
+	float lt_maxxdst = lt_EscapeDist>0.0?lt_EscapeDist:999.0;
+	float testWidth = base_Rad_StepsU_StepsV[0];
+	float testStepU = 1/max(1,base_Rad_StepsU_StepsV[1]);
+	float testStepV = 1/max(1,base_Rad_StepsU_StepsV[2]);
+
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = isconnected(in_nrm)?in_nrm:N;
+
+	point pCamWrl = point("camera", 0, 0, 0);
+	point ltDirN1 = normalize(lt_Dir);
+	float ltDot = max(0,dot(nThis,ltDirN1));
+	point viDirN = normalize(pCamWrl-pThis);
+	float viDot = max(0,dot(nThis,viDirN));
+
+	int isHit = 0;
+	float testTotalLt = 0;
+	float ltLevlCount = 0;
+	float iis = 1;
+	float jjs = 1;
+	point perpend1 = cross(ltDirN1,point(0,0,1));
+	for(float ii=0; ii<1; ii = ii+testStepU){
+		float xi=mix(0, testWidth, ii)*iis;
+		iis = -1*iis;
+		point ltDirN2 = rotate(ltDirN1,xi,point(0,0,0),perpend1);
+		for(float jj=0; jj<1; jj = jj+testStepV){
+			float yi=mix(0, testWidth, jj)*jjs;
+			jjs = -1*jjs;
+			point ltDirN3 = rotate(ltDirN2,yi,point(0,0,0),nThis);
+			testTotalLt = testTotalLt+1;
+			isHit = trace(pThis+ltDirN3*lt_DeadzoneDist, ltDirN3, "maxdist", lt_maxxdst);
+			//if(lt_EscapeDist > 0.0 && isHit > 0){
+			//float hitDist = 0.0;
+			//getmessage ("trace", "hitdist" , hitDist);
+			//if(hitDist>=lt_EscapeDist){
+			//	isHit = 0;
+			//}
+			//}
+			if(isHit < 1){
+				ltLevlCount = ltLevlCount+1;//ltWeight
+			}
+			if(fabs(ii)<0.0001){
+				break;
+			}
+		}
+	}
+
+	Lt = pow(ltLevlCount/testTotalLt,ltExpL);
+	NORMALIZE(Lt,ltDot,ltNormalAffect,lt_Normalize);
+	NORMALIZE(Lt,viDot,ltViewAffect,lt_vNormalize);
+
+	out_Level = base_Level+Lt*lt_LevelOn+(1.0-Lt)*lt_LevelOff;
+}

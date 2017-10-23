@@ -41,7 +41,7 @@ WPL_PROJM = [
 ]
 
 kRaycastEpsilon = 0.01
-kRaycastDeadzone = 0.05
+kRaycastDeadzone = 0.0001
 
 def force_visible_object(obj):
 	if obj:
@@ -270,12 +270,27 @@ class WPL_proj_bubble( bpy.types.Operator ):
 		if len(selvertsAll) == 0:
 			self.report({'ERROR'}, "No selected vertices found")
 			return {'CANCELLED'}
+		#unselvertsAll = [e.index for e in active_mesh.vertices if e.index not in selvertsAll]
 		bpy.ops.object.mode_set( mode = 'EDIT' )
 		bm = bmesh.from_edit_mesh(active_mesh)
 		bm.verts.ensure_lookup_table()
 		bm.faces.ensure_lookup_table()
 		bm.verts.index_update()
-		bm_tree = BVHTree.FromBMesh(bm, epsilon = kRaycastEpsilon)
+		
+		bm2 = bm.copy()
+		bm2.verts.ensure_lookup_table()
+		bm2.faces.ensure_lookup_table()
+		bm2.verts.index_update()
+		v2r = []
+		for selvIdx in selvertsAll:
+			v2r.append(bm2.verts[selvIdx])
+		for v2r_v in v2r:
+			bm2.verts.remove(v2r_v)
+			bm2.verts.ensure_lookup_table()
+			bm2.faces.ensure_lookup_table()
+			bm2.verts.index_update()
+		bm2_tree = BVHTree.FromBMesh(bm2, epsilon = kRaycastEpsilon)
+		bm2.free()
 		# tracing to new geometry
 		matrix_world_inv = active_object.matrix_world.inverted()
 		cameraOrigin = matrix_world_inv * cameraOrigin_g
@@ -290,12 +305,12 @@ class WPL_proj_bubble( bpy.types.Operator ):
 			if self.opt_flatnMeth == 'TO_CAMERA':
 				direction = w_v[1] - cameraOrigin
 				direction.normalize()
-				hit, normal, index, distance = bm_tree.ray_cast(cameraOrigin, direction)
+				hit, normal, index, distance = bm2_tree.ray_cast(cameraOrigin, direction)
 			else:
 				origin = w_v[1]
 				direction = w_v[2]
 				direction.normalize()
-				hit, normal, index, distance = bm_tree.ray_cast(origin+kRaycastDeadzone*direction*opt_normdir, direction*opt_normdir)
+				hit, normal, index, distance = bm2_tree.ray_cast(origin+kRaycastDeadzone*direction*opt_normdir, direction*opt_normdir)
 			if (hit is not None) and ((w_v[1]-hit).length <= self.opt_maxDist):
 				# lerping position
 				vco_shift = hit - w_v[1]
@@ -533,84 +548,84 @@ class WPL_bridge_cirkpunch( bpy.types.Operator ):
 # 		bm.free()
 # 		return {'FINISHED'}
 
-# class WPL_uv_flatten( bpy.types.Operator ):
-# 	bl_idname = "mesh.wpluv_flatten"
-# 	bl_label = "Flatten toward active UVMap"
-# 	bl_options = {'REGISTER', 'UNDO'}
-# 	opt_flatnFac = bpy.props.FloatProperty(
-# 		name		= "Flatness",
-# 		description = "Flatness applied",
-# 		default	 = 1.0,
-# 		min		 = -100,
-# 		max		 = 100
-# 		)
-#
-# 	@classmethod
-# 	def poll( cls, context ):
-# 		return ( context.object is not None  and
-# 				context.object.type == 'MESH' )
-#
-# 	def execute( self, context ):
-# 		active_object = context.scene.objects.active
-# 		active_mesh = active_object.data
-# 		active_uvmap = active_mesh.uv_textures.active
-# 		selvertsAll = get_selected_vertsIdx(active_mesh)
-# 		if len(selvertsAll) == 0:
-# 			self.report({'ERROR'}, "No inner vertices found")
-# 			#print("All: ",selvertsAll," outer:", selvertsBnd)
-# 			return {'CANCELLED'}
-# 		if active_uvmap is None:
-# 			self.report({'ERROR'}, "No active UVMap found, unwrap mesh first")
-# 			#print("All: ",selvertsAll," outer:", selvertsBnd)
-# 			return {'CANCELLED'}
-#
-# 		bpy.ops.object.mode_set( mode = 'EDIT' )
-# 		bm = bmesh.from_edit_mesh(active_mesh)
-# 		bm.verts.ensure_lookup_table()
-# 		bm.faces.ensure_lookup_table()
-# 		bm.verts.index_update()
-# 		uv_layer = bm.loops.layers.uv.verify()
-# 		bm.faces.layers.tex.verify()  # currently blender needs both layers.
-# 		# sorting vertex list on Z coord
-# 		selvertsAll = sorted(selvertsAll, key=lambda plt: (-active_mesh.vertices[plt].co[2]))
-# 		anchor_vertIdx = selvertsAll[0]
-# 		anchor_p1 = mathutils.Vector((1,0,0))
-# 		anchor_p2 = mathutils.Vector((0,1,0))
-# 		for elem in reversed(bm.select_history):
-# 			if isinstance(elem, bmesh.types.BMFace):
-# 				anchor_vertIdx = elem.verts[0].index
-# 				facen = elem.normal
-# 				if facen.dot(mathutils.Vector((0,0,1))) > 0.99:
-# 					anchor_p1 = facen.cross(mathutils.Vector((1,0,0)))
-# 				else:
-# 					anchor_p1 = facen.cross(mathutils.Vector((0,0,1)))
-# 				anchor_p2 = facen.cross(anchor_p1)
-# 				tmp = anchor_p2
-# 				anchor_p2 = anchor_p1
-# 				anchor_p1 = -tmp
-# 				break
-# 			if isinstance(elem, bmesh.types.BMVert):
-# 				anchor_vertIdx = elem.index
-# 				break
-# 		first_co = active_mesh.vertices[anchor_vertIdx].co
-# 		first_uv = mathutils.Vector((0,0))
-# 		#searching for first_co_uv
-# 		for face in bm.faces:
-# 			for loop in face.loops:
-# 				vert = loop.vert
-# 				if vert.index == anchor_vertIdx:
-# 					first_uv = loop[uv_layer].uv
-# 		for face in bm.faces:
-# 			for loop in face.loops:
-# 				vert = loop.vert
-# 				if (vert.index in selvertsAll):
-# 					rel_uv = loop[uv_layer].uv - first_uv
-# 					new_co = first_co+anchor_p1*rel_uv[0]+anchor_p2*rel_uv[1]
-# 					vert.co = vert.co.lerp(new_co,self.opt_flatnFac)
-# 					selvertsAll.remove(vert.index) #to avoid double-effect when vert in several loops
-# 		#bm.to_mesh(active_mesh)
-# 		bmesh.update_edit_mesh(active_mesh)
-# 		return {'FINISHED'}
+class WPL_uv_flatten( bpy.types.Operator ):
+	bl_idname = "mesh.wpluv_flatten"
+	bl_label = "Flatten toward active UVMap"
+	bl_options = {'REGISTER', 'UNDO'}
+	opt_flatnFac = bpy.props.FloatProperty(
+		name		= "Flatness",
+		description = "Flatness applied",
+		default	 = 1.0,
+		min		 = -100,
+		max		 = 100
+		)
+
+	@classmethod
+	def poll( cls, context ):
+		return ( context.object is not None  and
+				context.object.type == 'MESH' )
+
+	def execute( self, context ):
+		active_object = context.scene.objects.active
+		active_mesh = active_object.data
+		active_uvmap = active_mesh.uv_textures.active
+		selvertsAll = get_selected_vertsIdx(active_mesh)
+		if len(selvertsAll) == 0:
+			self.report({'ERROR'}, "No inner vertices found")
+			#print("All: ",selvertsAll," outer:", selvertsBnd)
+			return {'CANCELLED'}
+		if active_uvmap is None:
+			self.report({'ERROR'}, "No active UVMap found, unwrap mesh first")
+			#print("All: ",selvertsAll," outer:", selvertsBnd)
+			return {'CANCELLED'}
+
+		bpy.ops.object.mode_set( mode = 'EDIT' )
+		bm = bmesh.from_edit_mesh(active_mesh)
+		bm.verts.ensure_lookup_table()
+		bm.faces.ensure_lookup_table()
+		bm.verts.index_update()
+		uv_layer = bm.loops.layers.uv.verify()
+		bm.faces.layers.tex.verify()  # currently blender needs both layers.
+		# sorting vertex list on Z coord
+		selvertsAll = sorted(selvertsAll, key=lambda plt: (-active_mesh.vertices[plt].co[2]))
+		anchor_vertIdx = selvertsAll[0]
+		anchor_p1 = mathutils.Vector((1,0,0))
+		anchor_p2 = mathutils.Vector((0,1,0))
+		for elem in reversed(bm.select_history):
+			if isinstance(elem, bmesh.types.BMFace):
+				anchor_vertIdx = elem.verts[0].index
+				facen = elem.normal
+				if facen.dot(mathutils.Vector((0,0,1))) > 0.99:
+					anchor_p1 = facen.cross(mathutils.Vector((1,0,0)))
+				else:
+					anchor_p1 = facen.cross(mathutils.Vector((0,0,1)))
+				anchor_p2 = facen.cross(anchor_p1)
+				tmp = anchor_p2
+				anchor_p2 = anchor_p1
+				anchor_p1 = -tmp
+				break
+			if isinstance(elem, bmesh.types.BMVert):
+				anchor_vertIdx = elem.index
+				break
+		first_co = active_mesh.vertices[anchor_vertIdx].co
+		first_uv = mathutils.Vector((0,0))
+		#searching for first_co_uv
+		for face in bm.faces:
+			for loop in face.loops:
+				vert = loop.vert
+				if vert.index == anchor_vertIdx:
+					first_uv = loop[uv_layer].uv
+		for face in bm.faces:
+			for loop in face.loops:
+				vert = loop.vert
+				if (vert.index in selvertsAll):
+					rel_uv = loop[uv_layer].uv - first_uv
+					new_co = first_co+anchor_p1*rel_uv[0]+anchor_p2*rel_uv[1]
+					vert.co = vert.co.lerp(new_co,self.opt_flatnFac)
+					selvertsAll.remove(vert.index) #to avoid double-effect when vert in several loops
+		#bm.to_mesh(active_mesh)
+		bmesh.update_edit_mesh(active_mesh)
+		return {'FINISHED'}
 
 class WPLSculptFeatures_Panel(bpy.types.Panel):
 	bl_label = "Sculpt helpers"
@@ -633,6 +648,7 @@ class WPLSculptFeatures_Panel(bpy.types.Panel):
 		col.separator()
 		col.operator("mesh.wplproj_bubble", text="Bubble verts (Camera)").opt_flatnMeth = 'TO_CAMERA'
 		col.operator("mesh.wplproj_bubble", text="Bubble verts (Normals)").opt_flatnMeth = 'USE_NORMALS'
+		col.operator("mesh.wpluv_flatten", text="UV-flatten")
 
 		col.separator()
 		col.label("Subdivide")
@@ -640,10 +656,6 @@ class WPLSculptFeatures_Panel(bpy.types.Panel):
 		col.operator("mesh.wplbridge_cirkpunch", text="Star break faces")
 		col.operator("mesh.wplsubdiv_long_edges", text="Cut Long Edges")
 		#col.operator("mesh.wplbridge_mesh_islands", text="Bridge islands")
-
-		#col.separator()
-		#col.label("UV Flattening")
-		#col.operator("mesh.wpluv_flatten", text="UVMap flatten")
 
 def register():
 	print("WPLSculptFeatures_Panel registered")

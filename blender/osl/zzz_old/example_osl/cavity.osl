@@ -1,0 +1,146 @@
+// https://dl.dropboxusercontent.com/s/qwds1er58osjknj/cavity_normals.osl
+void rng_seed(output int rng, int seed)
+{
+  int chash = seed;
+  if (chash == 0) chash = 1;
+  rng = chash * 30391861;
+}
+
+float rng_uniform(output int rng)
+{
+  float res = fmod((rng / float(2137483647)), 1.0) * .5 + .5;
+  rng *= 30391861;
+  return res;
+}
+
+void to_unit_disk(float x, float y, output float x_out, output float y_out)
+{
+  float r, phi;
+  float a = 2.0 * x - 1.0;
+  float b = 2.0 * y - 1.0;
+    
+  if(a > -b) 
+  { if(a > b) 
+    { r = a;
+      phi = M_PI_4 *(b/a);
+    }
+    else 
+    { r = b;
+      phi = M_PI_4 *(2.0 - a/b);
+  } }
+  else 
+  { if(a < b) 
+    { r = -a;
+      phi = M_PI_4 *(4.0 + b/a);
+    }
+    else 
+    { r = -b;
+      if(b != 0.0) phi = M_PI_4 *(6.0 - a/b);
+      else phi = 0.0;
+  } }
+  x_out = r * cos(phi);
+  y_out = r * sin(phi);
+}
+
+void make_orthonormals(vector N, output vector a, output vector b)
+{
+  if(N[0] != N[1] || N[0] != N[2]) a = cross(vector(1, 1, 1), N);
+  else a = cross(vector(-1, 1, 1), N);
+  
+  a = normalize(a);
+  b = cross(N, a);
+}
+
+vector sample_cos_hemisphere(vector N, float randu, float randv, float dist)
+{
+  vector T, B;    
+  make_orthonormals(N, T, B);
+  to_unit_disk(randu, randv, randu, randv);
+  float costheta = abs((1.0 - randu * randu - randv * randv));
+
+  return normalize(randu * T + randv * B + costheta * N);
+}
+
+vector project_vector_on_perp_plane(vector N, vector a)
+{
+    vector temp_u = 0;
+    vector temp_v = 0;
+    
+    make_orthonormals(N, temp_u, temp_v);
+    return (dot(a, temp_u) * temp_u) + (dot(a, temp_v) * temp_v);
+
+}
+
+shader cavity(
+//    int Samples = 4,
+    float Oversampling = 1,
+    float Distance = 0.1,
+    float lift_distance = 0.05,
+    output color Cavity = .5
+)
+{
+  int Samples = 0;
+  float samples_rng = 0;
+  int i, rng;
+  int hits = 0;
+  float f = 0, randu = 0, randv = 0;
+  vector ray_P, ray_R;
+  vector hit_normal = 0, sample_normal_prj = N;
+  vector hitP = P;
+  color cav = 0;
+  vector deltaP = 0;
+  float sumC = 0;
+  int success = 0;
+
+f = fmod(cellnoise(P*123456.0), 1.0);
+rng_seed(rng, int(f * 21374647));
+
+hits = 0;
+samples_rng = rng_uniform(rng);
+Samples = (int) floor(Oversampling) + ( samples_rng > (1-mod(Oversampling, 1.0)));
+
+for(i = 0; i < Samples; i++)
+{
+    randu = rng_uniform(rng);
+    randv = rng_uniform(rng);
+    ray_P = P + (-N * lift_distance);
+    ray_R = sample_cos_hemisphere(N, randu, randv, 0);
+    success = trace(ray_P, ray_R, "maxdist", Distance);
+    if (success)
+    {
+        success = getmessage("trace", "P", hitP);
+        getmessage("trace", "N", hit_normal);
+        if (success)
+        {
+           sample_normal_prj = project_vector_on_perp_plane(N, hit_normal);
+           deltaP = project_vector_on_perp_plane(N, hitP - P);
+           sumC += sign(-dot(sample_normal_prj, deltaP)) * length(sample_normal_prj);
+           hits++;
+        }
+    }
+    
+    randu = rng_uniform(rng);
+    randv = rng_uniform(rng);
+    ray_P = P + (N * lift_distance);
+    ray_R = sample_cos_hemisphere(-N, randu, randv, 0);
+    success = trace(ray_P, ray_R, "maxdist", Distance);
+    if (success)
+    {
+        success = getmessage("trace", "P", hitP);
+        getmessage("trace", "N", hit_normal);
+        
+
+        if (success)
+        {
+            sample_normal_prj = project_vector_on_perp_plane(-N, hit_normal);
+            deltaP = project_vector_on_perp_plane(-N, hitP - P);
+            sumC += sign(dot(sample_normal_prj, deltaP)) * length(sample_normal_prj);
+            hits++;
+        }
+    }
+
+}
+
+cav = (color) (sumC/hits)*.5;
+Cavity = (color) cav + .5;
+}

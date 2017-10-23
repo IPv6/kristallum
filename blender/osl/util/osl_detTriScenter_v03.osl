@@ -1,0 +1,79 @@
+#define OUTPUT2D_COORD "raster"
+void make_orthonormals(vector N, output vector a, output vector b)
+{
+	if(N[0] != N[1] || N[0] != N[2]) a = cross(vector(1, 1, 1), N);
+	else a = cross(vector(-1, 1, 1), N);
+
+	a = normalize(a);
+	b = cross(N, a);
+}
+
+point project_p2vec(point p, point pA, point pB)
+{
+	float dl = length(pA - pB);
+	float l2 = pow(dl,2);
+	float t = dot(p - pB, pA - pB) / l2;
+	point projection = pB + t * (pA - pB);
+	return projection;
+}
+
+int project_rays(point p, point p2, point q, point q2, output vector intersection)
+{
+	point perp = project_p2vec(p,q,q2);
+	intersection = perp+tan(acos(dot(perp-p,p2-p)))*length(perp-p);
+	return 1;
+}
+
+shader detFlacen (
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+
+	output point vol_Center = point(0,0,0),
+	output point vol_decar3D = point(0,0,0),
+	output point vol_polar3D = point(0,0,0),
+	output point vol_oppoP = point(0,0,0),
+	output float vol_nrmLen = 0,
+	output float vol_rayLen = 0,
+	output float vol_maxLen = 0
+)
+{
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = isconnected(in_nrm)?in_nrm:N;
+
+	point triagVertx[3];
+	getattribute("geom:trianglevertices",triagVertx);
+	float vol_alen_1_2 = length(triagVertx[1]-triagVertx[2]);
+	float vol_alen_2_0 = length(triagVertx[2]-triagVertx[0]);
+	float vol_alen_1_0 = length(triagVertx[1]-triagVertx[0]);
+	point oppo_prj = pThis;
+
+	// v0
+	float vol_alen = vol_alen_1_2;
+	vol_Center = triagVertx[0];
+	vol_maxLen = max(vol_alen_2_0,vol_alen_1_0);
+	project_rays(pThis, vol_Center, triagVertx[1], triagVertx[2], oppo_prj);
+	if(vol_alen_2_0<vol_alen){
+		// v1
+		vol_alen = vol_alen_2_0;
+		vol_Center = triagVertx[1];
+		vol_maxLen = max(vol_alen_1_2,vol_alen_1_0);
+		project_rays(pThis, vol_Center, triagVertx[0], triagVertx[2], oppo_prj);
+	}
+	if(vol_alen_1_0<vol_alen){
+		// v2
+		vol_alen = vol_alen_1_0;
+		vol_Center = triagVertx[2];
+		vol_maxLen = max(vol_alen_1_2,vol_alen_2_0);
+		project_rays(pThis, vol_Center, triagVertx[1], triagVertx[0], oppo_prj);
+	}
+
+	// Derivations
+	float len2center = length(vol_Center-pThis);
+	vol_rayLen = length(oppo_prj-vol_Center);
+	vol_nrmLen = len2center/vol_rayLen;
+	vol_oppoP = oppo_prj;
+	vol_decar3D = pThis-vol_Center;
+	vol_polar3D = point(len2center,
+						acos(dot(normalize(pThis-vol_Center),point(0,0,1))),
+						acos(dot(nThis,point(0,0,1))));
+}

@@ -1,0 +1,49 @@
+#define MAX_TRANSPR 10
+#define RAY_MINOFFSET 0.0005
+
+shader detDeepn (
+	point normal_scale = point(-1,-1,-1),
+	point normal_offset = point(0,0,0),
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+	float max_hop = 999.0,
+
+	output float out_thickness = 0,
+	output point out_thicknessP = point(0,0,0),
+	output float out_nearness = 0,
+	output point out_nearnessP = point(0,0,0)
+)
+{
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = isconnected(in_nrm)?in_nrm:N;
+
+	string thisId;
+	getattribute("geom:name",thisId);
+	point secdir = normalize(nThis*normal_scale+normal_offset);
+	string hitId;
+	point pCurr = pThis;
+	point pSideHit = pThis;
+	point pSideHit2 = pThis;
+
+	for(int skipcc = 0;skipcc < MAX_TRANSPR; skipcc++){
+		int isHit = trace(pCurr+RAY_MINOFFSET*secdir, secdir, "maxdist", max_hop);
+		getmessage("trace","geom:name",hitId);
+		if(isHit > 0 && hitId == thisId){
+			getmessage("trace","P",pSideHit);
+		}else{
+			if(isHit == 0){
+				break;
+			}
+			if(hitId != thisId){
+				getmessage("trace","P",pSideHit2);
+				break;
+			}
+		}
+		getmessage("trace","P",pCurr);
+	}
+
+	out_thicknessP = pSideHit;
+	out_nearnessP = pSideHit2;
+	out_thickness = length(pThis-out_thicknessP);
+	out_nearness = length(pThis-out_nearnessP);
+}

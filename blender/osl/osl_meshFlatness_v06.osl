@@ -1,0 +1,197 @@
+// https://github.com/imageworks/OpenShadingLanguage/blob/master/src/doc/osl-languagespec.pdf
+// https://docs.blender.org/manual/en/dev/render/cycles/nodes/osl.html
+// To prevent "AO leaking" ignoring far points (near plane is not affected by objects BEHIND it)
+
+#define ISDISTINRANGE(dst,mmArr) ((mmArr[1]==mmArr[2])||(mmArr[1]<mmArr[2] && dst>=mmArr[1] && dst<=mmArr[2])||(mmArr[1]>mmArr[2] && (dst>=mmArr[1] || dst<=mmArr[2])))
+
+shader charFlatness (
+	point base_Frac_Steps = point(0.01, 30, 0),
+
+	point dp_Frac_Min_Max = point(1.0, -1.0, 1.0),
+	float dp_Level = 0,
+
+	point dc_Frac_Min_Max = point(1.0, 0.0, 0.0),
+	float dc_Level = 0,
+
+	// nice: 0.4,0.1,0.5 == 0.0,0.24,2.0
+	point cu_Frac_Min_Max = point(1.0, 0.0, 0.0),
+	float cu_Level = 0,
+
+	// nice: 0.2,0,0.5 == 0.005,0.07,0.8
+	point sp_Frac_Min_Max = point(1.0, 0.0, 0.0),
+	float sp_Level = 0,
+
+	point ob_Frac_Min_Max = point(1.0, 0.0, 0.0),
+	float ob_Level = 0.0,
+
+	point sn_Frac_Min_Max = point(1.0, 0.0, 0.0),
+	string skip_objmask = "",
+
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+
+	output float out_Level = 0.0,
+	output float Dp = 0.0,
+	output float Dc = 0.0,
+	output float Cu = 0.0,
+	output float Sp = 0.0,
+	output float Ob = 0.0,
+	output point SN = point(0,0,0)
+){
+	if(base_Frac_Steps[0] < 0){
+		return;
+	}
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = isconnected(in_nrm)?in_nrm:N;
+	point pThisRST = transform("raster", pThis);
+	point rbtPixels = transform("raster", point("NDC", 1,1,0));
+	float pixelWidth = min(rbtPixels[0],rbtPixels[1])*base_Frac_Steps[0];
+
+	float dpSoftness = max(0.0001,fabs(dp_Frac_Min_Max[0])*(fabs(dp_Level)<0.0001?0:1));
+	float dcSoftness = max(0.0001,fabs(dc_Frac_Min_Max[0])*(fabs(dc_Level)<0.0001?0:1));
+	float cuSoftness = max(0.0001,fabs(cu_Frac_Min_Max[0])*(fabs(cu_Level)<0.0001?0:1));
+	float spSoftness = max(0.0001,fabs(sp_Frac_Min_Max[0])*(fabs(sp_Level)<0.0001?0:1));
+	float obSoftness = max(0.0001,fabs(ob_Frac_Min_Max[0])*(fabs(ob_Level)<0.0001?0:1));
+	float snSoftness = max(0.0001,fabs(sn_Frac_Min_Max[0]));
+
+	string thisId;
+	getattribute("geom:name",thisId);
+	if (strlen(skip_objmask) > 0 && endswith(thisId,skip_objmask)){
+		return;
+	}
+	point pCamWrl = point("camera", 0, 0, 0);
+	float baseCamDist = length(pCamWrl-pThis);
+	point nFarFarAway = pThis;
+
+	point pSideHit;
+	point nSideHit;
+	float hitCamDist = 0;
+	int isHit = 0;
+	string hitId;
+	float dpLevlCount = 0;
+	float dpLevlTotal = 0;
+	float dcLevlCount = 0;
+	float dcLevlTotal = 0;
+	float cuLevlCount = 0;
+	float cuLevlTotal = 0;
+	float spLevlCount = 0;
+	float spLevlTotal = 0;
+	float obLevlCount = 0;
+	float obLevlTotal = 0;
+	point snLevlCount = point(0,0,0);
+	float snLevlTotal = 0;
+	if(pixelWidth > 0 && fabs(dp_Level)+fabs(dc_Level)+fabs(sp_Level)+fabs(cu_Level)+fabs(ob_Level)){
+		float testWidth = pixelWidth;
+		float testStep = 1;
+		if(base_Frac_Steps[2]>0){
+			testStep = base_Frac_Steps[2]*1/(2*testWidth);
+		}else{
+			testStep = max(0.01,1/base_Frac_Steps[1]);
+		}
+		if(testStep > 0){
+			for(float ii=0; ii<1; ii = ii+testStep){
+				float xi=mix(-testWidth,testWidth, ii);
+				for(float jj=0; jj<1; jj = jj+testStep){
+					float yi=mix(-testWidth,testWidth, jj);
+					float ptlen = sqrt(xi*xi+yi*yi);
+					if(ptlen > testWidth+0.1){
+						continue;
+					}
+					float dpWeight = (1.0-ptlen/(testWidth*dpSoftness));
+					float dcWeight = (1.0-ptlen/(testWidth*dcSoftness));
+					float cuWeight = (1.0-ptlen/(testWidth*cuSoftness));
+					float spWeight = (1.0-ptlen/(testWidth*spSoftness));
+					float obWeight = (1.0-ptlen/(testWidth*obSoftness));
+					float snWeight = (1.0-ptlen/(testWidth*snSoftness));
+					if(dpWeight <= 0.01
+						&& dcWeight <= 0.01
+						&& spWeight <= 0.01
+						&& cuWeight <= 0.01
+						&& obWeight <= 0.01
+						&& snWeight <= 0.01){
+						continue;
+					}
+
+					point pSideRst = pThisRST+point(xi,yi,0);
+					point pSideWlr = transform("raster", "world", pSideRst);
+					isHit = trace(pCamWrl, pSideWlr-pCamWrl);
+					if(isHit > 0){
+						getmessage("trace","N",nSideHit);
+						getmessage("trace","P",pSideHit);
+						getmessage("trace","geom:name",hitId);
+						if (strlen(skip_objmask) > 0 && endswith(hitId,skip_objmask)){
+							dpLevlCount = 0;
+							dcLevlCount = 0;
+							cuLevlCount = 0;
+							spLevlCount = 0;
+							obLevlCount = 0;
+							snLevlCount = 0;
+							return;
+						}
+					}else{
+						nSideHit = nThis;
+						pSideHit = nFarFarAway;
+					}
+					hitCamDist = length(pSideHit-pCamWrl);
+					float camDistDiff = baseCamDist-hitCamDist;
+					if(dpWeight > 0){
+						dpLevlTotal = dpLevlTotal+dpWeight;
+						if(ISDISTINRANGE(camDistDiff, dp_Frac_Min_Max)){
+							point dir2hit = pThis-pSideHit;
+							float testFactor = length(dir2hit);
+							dpLevlCount = dpLevlCount + dpWeight*testFactor;
+						}
+					}
+					if(dcWeight > 0){
+						dcLevlTotal = dcLevlTotal+dcWeight;
+						if(ISDISTINRANGE(camDistDiff, dc_Frac_Min_Max)){
+							float testFactor = fabs(camDistDiff);
+							dcLevlCount = dcLevlCount + dcWeight*testFactor;
+						}
+					}
+					if(cuWeight > 0){
+						cuLevlTotal = cuLevlTotal+cuWeight;
+						if(ISDISTINRANGE(camDistDiff, cu_Frac_Min_Max)){
+							float testFactor = acos(dot(nThis,nSideHit))/M_PI;
+							cuLevlCount = cuLevlCount + cuWeight*testFactor;
+						}
+					}
+					if(spWeight > 0){
+						spLevlTotal = spLevlTotal+spWeight;
+						if(ISDISTINRANGE(camDistDiff, sp_Frac_Min_Max)){
+							// http://mathworld.wolfram.com/Point-PlaneDistance.html
+							point dir2hit = pThis-pSideHit;
+							float testFactor = fabs(dot(dir2hit,nThis));
+							spLevlCount = spLevlCount + spWeight*testFactor;
+						}
+					}
+					if(obWeight > 0){
+						obLevlTotal = obLevlTotal+obWeight;
+						if(isHit > 0 && ISDISTINRANGE(camDistDiff, ob_Frac_Min_Max)){
+							float testFactor = 0;
+							if(hitId == thisId){
+								testFactor = 1;
+							}
+							obLevlCount = obLevlCount + obWeight*testFactor;
+						}
+					}
+					if(snWeight > 0){
+						snLevlTotal = snLevlTotal+snWeight;
+						if(ISDISTINRANGE(camDistDiff, sn_Frac_Min_Max)){
+							point testFactor = nSideHit;
+							snLevlCount = snLevlCount + snWeight*testFactor;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	Dp = dpLevlTotal>0?dpLevlCount/dpLevlTotal:0;
+	Dc = dcLevlTotal>0?dcLevlCount/dcLevlTotal:0;
+	Cu = cuLevlTotal>0?cuLevlCount/cuLevlTotal:0;
+	Sp = spLevlTotal>0?spLevlCount/spLevlTotal:0;
+	Ob = obLevlTotal>0?(1.0-obLevlCount/obLevlTotal):0;
+	SN = snLevlTotal>0?snLevlCount/snLevlTotal:nThis;
+	out_Level = Dp*dp_Level+Dc*dc_Level+Sp*sp_Level+Cu*cu_Level+Ob*ob_Level;
+}

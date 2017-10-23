@@ -1,0 +1,19 @@
+
+shader detConv2Raster (
+	point in_pos = point(0,0,0),
+	point in_pos1 = point(0,0,0),
+	point in_pos2 = point(0,0,0),
+	point in_pos3 = point(0,0,0),
+
+	output point out_this_RST = point(0,0,0),
+	output point out_pos1_RST = point(0,0,0),
+	output point out_pos2_RST = point(0,0,0),
+	output point out_pos3_RST = point(0,0,0)
+)
+{
+	point pThis = isconnected(in_pos)?in_pos:P;
+	out_this_RST = transform("raster", pThis);
+	out_pos1_RST = transform("raster", in_pos1);
+	out_pos2_RST = transform("raster", in_pos2);
+	out_pos3_RST = transform("raster", in_pos3);
+}

@@ -362,29 +362,29 @@ def set_color2vertex(mesh, loopscache, vcol_layer, vertIdx, value, acttype):
 	and color is a tuple with the RGB values."""
 	def changeColor(li, actcolor, acttype):
 		if acttype == 'REPLACE_WHITE':
-			vcol_layer.data[li].color = (value,value,value)
+			vcol_layer.data[li].color = (value,value,value,1.0)
 			return
 		curcolor = vcol_layer.data[li].color
 		if acttype == 'ADD_WHITE':
-			vcol_layer.data[li].color = (curcolor[0]+value,curcolor[1]+value,curcolor[2]+value)
+			vcol_layer.data[li].color = (curcolor[0]+value,curcolor[1]+value,curcolor[2]+value,1.0)
 			return
 		if acttype == 'MAXON_R':
-			vcol_layer.data[li].color = (max(curcolor[0],value),curcolor[1],curcolor[2])
+			vcol_layer.data[li].color = (max(curcolor[0],value),curcolor[1],curcolor[2],1.0)
 			return
 		if acttype == 'MAXON_G':
-			vcol_layer.data[li].color = (curcolor[0],max(curcolor[1],value),curcolor[2])
+			vcol_layer.data[li].color = (curcolor[0],max(curcolor[1],value),curcolor[2],1.0)
 			return
 		if acttype == 'MAXON_B':
-			vcol_layer.data[li].color = (curcolor[0],curcolor[1],max(curcolor[2],value))
+			vcol_layer.data[li].color = (curcolor[0],curcolor[1],max(curcolor[2],value),1.0)
 			return
 		if acttype == 'ADDON_R':
-			vcol_layer.data[li].color = (curcolor[0]+value,curcolor[1],curcolor[2])
+			vcol_layer.data[li].color = (curcolor[0]+value,curcolor[1],curcolor[2],1.0)
 			return
 		if acttype == 'ADDON_G':
-			vcol_layer.data[li].color = (curcolor[0],curcolor[1]+value,curcolor[2])
+			vcol_layer.data[li].color = (curcolor[0],curcolor[1]+value,curcolor[2],1.0)
 			return
 		if acttype == 'ADDON_B':
-			vcol_layer.data[li].color = (curcolor[0],curcolor[1],curcolor[2]+value)
+			vcol_layer.data[li].color = (curcolor[0],curcolor[1],curcolor[2]+value,1.0)
 			return
 	if loopscache is None:
 		for poly in mesh.polygons:
