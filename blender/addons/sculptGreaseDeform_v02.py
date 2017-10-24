@@ -400,7 +400,7 @@ def set_color2vertex(mesh, loopscache, vcol_layer, vertIdx, value, acttype):
 				changeColor(loop_index, value, acttype)
 ######################### ######################### #########################
 ######################### ######################### #########################
-class WPLGRDEFR_push(bpy.types.Operator):
+class WPLgrdf_push(bpy.types.Operator):
 	bl_idname = "mesh.wplgrdf_push"
 	bl_label = "Push with last stroke"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -538,7 +538,7 @@ class WPLGRDEFR_push(bpy.types.Operator):
 		bmesh.update_edit_mesh(active_mesh, True)
 		return {'FINISHED'}
 
-class WPLGRDEFR_vcdr(bpy.types.Operator):
+class WPLgrdf_vcdr(bpy.types.Operator):
 	bl_idname = "mesh.wplgrdf_vcdr"
 	bl_label = "Bake across stroke into VC"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -626,7 +626,7 @@ class WPLGRDEFR_vcdr(bpy.types.Operator):
 		select_and_change_mode(active_obj, 'VERTEX_PAINT')
 		return {'FINISHED'}
 
-class WPLGRDEFR_vcal(bpy.types.Operator):
+class WPLgrdf_vcal(bpy.types.Operator):
 	bl_idname = "mesh.wplgrdf_vcal"
 	bl_label = "Bake along stroke into VC"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -700,7 +700,7 @@ class WPLGRDEFR_vcal(bpy.types.Operator):
 		select_and_change_mode(active_obj, 'VERTEX_PAINT')
 		return {'FINISHED'}
 
-class WPLGRDEFR_selvnear(bpy.types.Operator):
+class WPLgrdf_selvnear(bpy.types.Operator):
 	bl_idname = "mesh.wplgrdf_selvnear"
 	bl_label = "Select verts under stroke"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -759,7 +759,7 @@ class WPLGRDEFR_selvnear(bpy.types.Operator):
 		return {'FINISHED'}
 
 
-class WPLGRDEFR_selfnear(bpy.types.Operator):
+class WPLgrdf_selfnear(bpy.types.Operator):
 	bl_idname = "mesh.wplgrdf_selfnear"
 	bl_label = "Select verts under stroke"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -802,7 +802,7 @@ class WPLGRDEFR_selfnear(bpy.types.Operator):
 		bmesh.update_edit_mesh(active_mesh, True)
 		return {'FINISHED'}
 
-class WPLGRDEFR_snap(bpy.types.Operator):
+class WPLgrdf_snap(bpy.types.Operator):
 	bl_idname = "mesh.wplgrdf_snap"
 	bl_label = "Snap to last stroke"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -870,7 +870,7 @@ class WPLGRDEFR_snap(bpy.types.Operator):
 		bmesh.update_edit_mesh(active_mesh, True)
 		return {'FINISHED'}
 
-class WPLGRDEFR_strf(bpy.types.Operator):
+class WPLgrdf_strf(bpy.types.Operator):
 	bl_idname = "mesh.wplgrdf_strf"
 	bl_label = "Stripify last stroke"
 	bl_options = {'REGISTER', 'UNDO'}

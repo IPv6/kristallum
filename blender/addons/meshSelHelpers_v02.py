@@ -152,7 +152,7 @@ def visibilitySelect(active_object, active_mesh, context, actionSelectType, fuzz
 	#context.tool_settings.mesh_select_mode = (True, False, False)
 	bpy.ops.mesh.select_mode(type="VERT")
 
-class WPL_selvccol( bpy.types.Operator ):
+class WPLvert_selvccol( bpy.types.Operator ):
 	bl_idname = "mesh.wplvert_selvccol"
 	bl_label = "Select by VC color"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -206,7 +206,7 @@ class WPL_selvccol( bpy.types.Operator ):
 			#select_and_change_mode(active_object,"VERTEX_PAINT")
 		return {'FINISHED'}
 
-class WPL_pickvccol( bpy.types.Operator ):
+class WPLvert_pickvccol( bpy.types.Operator ):
 	bl_idname = "mesh.wplvert_pickvccol"
 	bl_label = "Pick VC color from selection"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -256,7 +256,7 @@ class WPL_pickvccol( bpy.types.Operator ):
 			br.color = vertx2cols/vertx2cnt
 		return {'FINISHED'}
 
-class WPL_selvisible( bpy.types.Operator ):
+class WPLvert_selvisible( bpy.types.Operator ):
 	bl_idname = "mesh.wplvert_selvisible"
 	bl_label = "Select visible verts"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -278,7 +278,7 @@ class WPL_selvisible( bpy.types.Operator ):
 		visibilitySelect(active_object, active_mesh, context, 0, self.opt_rayFuzz )
 		return {'FINISHED'}
 
-class WPL_deselvisible( bpy.types.Operator ):
+class WPLvert_deselunvisible( bpy.types.Operator ):
 	bl_idname = "mesh.wplvert_deselunvisible"
 	bl_label = "Deselect invisible verts"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -300,8 +300,31 @@ class WPL_deselvisible( bpy.types.Operator ):
 		visibilitySelect(active_object, active_mesh, context, 1, self.opt_rayFuzz )
 		return {'FINISHED'}
 
-class WPL_deselunvisible( bpy.types.Operator ):
+class WPLvert_deselvisible( bpy.types.Operator ):
 	bl_idname = "mesh.wplvert_deselvisible"
+	bl_label = "Deselect visible verts"
+	bl_options = {'REGISTER', 'UNDO'}
+	opt_rayFuzz = bpy.props.FloatProperty(
+		name		= "Fuzziness",
+		default	 = 0.05
+	)
+	@classmethod
+	def poll( cls, context ):
+		return ( context.object is not None  and
+				context.object.type == 'MESH' )
+
+	def execute( self, context ):
+		if not bpy.context.space_data.region_3d.is_perspective:
+			self.report({'ERROR'}, "Can`t work in ORTHO mode")
+			return {'CANCELLED'}
+		active_object = context.scene.objects.active
+		active_mesh = active_object.data
+		visibilitySelect(active_object, active_mesh, context, 2, self.opt_rayFuzz )
+		return {'FINISHED'}
+		
+		
+class WPLvert_floodsel( bpy.types.Operator ):
+	bl_idname = "mesh.wplvert_floodsel"
 	bl_label = "Deselect visible verts"
 	bl_options = {'REGISTER', 'UNDO'}
 	opt_rayFuzz = bpy.props.FloatProperty(
@@ -341,6 +364,8 @@ class WPLSelectFeatures_Panel(bpy.types.Panel):
 		col.operator("mesh.wplvert_selvisible", text="Select visible")
 		col.operator("mesh.wplvert_deselvisible", text="Deselect visible")
 		col.operator("mesh.wplvert_deselunvisible", text="Deselect invisible")
+		col.separator()
+		col.operator("mesh.wplvert_floodsel", text="Flood-select linked")
 
 class WPLPaintSelect_Panel(bpy.types.Panel):
 	bl_label = "VC Selection helpers"

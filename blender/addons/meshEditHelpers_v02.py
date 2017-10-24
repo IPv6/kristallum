@@ -171,7 +171,7 @@ def cutLongEdges(active_mesh, seledgesIdx, context, opt_edgelen ):
 	bmesh.update_edit_mesh( active_mesh )
 	# bpy.context.scene.update()
 
-class WPL_subdiv_long_edges( bpy.types.Operator ):
+class WPLsubdiv_long_edges( bpy.types.Operator ):
 	bl_idname = "mesh.wplsubdiv_long_edges"
 	bl_label = "Subdiv Long Edges"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -198,7 +198,7 @@ class WPL_subdiv_long_edges( bpy.types.Operator ):
 		cutLongEdges(active_mesh, seledgesIdx, context, self.opt_edgelen )
 		return {'FINISHED'}
 		
-class WPL_refill_select( bpy.types.Operator ):
+class WPLrefill_select( bpy.types.Operator ):
 	bl_idname = "mesh.wplrefill_select"
 	bl_label = "Refill selection"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -228,7 +228,7 @@ class WPL_refill_select( bpy.types.Operator ):
 		bpy.ops.mesh.fill()
 		return {'FINISHED'}
 
-class WPL_proj_bubble( bpy.types.Operator ):
+class WPLproj_bubble( bpy.types.Operator ):
 	bl_idname = "mesh.wplproj_bubble"
 	bl_label = "Bubble verts into direction"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -319,7 +319,7 @@ class WPL_proj_bubble( bpy.types.Operator ):
 		bmesh.update_edit_mesh(active_mesh, True)
 		return {'FINISHED'}
 
-class WPL_proj_flatten( bpy.types.Operator ):
+class WPLproj_flatten( bpy.types.Operator ):
 	bl_idname = "mesh.wplproj_flatten"
 	bl_label = "Flatten to convex hull"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -392,7 +392,7 @@ class WPL_proj_flatten( bpy.types.Operator ):
 		bpy.ops.object.mode_set( mode = 'EDIT' )
 		return {'FINISHED'}
 
-class WPL_bridge_cirkpunch( bpy.types.Operator ):
+class WPLbridge_cirkpunch( bpy.types.Operator ):
 	bl_idname = "mesh.wplbridge_cirkpunch"
 	bl_label = "Break face with star pattern"
 	bl_options = {'REGISTER', 'UNDO'}
@@ -459,7 +459,7 @@ class WPL_bridge_cirkpunch( bpy.types.Operator ):
 		bmesh.update_edit_mesh( active_mesh )
 		return {'FINISHED'}
 
-# class WPL_bridge_mesh_islands( bpy.types.Operator ):
+# class WPLbridge_mesh_islands( bpy.types.Operator ):
 # 	# Operator get all selected faces, extracts bounds and then make faces BETWEEN mesh-selection islands, basing on distance between vertices
 # 	bl_idname = "mesh.wplbridge_mesh_islands"
 # 	bl_label = "Bridge edges of selected islands"
@@ -548,7 +548,7 @@ class WPL_bridge_cirkpunch( bpy.types.Operator ):
 # 		bm.free()
 # 		return {'FINISHED'}
 
-class WPL_uv_flatten( bpy.types.Operator ):
+class WPLuv_flatten( bpy.types.Operator ):
 	bl_idname = "mesh.wpluv_flatten"
 	bl_label = "Flatten toward active UVMap"
 	bl_options = {'REGISTER', 'UNDO'}

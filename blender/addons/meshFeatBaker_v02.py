@@ -402,7 +402,7 @@ class WPLbake_mesh_centers(bpy.types.Operator):
 		print("Vertices baked:", ok_count)
 		return {'FINISHED'}
 
-class WPL_weig_edt( bpy.types.Operator ):
+class WPLweig_edt( bpy.types.Operator ):
 	bl_idname = "mesh.wplweig_edt"
 	bl_label = "Change weight value in vertex group on surrent selection"
 	bl_options = {'REGISTER', 'UNDO'}
