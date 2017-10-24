@@ -84,6 +84,29 @@ def get_selected_vertsIdx(active_mesh):
 	bpy.ops.object.mode_set(mode='OBJECT')
 	selectedVertsIdx = [e.index for e in active_mesh.vertices if e.select]
 	return selectedVertsIdx
+
+def fuzzySceneRayCast(vFrom, vDir, fuzzyVal, objs2ignore):
+	gResult = mathutils.Vector((0,0,0))
+	gCount = 0.0;
+	if fuzzyVal > 0.0:
+		perpBase = mathutils.Vector((0,0,1))
+		if(math.fabs(vDir.dot(perpBase)) > 0.9):
+			perpBase = mathutils.Vector((0,1,0))
+		perp1 = vDir.cross(perpBase)
+		perp2 = vDir.cross(perp1)
+		vDirs = [vDir.normalized(), (vDir+perp1*fuzzyVal).normalized(), (vDir-perp1*fuzzyVal).normalized(), (vDir+perp2*fuzzyVal).normalized(), (vDir-perp2*fuzzyVal).normalized()]
+	else:
+		vDirs = [vDir.normalized()]
+	for shootDir in vDirs:
+		(result, loc_g, normal, index, object, matrix) = bpy.context.scene.ray_cast(vFrom+vDir*kRaycastEpsilon, shootDir)
+		#print("fuzzySceneRayCast", vFrom, shootDir, result, loc_g)
+		if result and (objs2ignore is None or object.name not in objs2ignore):
+			gCount = gCount+1.0
+			gResult = gResult+loc_g
+
+	if gCount>0:
+		return gResult/gCount
+	return None
 ######################### ######################### #########################
 ######################### ######################### #########################
 class WPLsmthdef_snap(bpy.types.Operator):
@@ -120,23 +143,35 @@ class WPLsmthdef_snap(bpy.types.Operator):
 				loop[uv_layer_holdr1].uv = (vert.co[0],vert.co[1])
 				loop[uv_layer_holdr2].uv = (vert.co[2],0)
 		return {'FINISHED'}
-		
+
 class WPLsmthdef_apply(bpy.types.Operator):
 	bl_idname = "mesh.wplsmthdef_apply"
 	bl_label = "Apply mesh deformations"
 	bl_options = {'REGISTER', 'UNDO'}
 
-	SmoothingLoops = FloatProperty(
+	SmoothingLoops = IntProperty(
 			name="Smoothing Loops",
 			description="Loops",
-			min=0.0, max=1000.0,
-			default=3.0,
+			min=0, max=1000,
+			default=3,
 	)
 	Sloppiness = FloatProperty(
 			name="Sloppiness",
 			description="Sloppiness",
 			min=0.0, max=100.0,
 			default=1.0,
+	)
+	CollisionDist = FloatProperty(
+			name="Collision Distance",
+			description="Collision Distance",
+			min=0.0, max=100.0,
+			default=0.0,
+	)
+	CollisionFuzz = FloatProperty(
+			name="Collision Fuzziness",
+			description="Collision Fuzziness",
+			min=0.0, max=100.0,
+			default=0.1,
 	)
 
 	@classmethod
@@ -156,6 +191,9 @@ class WPLsmthdef_apply(bpy.types.Operator):
 		select_and_change_mode(active_obj, 'EDIT')
 		edit_obj = bpy.context.edit_object
 		active_mesh = edit_obj.data
+		matrix_world = active_obj.matrix_world
+		matrix_world_inv = active_obj.matrix_world.inverted()
+		matrix_world_nrml = matrix_world_inv.transposed().to_3x3()
 		bm = bmesh.from_edit_mesh(active_mesh)
 		bm.verts.ensure_lookup_table()
 		bm.faces.ensure_lookup_table()
@@ -179,7 +217,7 @@ class WPLsmthdef_apply(bpy.types.Operator):
 		checked_verts = copy.copy(selverts)
 		verts_shifts = {}
 		propagation_stages = []
-		for stage in range(1,int(self.SmoothingLoops)+1):
+		for stage in range(1,self.SmoothingLoops+1):
 			stage_verts = {}
 			checked_verts_cc = copy.copy(checked_verts)
 			for v_idx in checked_verts_cc:
@@ -202,10 +240,10 @@ class WPLsmthdef_apply(bpy.types.Operator):
 			propagation_stages.append(stage_verts)
 		#print("vert stages",propagation_stages)
 		#print("verts_shifts",verts_shifts)
+		new_positions = {}
 		stage_cnt = 1.0
 		for stage_verts in propagation_stages:
 			stage_weight = pow(1.0-stage_cnt/len(propagation_stages),self.Sloppiness)
-			#print("processing vert stage",stage_verts)
 			for s_idx in stage_verts:
 				avg_shift = mathutils.Vector((0,0,0))
 				avg_count = 0.0
@@ -217,8 +255,28 @@ class WPLsmthdef_apply(bpy.types.Operator):
 					verts_shifts[s_idx] = s_shift
 					s_v = bm.verts[s_idx]
 					#print("shifting vert",s_idx, s_v.index, s_v.co,verts_map[s_idx])
-					s_v.co = s_v.co+s_shift*stage_weight
+					s_v_co2 = s_v.co+s_shift*stage_weight
+					if(self.CollisionDist > 0.0):
+						s_dir_g = (matrix_world_nrml*s_shift.normalized())
+						s_v_g = matrix_world*s_v.co
+						min_okdst = (s_shift*stage_weight).length
+						loc_g = fuzzySceneRayCast(s_v_g, s_dir_g, self.CollisionFuzz, [active_obj.name])
+						if loc_g is not None:
+							loc_l = matrix_world_inv * loc_g
+							hit_dst = (loc_l-s_v.co).length-self.CollisionDist
+							if hit_dst < min_okdst:
+								if hit_dst > 0:
+									#s_v_co2 = s_v.co+hit_dst*(loc_l-s_v.co).normalized()
+									s_v_co2 = s_v.co+hit_dst*s_shift.normalized()
+								else:
+									s_v_co2 = s_v.co
+					#s_v.co = s_v_co2
+					new_positions[s_idx] = s_v_co2
 			stage_cnt = stage_cnt+1.0
+		# updateing positions as post-step
+		for s_idx in new_positions:
+			s_v = bm.verts[s_idx]
+			s_v.co = new_positions[s_idx]
 		bm.normal_update()
 		bmesh.update_edit_mesh(active_mesh, True)
 		return {'FINISHED'}
