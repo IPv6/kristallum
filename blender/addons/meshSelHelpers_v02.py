@@ -2,6 +2,7 @@ import bpy
 import bmesh
 import math
 import mathutils
+import copy
 from mathutils import Vector
 from random import random, seed
 from mathutils.bvhtree import BVHTree
@@ -188,14 +189,15 @@ class WPLvert_selvccol( bpy.types.Operator ):
 		br = self.current_brush(context)
 		if br:
 			#print("brush color:",br.color)
-			basecol = Vector(br.color)
+			basecol = Vector((br.color[0],br.color[1],br.color[2]))
 			baselayr = active_mesh.vertex_colors.active
 			vertx2sel = []
 			for ipoly in range(len(active_mesh.polygons)):
 				for idx, ivertex in enumerate(active_mesh.polygons[ipoly].loop_indices):
 					ivdx = active_mesh.polygons[ipoly].vertices[idx]
 					if (ivdx not in vertx2sel) and (baselayr.data[ivertex].color is not None):
-						dist = Vector(baselayr.data[ivertex].color)
+						vcol = baselayr.data[ivertex].color
+						dist = Vector((vcol[0],vcol[1],vcol[2]))
 						if (dist-basecol).length <= self.opt_colFuzz:
 							print("Near color:",dist,basecol)
 							vertx2sel.append(ivdx)
@@ -203,7 +205,8 @@ class WPLvert_selvccol( bpy.types.Operator ):
 			for idx in vertx2sel:
 				active_mesh.vertices[idx].select = True
 			select_and_change_mode(active_object,"EDIT")
-			#select_and_change_mode(active_object,"VERTEX_PAINT")
+			bpy.context.tool_settings.mesh_select_mode = (True, False, False)
+			select_and_change_mode(active_object,"VERTEX_PAINT")
 		return {'FINISHED'}
 
 class WPLvert_pickvccol( bpy.types.Operator ):
@@ -249,11 +252,11 @@ class WPLvert_pickvccol( bpy.types.Operator ):
 					for idx, ivertex in enumerate(active_mesh.polygons[ipoly].loop_indices):
 						ivdx = active_mesh.polygons[ipoly].vertices[idx]
 						if vertx2cnt == 0:
-							vertx2cols = baselayr.data[ivertex].color
+							vertx2cols = mathutils.Vector(baselayr.data[ivertex].color)
 						else:
-							vertx2cols = vertx2cols + baselayr.data[ivertex].color
+							vertx2cols = vertx2cols + mathutils.Vector(baselayr.data[ivertex].color)
 						vertx2cnt = vertx2cnt+1
-			br.color = vertx2cols/vertx2cnt
+			br.color = mathutils.Vector((vertx2cols[0],vertx2cols[1],vertx2cols[2]))/vertx2cnt
 		return {'FINISHED'}
 
 class WPLvert_selvisible( bpy.types.Operator ):
@@ -321,15 +324,29 @@ class WPLvert_deselvisible( bpy.types.Operator ):
 		active_mesh = active_object.data
 		visibilitySelect(active_object, active_mesh, context, 2, self.opt_rayFuzz )
 		return {'FINISHED'}
-		
-		
+
+
 class WPLvert_floodsel( bpy.types.Operator ):
 	bl_idname = "mesh.wplvert_floodsel"
-	bl_label = "Deselect visible verts"
+	bl_label = "Flood-select linked"
 	bl_options = {'REGISTER', 'UNDO'}
-	opt_rayFuzz = bpy.props.FloatProperty(
-		name		= "Fuzziness",
-		default	 = 0.05
+	opt_floodDir = FloatVectorProperty(
+		name	 = "Flood direction",
+		size	 = 3,
+		min=-1.0, max=1.0,
+		default	 = (0.0,0.0,1.0)
+	)
+	opt_floodDist = IntProperty(
+		name	 = "Max Loops",
+		default	 = 100
+	)
+	opt_floodFuzz = FloatProperty(
+		name	 = "Max angle to select",
+		default	 = 0.3
+	)
+	opt_floodContinue = FloatProperty(
+		name	 = "Max angle to flood",
+		default	 = 1.6
 	)
 	@classmethod
 	def poll( cls, context ):
@@ -337,12 +354,46 @@ class WPLvert_floodsel( bpy.types.Operator ):
 				context.object.type == 'MESH' )
 
 	def execute( self, context ):
-		if not bpy.context.space_data.region_3d.is_perspective:
-			self.report({'ERROR'}, "Can`t work in ORTHO mode")
-			return {'CANCELLED'}
 		active_object = context.scene.objects.active
 		active_mesh = active_object.data
-		visibilitySelect(active_object, active_mesh, context, 2, self.opt_rayFuzz )
+		selverts = get_selected_vertsIdx(active_mesh)
+		if len(selverts) == 0:
+			self.report({'ERROR'}, "No selected verts found, select some")
+			return {'FINISHED'}
+		select_and_change_mode(active_object, 'EDIT')
+		edit_obj = bpy.context.edit_object
+		active_mesh = edit_obj.data
+		bm = bmesh.from_edit_mesh(active_mesh)
+		bm.verts.ensure_lookup_table()
+		bm.faces.ensure_lookup_table()
+		bm.verts.index_update()
+		checked_verts = copy.copy(selverts)
+		verts_shifts = {}
+		floodDir = mathutils.Vector((self.opt_floodDir[0],self.opt_floodDir[1],self.opt_floodDir[2])).normalized()
+		#propagation_stages = []
+		for stage in range(1,self.opt_floodDist+1):
+			stage_verts = {}
+			checked_verts_cc = copy.copy(checked_verts)
+			for v_idx in checked_verts_cc:
+				v = bm.verts[v_idx]
+				for edg in v.link_edges:
+					v2 = edg.other_vert(v)
+					if v2.index not in checked_verts_cc:
+						flowfir = (v2.co-v.co).normalized()
+						flowdot = flowfir.dot(floodDir)
+						flowang = math.acos(flowdot)
+						if(flowang < self.opt_floodFuzz):
+							v2.select = True
+						if(flowang < self.opt_floodContinue):
+							if v2.index not in checked_verts:
+								checked_verts.append(v2.index)
+							if(v2.index not in stage_verts):
+								stage_verts[v2.index] = []
+							if v_idx not in stage_verts[v2.index]:
+								stage_verts[v2.index].append(v_idx)
+			if len(stage_verts) == 0:
+				break
+			#propagation_stages.append(stage_verts)
 		return {'FINISHED'}
 
 class WPLSelectFeatures_Panel(bpy.types.Panel):
