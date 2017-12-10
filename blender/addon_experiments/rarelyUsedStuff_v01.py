@@ -271,6 +271,91 @@ bl_info = {
 					# selvertsAll.remove(vert.index) #to avoid double-effect when vert in several loops
 		# bmesh.update_edit_mesh(active_mesh)
 		# return {'FINISHED'}
+		
+class WPLproj_flatten( bpy.types.Operator ):
+	bl_idname = "mesh.wplproj_flatten"
+	bl_label = "Flatten to convex hull"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	opt_flatnMeth = EnumProperty(
+		items = [
+			('TO_CAMERA', "To camera", "", 1),
+			('MESH_NORMALS', "Mesh Normals", "", 2),
+		],
+		name="Method",
+		description="Method",
+		default='TO_CAMERA',
+	)
+	opt_flatnFac = bpy.props.FloatProperty(
+		name		= "Influence",
+		description = "Influence",
+		default	 = 1.0,
+		min		 = -100,
+		max		 = 100
+		)
+	opt_heightAbv = bpy.props.FloatProperty(
+		name		= "Additional height",
+		description = "Additional height",
+		default	 = 0.0,
+		min		 = -100,
+		max		 = 100
+		)
+	@classmethod
+	def poll( cls, context ):
+		return ( context.object is not None  and
+				context.object.type == 'MESH' )
+
+	def execute( self, context ):
+		active_object = context.scene.objects.active
+		active_mesh = active_object.data
+		if not bpy.context.space_data.region_3d.is_perspective:
+			self.report({'ERROR'}, "Can`t work in ORTHO mode")
+			return {'CANCELLED'}
+		cameraOrigin_g = camera_pos(bpy.context.space_data.region_3d)
+		selvertsAll = get_selected_vertsIdx(active_mesh)
+		bpy.ops.object.mode_set( mode = 'EDIT' )
+		bpy.ops.mesh.region_to_loop()
+		selvertsBnd = get_selected_vertsIdx(active_mesh)
+		selvertsInner = list(filter(lambda plt: plt not in selvertsBnd, selvertsAll))
+		if len(selvertsInner) == 0:
+			self.report({'ERROR'}, "No inner vertices found, select more verts")
+			return {'CANCELLED'}
+		bm2 = bmesh.new()
+		chull_verts = [ active_mesh.vertices[vIdx].co for vIdx in selvertsBnd ]
+		for v in chull_verts:
+			bm2.verts.new(v)
+		if len(bm2.verts)<3:
+			self.report({'ERROR'}, "No inner vertices found, select more verts")
+			return {'CANCELLED'}
+		bmesh.ops.convex_hull(bm2, input=bm2.verts)
+		bm2_tree = BVHTree.FromBMesh(bm2, epsilon = kRaycastEpsilon)
+		bm2.free()
+		#obj_tmp = bpy.data.objects.new(name=me_tmp.name, object_data=me_tmp)
+		#scene.objects.link(obj_tmp)
+		#scene.update()
+		# tracing to new geometry
+		matrix_world_inv = active_object.matrix_world.inverted()
+		cameraOrigin = matrix_world_inv * cameraOrigin_g
+		inner_verts = [ (vIdx, active_mesh.vertices[vIdx].co, active_mesh.vertices[vIdx].normal) for vIdx in selvertsInner ]
+		for w_v in inner_verts:
+			hit = None
+			if self.opt_flatnMeth == 'TO_CAMERA':
+				direction = w_v[1] - cameraOrigin
+				direction.normalize()
+				hit, normal, index, distance = bm2_tree.ray_cast(cameraOrigin, direction)
+			else:
+				origin = w_v[1]
+				direction = w_v[2]
+				direction.normalize()
+				hit, normal, index, distance = bm2_tree.ray_cast(origin+kRaycastDeadzone*direction, direction)
+			if hit is not None:
+				# lerping position
+				vco_shift = hit - w_v[1]
+				vco = w_v[1]+vco_shift*self.opt_flatnFac
+				vco = vco+self.opt_heightAbv*normal
+				active_mesh.vertices[w_v[0]].co = vco
+		bpy.ops.object.mode_set( mode = 'EDIT' )
+		return {'FINISHED'}
 
 class WPLVCBakeSettings(PropertyGroup):
 	bake_uvbase = StringProperty(
@@ -306,6 +391,9 @@ class WPLBakeMeshFeatures_Panel2(bpy.types.Panel):
 		active_object = context.scene.objects.active
 		col = layout.column()
 		if active_object is not None and active_object.data is not None:
+			col.label("Flattening")
+			col.operator("mesh.wplproj_flatten", text="Projected flatten (Camera)").opt_flatnMeth = 'TO_CAMERA'
+			col.operator("mesh.wplproj_flatten", text="Projected flatten (Normals)").opt_flatnMeth = 'MESH_NORMALS'
 			#col.operator("mesh.wplbridge_mesh_islands", text="Bridge islands")
 			#col.operator("mesh.wpluv_flatten", text="UV-flatten")
 			obj_data = active_object.data
