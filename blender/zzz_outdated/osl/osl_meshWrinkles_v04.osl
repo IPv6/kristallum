@@ -1,0 +1,95 @@
+#define WRI_VERTEXCOL_NAME "Wri"
+#define MAX_TRANSPR 5
+#define MIN_LVL2DETECT 0.00001
+
+void make_orthonormals(vector N, output vector a, output vector b)
+{
+	if(N[0] != N[1] || N[0] != N[2]) a = cross(vector(1, 1, 1), N);
+	else a = cross(vector(-1, 1, 1), N);
+
+	a = normalize(a);
+	b = cross(N, a);
+}
+
+shader wriDetect (
+	float base_Alpha = 0.0,
+	float rayc_Maxdist = 0.1,
+
+	color in_color = color(0,0,0),
+	string in_color_vcname = "",
+	color color_hitmask = color(1.0,1.0,1.0),
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+	point in_inc = point(0,0,0),
+
+	output float out_depth = 0.0,
+	output color out_color = color(0,0,0),
+	output float out_dst = 0,
+	output point out_nrm = point(0,0,0)
+){
+	if(base_Alpha < 0.001){
+		return;
+	}
+	string vcname = in_color_vcname;
+	if(strlen(vcname)<3){
+		vcname = WRI_VERTEXCOL_NAME;
+	}
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = isconnected(in_nrm)?in_nrm:N;
+	out_nrm = nThis;
+
+	int isHit = 0;
+	float hitdist = 0;
+	color hitColor = color(0,0,0);
+	point nTraceDir = isconnected(in_inc)?normalize(in_inc):I;//normalize(point("camera", 0, 0, 0)-pThis);
+	point pTraceRoot = pThis;
+	float currDist = 0;
+	point pSideHit = pThis;
+	point pSideN = nThis;
+	float searchDir = 1;
+	int recoverAttempts = 0;
+	for(int skipcc = 0;skipcc < MAX_TRANSPR;skipcc++){
+		isHit = trace(pTraceRoot+searchDir*nTraceDir*MIN_LVL2DETECT, searchDir*nTraceDir, "maxdist", rayc_Maxdist);
+		if(isHit == 0 && recoverAttempts == 0){
+			recoverAttempts = 1;
+			currDist = 0;
+			pTraceRoot = pThis;
+			searchDir = -1;
+			isHit = trace(pTraceRoot+searchDir*nTraceDir*MIN_LVL2DETECT, searchDir*nTraceDir, "maxdist", 0.001);
+		}
+		if(isHit != 0){
+			getmessage("trace","P",pSideHit);
+			getmessage("trace", vcname, hitColor);
+			getmessage("trace", "hitdist", hitdist);
+			getmessage("trace", "N", pSideN);
+			pTraceRoot = pSideHit;// For next attempt
+			currDist = currDist+searchDir*hitdist;
+			float level = hitColor[0]*color_hitmask[0]+hitColor[1]*color_hitmask[1]+hitColor[2]*color_hitmask[2];
+			if(level >= MIN_LVL2DETECT){
+				out_depth = level;
+				out_dst = currDist;
+				out_color = hitColor;
+				out_nrm = -1*searchDir*pSideN;
+			}else{
+				if(hitColor[0]+hitColor[1]+hitColor[2] < MIN_LVL2DETECT){
+					// Non-wri stuff, ray dropped
+					isHit = 0;
+				}
+			}
+			//if(out_depth < MIN_LVL2DETECT && recoverAttempts > 0){
+			//	if(recoverAttempts == 1){
+			//		recoverAttempts = 2;
+			//		currDist = 0;
+			//		pTraceRoot = pThis-nTraceDir*MIN_LVL2DETECT;
+			//		searchDir = 1;
+			//	}else{
+			//		//printf("\nUnrecovered %i %i",skipcc, recoverAttempts);
+			//		break;
+			//	}
+			//}
+		}
+		if(isHit == 0){
+			break;
+		}
+	}
+}

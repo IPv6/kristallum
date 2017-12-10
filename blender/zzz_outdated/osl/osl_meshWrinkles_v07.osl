@@ -1,0 +1,81 @@
+#define MIN_LVL2DETECT 0.0001
+#define MAX_TRANSPR 10
+
+void make_orthonormals(vector N, output vector a, output vector b)
+{
+	if(N[0] != N[1] || N[0] != N[2]) a = cross(vector(1, 1, 1), N);
+	else a = cross(vector(-1, 1, 1), N);
+
+	a = normalize(a);
+	b = cross(N, a);
+}
+
+shader wriDetect (
+	float rayc_Maxdist = 0.05,
+	float rayc_Elevation = -0.001,
+	//point rayc_sidefilt = point(0,0,0),
+	point rayc_normfilt = point(0,0,0),
+
+	float mask_alpha = 1.0,
+	string mask_objname = "",
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+
+	output float out_dst = 0,
+	output float out_fac = 0,
+	//output float out_mai = 0,
+	output point out_nrm = point(0,0,0)
+){
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = isconnected(in_nrm)?in_nrm:N;
+	out_nrm = nThis;
+	out_fac = 0;
+	if(rayc_Maxdist < 0.0001 || mask_alpha < 0.001){
+		return;
+	}
+
+	int isHit = 0;
+	float hitdist = 0;
+	color hitColor = color(0,0,0);
+	point nTraceDir = -1*nThis;//isconnected(in_inc)?normalize(in_inc)://normalize(point("camera", 0, 0, 0)-pThis);
+	point pTraceRoot = pThis + nTraceDir*rayc_Elevation;
+	float maxxDist = rayc_Maxdist;
+	point pSideHit = pThis;
+	point pSideN = nThis;
+	for(int skipcc = 0;skipcc < MAX_TRANSPR;skipcc++){
+		isHit = trace(pTraceRoot+MIN_LVL2DETECT*nTraceDir, nTraceDir, "maxdist", maxxDist);
+		if(isHit != 0){
+			string hitId;
+			getmessage("trace","P", pSideHit);
+			getmessage("trace", "geom:name", hitId);
+			getmessage("trace", "hitdist", hitdist);
+			pTraceRoot = pSideHit;// For next attempt
+			maxxDist = maxxDist-hitdist;
+			if(regex_search(hitId, mask_objname) > 0){
+				getmessage("trace", "N", pSideN);
+				if(dot(pSideN,nThis) < 0){
+					pSideN = -1*pSideN;
+				}
+				//getmessage("trace", "material:index", out_mai);
+				out_dst = length(pThis-pSideHit);
+				out_nrm = pSideN;//reflect(pSideN,nThis);//-1*pSideN <- I
+				out_fac = fabs(dot(pSideN,nThis));
+				//if(length(rayc_sidefilt) > 0.1){
+				//	point nc = cross(pSideN,nThis);
+				//	float sidnd = clamp(dot(nc, normalize(rayc_sidefilt)),0,1);
+				//	out_fac = out_fac*sidnd;
+				//	out_nrm = normalize(mix(nThis,out_nrm,sidnd));
+				//}
+				if(rayc_normfilt[0]+rayc_normfilt[1] > 0.01){
+					out_nrm = normalize(mix(nThis,out_nrm,clamp(out_dst/rayc_normfilt[0]*rayc_normfilt[1],0,1)));
+				}
+				out_nrm = normalize(mix(nThis,out_nrm,mask_alpha));
+				out_fac = out_fac*mask_alpha;
+				break;
+			}
+		}
+		if(isHit == 0 || maxxDist < MIN_LVL2DETECT){
+			break;
+		}
+	}
+}

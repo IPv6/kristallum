@@ -1,0 +1,174 @@
+// https://github.com/imageworks/OpenShadingLanguage/blob/master/src/doc/osl-languagespec.pdf
+// https://docs.blender.org/manual/en/dev/render/cycles/nodes/osl.html
+
+#define WRI_OBJECT_PREFIX "wri_"
+#define WRI_VERTEXCOL_NAME "WriLevel"
+#define WRI_VERTEXBLUR_NAME "WriBlur"
+#define WRI_VERTEXALPHA_NAME "WriAlpha"
+#define MAXCACHE 20
+
+//#define ISWHITE(cl) (fabs(cl[0]-cl[1])<0.0001 && fabs(cl[0]-cl[2])<0.0001)
+#define MAXCHL(cl) (max(max(fabs(cl[0]),fabs(cl[1])),fabs(cl[2])))
+
+shader charWri (
+	point base_Frac_Steps = point(0.002, 0, 2),
+	point wri_Levels = point(1,1,1),
+	float wri_BlurDistance = 0.05,
+	float wri_NormalBlend = 0.1,
+
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+	color in_colmap = color(0,0,0),
+	string name_ColMap = "",
+	color in_colalpha = color(0,0,0),
+	string name_ColAlpha = "",
+	color in_colblur = color(0,0,0),
+	string name_ColBlur = "",
+	string name_WriObj = "",
+
+	output float out_Total = 0.0,
+	output point out_Normal = 0.0,
+	output float Wri = 0.0,
+	output float Height = 0.0,
+	output point ColorMap = point(0,0,0)
+){
+	point rbtPixels = transform("raster", point("NDC", 1,1,0));
+	float baseResolution = min(rbtPixels[0],rbtPixels[1]);
+	float pixelWidth = baseResolution*base_Frac_Steps[0];
+
+	string vcname = name_ColMap;
+	if(strlen(vcname)<3){
+		vcname = WRI_VERTEXCOL_NAME;
+	}
+	string vaname = name_ColAlpha;
+	if(strlen(vaname)<3){
+		vaname = WRI_VERTEXALPHA_NAME;
+	}
+	string vbname = name_ColBlur;
+	if(strlen(vbname)<3){
+		vbname = WRI_VERTEXBLUR_NAME;
+	}
+	
+	color vcColMap = in_colmap;
+	color vcAlpha1 = in_colalpha;
+	color vcAlpha2 = color(0,0,0);
+	color vcBlur1 = in_colblur;
+	color vcBlur2 = color(0,0,0);
+	point pThis = length(in_pos)>0?in_pos:P;
+	point nThis = length(in_nrm)>0?in_nrm:N;
+	point pCamWrl = point("camera", 0, 0, 0);
+	point pThisRST = transform("raster", pThis);
+	float wriDist = 0;
+
+	if(wri_NormalBlend>0){
+		string WOP = name_WriObj;
+		if(strlen(WOP)<3){
+			WOP = WRI_OBJECT_PREFIX;
+		}
+		string thisId;
+		getattribute("geom:name",thisId);
+		if(startswith(thisId,WOP) > 0){
+			string hitId;
+			point pSideHit;
+			point nSideHit;
+			point pCurr = pThis;
+			int isHit = trace(pCurr, -nThis);
+			getmessage("trace","geom:name",hitId);
+			if(isHit > 0 && startswith(hitId,WOP) < 1){
+				getmessage("trace","P",pSideHit);
+				getmessage("trace","N",nSideHit);
+				getmessage("trace",vaname,vcAlpha2);
+				getmessage("trace",vbname,vcBlur2);
+				wriDist = length(pCurr-pSideHit);
+				nThis = mix(nSideHit,nThis,clamp(wriDist/wri_NormalBlend,0,1));
+				//nThis = nSideHit;
+			}
+		}
+	}
+
+	float wri_LevelBlend = max(MAXCHL(vcAlpha1),MAXCHL(vcAlpha2));
+	float wri_LevelBlur = max(MAXCHL(vcBlur1),MAXCHL(vcBlur1));
+	float wri_blurdst = wri_BlurDistance*wri_LevelBlur;
+	int anglesSet = 0;
+	point potencialsPoints[ MAXCACHE ];
+	point potencialsPoin3d[ MAXCACHE ];
+	point potencialsLevels[ MAXCACHE ];
+    for(int i=0;i<MAXCACHE;i++){
+        potencialsPoints[i]=point(0,0,0);
+        potencialsPoin3d[i]=point(0,0,0);
+        potencialsLevels[i]=point(0,0,0);
+    }
+	if(wri_blurdst > 0.001 && fabs(wri_LevelBlend)>0.001){
+		float testStep = 1;
+		float testWidth = pixelWidth;
+		if(base_Frac_Steps[2]>0){
+			testStep = base_Frac_Steps[2]*1/(2*testWidth);
+		}else{
+			testStep = max(0.01,1/base_Frac_Steps[1]);
+		}
+		for(float ii=0; ii<1; ii = ii+testStep){
+			float xi=mix(-testWidth,testWidth, ii);
+			for(float jj=0; jj<1; jj = jj+testStep){
+				float yi=mix(-testWidth,testWidth, jj);
+				point pOffs = point(xi,yi,0);
+				int anglIdx = int(MAXCACHE*(atan2(pOffs[1],pOffs[0])+M_PI)/M_2PI);
+				if(MAXCHL(potencialsLevels[anglIdx]) > 0.001 && length(pOffs)>=length(potencialsPoints[anglIdx])){
+					// already found
+					continue;
+				}
+				
+				point pSideRst = pThisRST+pOffs;
+				point pSideWlr = transform("raster", "world", pSideRst);
+				int isHit = trace(pCamWrl, pSideWlr-pCamWrl);
+				if(isHit > 0){
+					point hitPos = point(0,0,0);
+					color hitColor = color(0,0,0);
+					getmessage("trace", vcname, hitColor);
+					getmessage("trace", "P", hitPos);
+					//if(ISWHITE(hitColor)){
+					//	if(MAXCHL(hitColor)<0.001){// or black! Stopping direction
+					//		potencialsPoints[anglIdx] = pOffs;
+					//		potencialsLevels[anglIdx] = point(-1,-1,-1);
+					//		potencialsPoin3d[anglIdx] = hitPos-pThis;
+					//	}
+					//	// Ignoring
+					//	continue;
+					//}
+					if(MAXCHL(hitColor) > 0.001){
+						anglesSet = anglesSet+1;
+						potencialsPoints[anglIdx] = pOffs;
+						potencialsLevels[anglIdx] = point(hitColor[0],hitColor[1],hitColor[2]);
+						potencialsPoin3d[anglIdx] = hitPos-pThis;
+					}
+				}
+			}
+		}
+	}
+
+	color wri_ColMap = vcColMap;
+	if(anglesSet>0){
+		point summLevel = point(0,0,0);
+		float summLevelCc = 0;
+		for(int i=0;i<MAXCACHE;i++){
+			if(MAXCHL(potencialsLevels[i]) < 0.001){
+				continue;
+			}
+			//float pIlen = length(potencialsPoints[i]);
+			float pIlen = length(potencialsPoin3d[i]);
+			point level = potencialsLevels[i]*clamp(1.0-pIlen/wri_blurdst,0,1);
+			if(MAXCHL(level) > MAXCHL(summLevel)){
+				summLevel = summLevel+level;
+				summLevelCc = summLevelCc+1;
+			}
+		}
+		if(summLevelCc>0){
+			wri_ColMap = summLevel/summLevelCc;
+		}
+	}
+	float summary = wri_Levels[0]*wri_ColMap[0]+wri_Levels[1]*wri_ColMap[1]+wri_Levels[2]*wri_ColMap[2];
+	out_Total = summary*wri_LevelBlend;
+	out_Normal = nThis;
+	Wri = summary;
+	Height = wriDist;
+	ColorMap = wri_ColMap;
+}

@@ -1,0 +1,61 @@
+point project_vec2vec(point projTarget, point pA, point pB)
+{
+	point p2 = normalize(projTarget);
+	point p1 = pA;
+	point pC = pB;
+	float dl = length(p2 - p1);
+	float l2 = pow(dl,2);
+	float t = dot(pC - p1, p2 - p1) / l2;
+	point proj = p1 + t * (p2 - p1);
+	return proj;
+}
+
+point project_p2vec(point p, point pA, point pB)
+{
+	float dl = length(pA - pB);
+	float l2 = pow(dl,2);
+	float t = dot(p - pB, pA - pB) / l2;
+	//if(t >= 0 && t <= 1){
+	point projection = pB + t * (pA - pB);
+	//float dist = length(projection-p);
+	return projection;
+}
+
+shader detHalo (
+	point haloCenter = point(0,0,0),
+	point haloNormal = point(0,0,1),
+	float haloSize = 2,
+
+	point in_pos_G = point(0,0,0),
+	point in_nrm = point(0,0,0),
+
+	output point out_Axis1 = point(0,0,0),
+	output point out_N_proj = point(0,0,0),
+	output float out_N_angl = 0
+)
+{
+	point pThisIn = isconnected(in_pos_G)?in_pos_G:P;
+	point nThis = isconnected(in_nrm)?in_nrm:N;
+	point pThis = pThisIn - haloCenter;
+	point proj = project_vec2vec(haloNormal,point(0,0,0),nThis);
+	out_N_proj = proj;
+	out_N_angl = acos(dot(nThis,normalize(haloNormal)));
+
+	if(haloSize > 0){
+		point pThisLocal = transform("common", "object", pThis);
+		point nHaloLocal = transform("common", "object", normalize(haloNormal));
+		float distance2haloPerpPlane = fabs(dot(pThisLocal,nHaloLocal));
+		float factor = clamp(1.0-distance2haloPerpPlane/haloSize,0,1);
+		point perp1 = cross(nHaloLocal,point(0,0,1));
+		point perp2 = cross(nHaloLocal,pThisLocal);
+		float radial = acos(dot(normalize(perp1),normalize(perp2)))/M_PI;
+		out_Axis1 = point(radial,distance2haloPerpPlane,factor);
+	}else{
+		point projThis = project_p2vec(pThisIn, haloCenter, haloCenter+haloNormal);
+		point proj1 = project_vec2vec(haloNormal, haloCenter, pThisIn);
+		point perp1 = cross(haloNormal,point(0,0,1));
+		point perp2 = cross(haloNormal,pThisIn-haloCenter);
+		float radial = acos(dot(normalize(perp1),normalize(perp2)))/M_PI;
+		out_Axis1 = point(length(pThisIn-projThis),length(pThisIn-proj1),radial);
+	}
+}
