@@ -1,0 +1,58 @@
+shader vcGradient (
+	float iterations = 3.0,
+	float lt_Elevation = 0.01,
+	float lt_Radius = 0.1,
+	point lt_mainflow = point(1,1,1),
+
+	string vc_Name = "",
+	point vc_Mask = point(1,1,1),
+	color vc_Val = color(0,0,0),
+
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+
+	output point out_GradPos = point(0,0,0),
+	output color out_GradCol = color(0,0,0)
+){
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = isconnected(in_nrm)?in_nrm:Ng;
+	if(iterations < 1.0 || lt_Radius < 0.000001 || strlen(vc_Name) == 0 || (vc_Mask[0]+vc_Mask[1]+vc_Mask[2]) < 0.001){
+		// Fast exit for no-need-to-test cases
+		out_GradPos = pThis;
+		out_GradCol = vc_Val;
+		return;
+	}
+
+	point maincross = cross(nThis,normalize(lt_mainflow));
+	point mainflow = cross(nThis,maincross);
+	float rot_Step = 2.0*M_PI/iterations;
+
+	out_GradPos = point(0,0,0);
+	out_GradCol = color(0,0,0);
+	float wei_d = 0.0;
+
+	float base_d = max(max(vc_Val[0]*vc_Mask[0],vc_Val[1]*vc_Mask[1]),vc_Val[2]*vc_Mask[2]);
+	for(float i=0;i<iterations;i = i+1.0){
+		point mainflow_rot = rotate(mainflow, i*rot_Step, point(0,0,0), nThis);
+		point pTo = pThis+mainflow_rot*lt_Radius;
+		point pFrom = pTo+lt_Elevation*nThis;
+		int isHit = trace(pFrom, normalize(pTo-pFrom));
+		if(isHit > 0){
+			color vc_test = vc_Val;
+			getmessage("trace", vc_Name, vc_test);
+			//point pt_test = pTo;
+			//getmessage("trace", "P", pt_test);
+			float dist_d = max(max(vc_test[0]*vc_Mask[0],vc_test[1]*vc_Mask[1]),vc_test[2]*vc_Mask[2]);
+			if(dist_d > base_d){
+				out_GradPos = out_GradPos+pTo;
+				out_GradCol = out_GradCol+vc_test;
+				wei_d = wei_d+1.0;
+			}
+		}
+	}
+	if(wei_d>0){
+		out_GradDst = out_GradDst/wei_d;
+		out_GradPos = out_GradPos/wei_d;
+		out_GradCol = out_GradCol/wei_d;
+	}
+}
