@@ -118,6 +118,7 @@ class NODEVIEW_MT_WPL_Menu(bpy.types.Menu):
 			return
 
 		layout = self.layout
+		layout.separator()
 		layout.operator_context = 'INVOKE_REGION_WIN'
 		layout.menu(NODEVIEW_MT_WPL_Groups.bl_idname)
 
@@ -127,7 +128,7 @@ def register():
 		ngstore = bpy.types.WindowManager.ngstore
 	except:
 		bpy.types.NODE_MT_add.append(bpy.types.NODEVIEW_MT_WPL_Menu.draw)
-		bpy.types.WindowManager.ngstore = WPL_Gnt.store
+		bpy.types.WindowManager.ngstore = WPL_Gnt.ngstore
 
 def unregister():
 	bpy.utils.unregister_module(__name__)
