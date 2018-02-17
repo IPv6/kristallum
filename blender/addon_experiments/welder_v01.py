@@ -173,7 +173,7 @@ class WPL_addweld(bpy.types.Operator):
 			array_mod = OBJ_WELD.modifiers.new(type="ARRAY", name=kWPLWeldMods+"_array")
 			array_mod.use_merge_vertices=True
 			#count=int(int(float(edge_length))*2)
-			count = int(float(edge_length)/(OBJ_WELD.dimensions[0]*weldInsetFrac))+1
+			count = int(0.5*float(edge_length)/(OBJ_WELD.dimensions[0]*weldInsetFrac))+1
 			array_mod.count=count
 			array_mod.relative_offset_displace[0]=weldInsetFrac
 			curve_mod=OBJ_WELD.modifiers.new(type="CURVE", name=kWPLWeldMods+"_curve")
