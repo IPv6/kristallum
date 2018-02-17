@@ -24,6 +24,7 @@ bl_info = {
 kWPL_HierarchyChar = '_'
 class WPL_Gnt:
 	ngstore = {}
+	rowstr = {}
 
 ######################### ######################### #########################
 ######################### ######################### #########################
@@ -34,9 +35,13 @@ class NODEVIEW_MT_WPL_Groups(bpy.types.Menu):
 	def draw(self, context):
 		nameFilter = ""
 		try:
-			nameFilter = context.hier.value
+			row = context.hier
+			nameFilter = WPL_Gnt.rowstr[row]
 		except:
 			pass
+		if len(nameFilter) == 0:
+			WPL_Gnt.rowstr = {} # resetting to free objects
+		#print("WPL_Gnt.rowstr len=",len(WPL_Gnt.rowstr))
 		layout = self.layout
 		all_ngroups = bpy.data.node_groups
 		all_ngroups_mtt = []
@@ -94,10 +99,11 @@ class NODEVIEW_MT_WPL_Groups(bpy.types.Menu):
 				if next_hiercounts[ng_hier] < 999:
 					next_hiercounts[ng_hier] = 999
 					row = layout.row()
-					n_op_set2 = n_op_start.settings.add()
-					n_op_set2.name = "hier_"+ng_ui
-					n_op_set2.value = ng_hier
-					row.context_pointer_set("hier", n_op_set2)
+					#n_op_set2 = n_op_start.settings.add()
+					#n_op_set2.name = "hier["+ng_ui+"]"
+					#n_op_set2.value = ng_hier
+					WPL_Gnt.rowstr[row] = ng_hier
+					row.context_pointer_set("hier", row)
 					row.menu("NODEVIEW_MT_WPL_Groups", text = item["hier"]+"...")
 
 
