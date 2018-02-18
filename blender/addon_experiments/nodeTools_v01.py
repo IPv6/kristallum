@@ -33,6 +33,14 @@ class NODEVIEW_MT_WPL_Groups(bpy.types.Menu):
 	bl_idname = "NODEVIEW_MT_WPL_Groups"
 	
 	def draw(self, context):
+		# menu type
+		tree_type = context.space_data.tree_type
+		typeFilter = 'SHADER'
+		addnodeType = 'ShaderNodeGroup'
+		if tree_type == 'CompositorNodeTree':
+			typeFilter = 'COMPOSITING'
+			addnodeType = 'CompositorNodeGroup'
+		# hierlevel
 		nameFilter = ""
 		try:
 			row = context.hier
@@ -48,8 +56,9 @@ class NODEVIEW_MT_WPL_Groups(bpy.types.Menu):
 		next_hiercounts = {}
 		for ng in all_ngroups:
 			ui_name = ng.name
-			if ng.type != 'SHADER':
-				# ignoring compositing, etc nodes
+			if ng.type != typeFilter:
+				# ignoring improper nodes
+				#print("node type",ng.type)
 				continue
 			if ng.library is not None:
 				ui_name = "L: "+ng.name
@@ -89,7 +98,7 @@ class NODEVIEW_MT_WPL_Groups(bpy.types.Menu):
 			ng_hier = item["hier"]
 			if len(ng_hier) == 0 or next_hiercounts[ng_hier] < 2:
 				n_op = layout.operator("node.add_node", text = ng_ui) #bpy.ops.node.add_node
-				n_op.type = "ShaderNodeGroup"
+				n_op.type = addnodeType
 				n_op.use_transform = True
 				n_op_set = n_op.settings.add()
 				n_op_set.name = "node_tree"
@@ -115,12 +124,12 @@ class NODEVIEW_MT_WPL_Menu(bpy.types.Menu):
 	@classmethod
 	def poll(cls, context):
 		space = context.space_data
-		#tree_type = context.space_data.tree_type
-		return space.type == 'NODE_EDITOR' and space.tree_type == 'ShaderNodeTree'
+		return space.type == 'NODE_EDITOR'
 
 	def draw(self, context):
 		tree_type = context.space_data.tree_type
-		if not tree_type in "ShaderNodeTree":
+		if not ((tree_type in "ShaderNodeTree") or (tree_type in "CompositorNodeTree")):
+			#print("tree_type",tree_type)
 			return
 
 		layout = self.layout
