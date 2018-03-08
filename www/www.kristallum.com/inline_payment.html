@@ -115,7 +115,8 @@ window.jq_ui_ApiPayment = function(data)
 	pingBalance_payOpts = data;
 	pingBalance_payOpts.service = core_coalesce(pingBalance_payOpts.service,0);
 	var req_price = data.price*1.0;// virtual to rub = 1;
-	$("#payment_id").html(req_v1);
+	$("#payment_id").val(req_v1);
+	$("#payment_sum").val(req_price);
 	$("#total_sum").html(req_price);
 	$("#widget_paybar_content").show();
 
@@ -163,7 +164,7 @@ jq_bootstrap(function(){
 			<input type="hidden" name="is-inner-form" value="true">
 			<input type="hidden" name="referer" value="">
 			<input type="hidden" name="targets" value="Бонусный пакет">
-			<input type="hidden" name="sum" value="10" maxlength="10">
+			<input type="hidden" name="sum" id="payment_sum" value="10" maxlength="10">
 			
 			<label>Способ оплаты:</label>
 			<div class="roundedDivSm"><input class="radio-button__control" value="PC" checked="checked" name="paymentType" type="radio" id="ptPC">
