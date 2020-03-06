@@ -1,0 +1,235 @@
+#define RAY_MINOFFSET 0.0005
+
+point project_p2vec_v02(point p, point pA, point pB, int clamped)
+{
+	float dl = length(pA - pB);
+	float l2 = pow(dl,2);
+	float t = dot(p - pB, pA - pB) / l2;
+	if(clamped >= 1){
+		if(clamped >= 2){
+			if(t>0.5){
+				t=1.0;
+			}else{
+				t=0.0;
+			}
+		}else{
+			t = min(1.0,t);
+			t = max(0.0,t);
+		}
+	}
+	point projection = pB + t * (pA - pB);
+	return projection;
+}
+
+int testTriag(point xpThis, point nThis, float vc_DtEps, float vc_level, string vc_name, point out_pns[4])
+{
+	int isHit0 = trace(xpThis+nThis*vc_DtEps, -nThis, "maxdist", vc_DtEps*10);
+	if(isHit0 < 1){
+		return -1;
+	}
+	point triagVertx[4];
+	getmessage("trace","geom:trianglevertices",triagVertx);
+	int iAboveLevel = 0;
+	int p1i = 0;
+	for(int i=0;i<3;i++){
+		int i2 = ((i+1)%3);
+		int i3 = ((i+2)%3);
+		point tv = triagVertx[i];
+		point tv2 = triagVertx[i2];
+		point tv3 = triagVertx[i3];
+		point tv_shft = tv+normalize(xpThis-tv)*vc_DtEps;
+		int isHit = trace(tv_shft+nThis*vc_DtEps, -nThis, "maxdist", vc_DtEps*10);
+		if(isHit > 0){
+			color subVc = color(0,0,0);
+			getmessage("trace",vc_name,subVc);
+			float subVcMax = max(max(subVc[0],subVc[1]),subVc[2]);
+			if(subVcMax >= vc_level){
+				iAboveLevel = iAboveLevel+1;
+				if(iAboveLevel == 1){
+					out_pns[0] = tv;
+					out_pns[1] = tv2;
+					out_pns[2] = tv3;
+					p1i = i;
+				}else if(iAboveLevel == 2){
+					out_pns[1] = tv;
+					if(p1i == ((i+1)%3)){
+						out_pns[2] = tv3;
+					}else{
+						out_pns[2] = tv2;
+					}
+				}
+			}
+		}
+	}
+	return iAboveLevel;
+}
+
+shader osl_meshArtCent (
+	point in_pos = point(0,0,0),
+	point in_nrm = point(0,0,0),
+	float vc_level = 0.5,
+	color vc_posValue = color(0,0,0),
+	string vc_name = "",
+	point default_innerpoint = point(0,0,0),
+	float default_distance = 0,
+	float detection_eps = 0.0,
+	int detection_clamp = 1,
+
+	output float out_distance = 0,
+	output point out_innerpointI = point(0,0,0),
+	output point out_innerpoint1 = point(0,0,0),
+	output point out_innerpoint2 = point(0,0,0),
+	output point out_innerpoint3 = point(0,0,0),
+)
+{
+	point pThis = isconnected(in_pos)?in_pos:P;
+	point nThis = isconnected(in_nrm)?in_nrm:N;
+	float thisVcMax = max(max(vc_posValue[0],vc_posValue[1]),vc_posValue[2]);
+	out_distance = default_distance;
+	out_innerpointI = default_innerpoint;
+	out_innerpoint1 = default_innerpoint;
+	out_innerpoint2 = default_innerpoint;
+	out_innerpoint3 = default_innerpoint;
+	if(thisVcMax < 0.01){
+		return;
+	}
+	if(thisVcMax > 0.99){
+		out_distance = 0;
+		out_innerpointI = pThis;
+		out_innerpoint1 = pThis;
+		out_innerpoint2 = pThis;
+		out_innerpoint3 = pThis;
+		return;
+	}
+	if(strlen(vc_name)>0 && vc_level<1.0){
+		float vc_DtEps = detection_eps;
+		if (vc_DtEps<RAY_MINOFFSET){
+			vc_DtEps = RAY_MINOFFSET;
+		}
+		point new_pThis;
+		int nearVertxMax = 0;
+		point nearVertx[40];
+		point triagVertx1[4];
+		int iAboveLevel1 = testTriag(pThis,nThis,vc_DtEps,vc_level,vc_name,triagVertx1);
+		if(iAboveLevel1 == 0){
+			return;
+		}
+		if(iAboveLevel1 == 3){
+			out_distance = 0;
+			out_innerpointI = pThis;
+			out_innerpoint1 = pThis;
+			out_innerpoint2 = pThis;
+			out_innerpoint3 = pThis;
+			return;
+		}
+		for(int i=0;i<iAboveLevel1;i++){
+			nearVertx[nearVertxMax] = triagVertx1[i];
+			nearVertxMax = nearVertxMax+1;
+		}
+		//if(iAboveLevel1 == 2){
+		//	nearVertx[nearVertxMax] = mix(triagVertx1[0],triagVertx1[1],0.25);
+		//	nearVertxMax = nearVertxMax+1;
+		//	nearVertx[nearVertxMax] = mix(triagVertx1[0],triagVertx1[1],0.5);
+		//	nearVertxMax = nearVertxMax+1;
+		//	nearVertx[nearVertxMax] = mix(triagVertx1[0],triagVertx1[1],0.75);
+		//	nearVertxMax = nearVertxMax+1;
+		//}
+		
+		point triagVertx2[4];
+		new_pThis = (triagVertx1[0]+triagVertx1[1])*0.5;
+		new_pThis = new_pThis+normalize(new_pThis-triagVertx1[2])*vc_DtEps;
+		int iAboveLevel2 = testTriag(new_pThis,nThis,vc_DtEps,vc_level,vc_name,triagVertx2);
+		if(iAboveLevel2 >= 1 && iAboveLevel2 <= 3){
+			for(int i=0;i<iAboveLevel2;i++){
+				nearVertx[nearVertxMax] = triagVertx2[i];
+				nearVertxMax = nearVertxMax+1;
+			}
+			//if(iAboveLevel2 == 2){
+			//	nearVertx[nearVertxMax] = mix(triagVertx2[0],triagVertx2[1],0.25);
+			//	nearVertxMax = nearVertxMax+1;
+			//	nearVertx[nearVertxMax] = mix(triagVertx2[0],triagVertx2[1],0.5);
+			//	nearVertxMax = nearVertxMax+1;
+			//	nearVertx[nearVertxMax] = mix(triagVertx2[0],triagVertx2[1],0.75);
+			//	nearVertxMax = nearVertxMax+1;
+			//}
+		}
+		
+		point triagVertx3[4];
+		new_pThis = (triagVertx1[1]+triagVertx1[2])*0.5;
+		new_pThis = new_pThis+normalize(new_pThis-triagVertx1[0])*vc_DtEps;
+		int iAboveLevel3 = testTriag(new_pThis,nThis,vc_DtEps,vc_level,vc_name,triagVertx3);
+		if(iAboveLevel3 >= 1 && iAboveLevel3 <= 3){
+			for(int i=0;i<iAboveLevel3;i++){
+				nearVertx[nearVertxMax] = triagVertx3[i];
+				nearVertxMax = nearVertxMax+1;
+			}
+			//if(iAboveLevel3 == 2){
+			//	nearVertx[nearVertxMax] = mix(triagVertx3[0],triagVertx3[1],0.25);
+			//	nearVertxMax = nearVertxMax+1;
+			//	nearVertx[nearVertxMax] = mix(triagVertx3[0],triagVertx3[1],0.5);
+			//	nearVertxMax = nearVertxMax+1;
+			//	nearVertx[nearVertxMax] = mix(triagVertx3[0],triagVertx3[1],0.75);
+			//	nearVertxMax = nearVertxMax+1;
+			//}
+		}
+		
+		point triagVertx4[4];
+		new_pThis = (triagVertx1[2]+triagVertx1[0])*0.5;
+		new_pThis = new_pThis+normalize(new_pThis-triagVertx1[1])*vc_DtEps;
+		int iAboveLevel4 = testTriag(new_pThis,nThis,vc_DtEps,vc_level,vc_name,triagVertx4);
+		if(iAboveLevel4 >= 1 && iAboveLevel4 <= 3){
+			for(int i=0;i<iAboveLevel4;i++){
+				nearVertx[nearVertxMax] = triagVertx4[i];
+				nearVertxMax = nearVertxMax+1;
+			}
+			//if(iAboveLevel4 == 2){
+			//	nearVertx[nearVertxMax] = mix(triagVertx4[0],triagVertx4[1],0.25);
+			//	nearVertxMax = nearVertxMax+1;
+			//	nearVertx[nearVertxMax] = mix(triagVertx4[0],triagVertx4[1],0.5);
+			//	nearVertxMax = nearVertxMax+1;
+			//	nearVertx[nearVertxMax] = mix(triagVertx4[0],triagVertx4[1],0.75);
+			//	nearVertxMax = nearVertxMax+1;
+			//}
+		}
+		float minDist = 999.0;
+		for(int i=0;i<nearVertxMax-1;i++){
+			float td1 = length(pThis - nearVertx[i]);
+			for(int j=i+1;j<nearVertxMax;j++){
+				float td2 = length(pThis - nearVertx[j]);
+				if(td2 < td1){
+					point tmp = nearVertx[i];
+					nearVertx[i] = nearVertx[j];
+					nearVertx[j] = tmp;
+				}
+			}
+		}
+		out_innerpointI = pThis;
+		out_innerpoint1 = nearVertx[0];
+		out_innerpoint2 = nearVertx[1];
+		out_innerpoint3 = nearVertx[2];
+		for(int i=1;i<nearVertxMax;i++){
+			if(length(nearVertx[i]-out_innerpoint1) > 0.0){
+				out_innerpoint2 = nearVertx[i];
+				for(int j=i+1;j<nearVertxMax;j++){
+					if(length(nearVertx[j]-out_innerpoint2) > 0.0 && length(nearVertx[j]-out_innerpoint1) > 0.0){
+						out_innerpoint3 = nearVertx[j];
+						break;
+					}
+				}
+				break;
+			}
+		}
+		point p1 = project_p2vec_v02(pThis,out_innerpoint1,out_innerpoint2,detection_clamp);
+		point p2 = project_p2vec_v02(pThis,out_innerpoint1,out_innerpoint3,detection_clamp);
+		point p3 = project_p2vec_v02(pThis,out_innerpoint2,out_innerpoint3,detection_clamp);
+		out_innerpointI = p1;
+		if(length(p2-pThis)<length(out_innerpointI-pThis)){
+			out_innerpointI = p2;
+		}
+		if(length(p3-pThis)<length(out_innerpointI-pThis)){
+			out_innerpointI = p3;
+		}
+		out_distance = length(pThis-out_innerpointI);
+		return;
+	}
+}
