@@ -1,4 +1,0 @@
-[submodule "www/hubs.kristallum.com"]
-	path = www/hubs.kristallum.com
-	url = https://github.com/IPv6/kristallum.git
-	branch = gh-pages
